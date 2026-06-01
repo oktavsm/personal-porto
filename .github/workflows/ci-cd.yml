@@ -223,7 +223,7 @@ jobs:
           SSL_DHPARAM="/etc/letsencrypt/ssl-dhparams.pem"
           TMP_CONF="$APP_DIR/nginx.$INACTIVE_SLOT.conf"
 
-          if [ -f "$CERT_DIR/fullchain.pem" ] && [ -f "$CERT_DIR/privkey.pem" ]; then
+          if [ "$PRIMARY_SERVER_NAME" != "_" ]; then
             INCLUDE_SSL_OPTIONS=""
             SSL_DHPARAM_LINE=""
 
