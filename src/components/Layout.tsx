@@ -1,4 +1,4 @@
-import { Menu, X } from "lucide-react";
+import { Mail, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { CustomCursor } from "./CustomCursor";
@@ -63,6 +63,9 @@ export function Layout() {
                 {link.label}
               </NavLink>
             ))}
+            <NavLink className="nav-contact" to="/contact" onClick={() => setOpen(false)}>
+              <Mail size={15} /> Contact
+            </NavLink>
           </nav>
         </div>
       </header>

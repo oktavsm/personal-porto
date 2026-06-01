@@ -187,6 +187,28 @@ section.is-visible,
   color: var(--text);
 }
 
+.nav-contact {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  margin-left: 4px;
+  border: 1px solid rgba(216, 211, 200, 0.16);
+  border-radius: 999px;
+  background: rgba(242, 238, 232, 0.035);
+  color: var(--text) !important;
+  font-weight: 800;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.nav-contact:hover,
+.nav-contact.active {
+  transform: translateY(-1px);
+  border-color: rgba(216, 211, 200, 0.36);
+  background: rgba(216, 211, 200, 0.075);
+}
+
 .nav-toggle {
   display: none;
   width: 42px;
@@ -1439,10 +1461,22 @@ li + li {
 }
 
 .music-section {
-  padding: 120px 0;
+  position: relative;
+  padding: 168px 0 120px;
+  margin-top: -72px;
   background:
-    radial-gradient(circle at 20% 0%, rgba(216, 211, 200, 0.055), transparent 32%),
-    linear-gradient(180deg, rgba(242, 238, 232, 0.018), transparent 45%);
+    radial-gradient(circle at 20% 18%, rgba(216, 211, 200, 0.055), transparent 34%),
+    linear-gradient(180deg, transparent 0%, rgba(242, 238, 232, 0.012) 22%, rgba(242, 238, 232, 0.018) 52%, transparent 100%);
+  overflow: hidden;
+}
+
+.music-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 150px;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(5, 6, 8, 0), rgba(216, 211, 200, 0.022), rgba(5, 6, 8, 0));
 }
 
 .music-grid {
@@ -1565,7 +1599,7 @@ li + li {
   bottom: 18px;
   z-index: 80;
   display: grid;
-  grid-template-columns: 44px minmax(0, 160px) 34px 34px;
+  grid-template-columns: minmax(0, 214px) 34px 34px;
   align-items: center;
   gap: 10px;
   max-width: calc(100vw - 36px);
@@ -1577,7 +1611,20 @@ li + li {
   backdrop-filter: blur(18px);
 }
 
-.global-music-player img {
+.global-music-jump {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 160px);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: inherit;
+}
+
+.global-music-jump:hover .global-music-copy strong {
+  color: var(--text);
+}
+
+.global-music-jump img {
   width: 44px;
   height: 44px;
   border-radius: 50%;
@@ -1752,7 +1799,11 @@ li + li {
     left: 14px;
     right: 14px;
     bottom: 14px;
-    grid-template-columns: 40px minmax(0, 1fr) 34px 34px;
+    grid-template-columns: minmax(0, 1fr) 34px 34px;
+  }
+
+  .global-music-jump {
+    grid-template-columns: 40px minmax(0, 1fr);
   }
 
   .interactive-section {

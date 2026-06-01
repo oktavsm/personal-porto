@@ -28,7 +28,7 @@ export const coreServerNodes: CoreServerNode[] = [
     id: "values",
     label: "Values",
     description: "Stability, structure, usefulness, and empathy guide how I learn, work, and build.",
-    href: "/#values",
+    href: "/#core-values",
     position: { x: 86, y: 62 },
   },
   {

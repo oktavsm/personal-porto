@@ -191,7 +191,7 @@ export function Home() {
         </div>
       </section>
 
-      <section id="values">
+      <section>
         <div className="container">
           <Card className="big-quote">
             <p>
@@ -214,7 +214,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id="core-values">
         <div className="container split">
           <div>
             <div className="section-kicker">Rebuilding my direction</div>

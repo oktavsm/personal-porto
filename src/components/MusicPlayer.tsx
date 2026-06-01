@@ -1,5 +1,6 @@
 import { Music, Pause, Play, Volume2 } from "lucide-react";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { media } from "../data/media";
 
 type Track = {
@@ -100,11 +101,13 @@ export function GlobalMusicPlayer() {
 
   return (
     <aside className="global-music-player" aria-label="Persistent music player">
-      <img src={track.cover} alt={`${track.title} cover`} />
-      <div className="global-music-copy">
-        <span>Now playing</span>
-        <strong>{track.title}</strong>
-      </div>
+      <Link className="global-music-jump" to="/#music" aria-label="Open music section">
+        <img src={track.cover} alt={`${track.title} cover`} />
+        <div className="global-music-copy">
+          <span>Now playing</span>
+          <strong>{track.title}</strong>
+        </div>
+      </Link>
       <button className="global-music-control" type="button" onClick={playing ? pause : play} aria-label={playing ? "Pause music" : "Play music"}>
         {playing ? <Pause size={16} /> : <Play size={16} />}
       </button>
@@ -124,7 +127,7 @@ export function HomeMusicSection() {
   const { track, tracks, playing, blocked, play, pause, setTrack } = useMusic();
 
   return (
-    <section className="music-section" data-reveal>
+    <section className="music-section" id="music" data-reveal>
       <div className="container music-grid">
         <div>
           <div className="section-kicker">Songs that give me space</div>
