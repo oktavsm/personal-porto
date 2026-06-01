@@ -19,6 +19,18 @@ export function Layout() {
   const location = useLocation();
 
   useEffect(() => {
+    try {
+      if (window.self !== window.top) {
+        document.documentElement.classList.add("is-embedded");
+        document.body.classList.add("is-embedded");
+      }
+    } catch {
+      document.documentElement.classList.add("is-embedded");
+      document.body.classList.add("is-embedded");
+    }
+  }, []);
+
+  useEffect(() => {
     if (location.hash) {
       window.setTimeout(() => {
         document.querySelector(location.hash)?.scrollIntoView({ behavior: "smooth", block: "start" });

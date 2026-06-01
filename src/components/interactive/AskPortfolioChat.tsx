@@ -47,10 +47,19 @@ export function AskPortfolioChat() {
   ]);
   const sessionIdRef = useRef<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isSending]);
+
+  useEffect(() => {
+    document.body.classList.toggle("chat-open", isOpen);
+
+    return () => {
+      document.body.classList.remove("chat-open");
+    };
+  }, [isOpen]);
 
   async function askPortfolio(message: string): Promise<WebhookResponse> {
     if (!webhookUrl) {
@@ -85,6 +94,7 @@ export function AskPortfolioChat() {
       return;
     }
 
+    inputRef.current?.blur();
     setInput("");
     setIsSending(true);
     setMessages((current) => [...current, { id: crypto.randomUUID(), role: "user", content: message }]);
@@ -181,8 +191,15 @@ export function AskPortfolioChat() {
 
           <form className="chat-form" onSubmit={(event) => void handleSubmit(event)}>
             <input
+              ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void handleSubmit(undefined);
+                }
+              }}
               maxLength={260}
               placeholder="Ask about Okta..."
               aria-label="Ask about Okta"

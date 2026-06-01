@@ -36,7 +36,12 @@ body {
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
+  overscroll-behavior-y: contain;
   cursor: none;
+}
+
+body.is-embedded {
+  overscroll-behavior: none;
 }
 
 body::before {
@@ -1683,6 +1688,18 @@ li + li {
   pointer-events: none;
 }
 
+body.is-embedded .portfolio-chat {
+  bottom: max(92px, env(safe-area-inset-bottom));
+}
+
+body.is-embedded.chat-open .portfolio-chat {
+  bottom: max(108px, env(safe-area-inset-bottom));
+}
+
+body.is-embedded .chat-panel {
+  max-height: min(620px, calc(100vh - 190px));
+}
+
 .chat-fab,
 .chat-panel {
   pointer-events: auto;
@@ -2022,8 +2039,17 @@ li + li {
     bottom: 78px;
   }
 
+  body.is-embedded .portfolio-chat,
+  body.is-embedded.chat-open .portfolio-chat {
+    bottom: max(96px, env(safe-area-inset-bottom));
+  }
+
   .chat-panel {
     max-height: calc(100vh - 156px);
+  }
+
+  body.is-embedded .chat-panel {
+    max-height: calc(100vh - 176px);
   }
 
   .interactive-section {
