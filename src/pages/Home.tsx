@@ -1,9 +1,12 @@
-import { ArrowRight, Download, Mail } from "lucide-react";
+import { ArrowRight, Compass, Download, Mail } from "lucide-react";
+import { useState } from "react";
 import { ExperienceCard } from "../components/ExperienceCard";
 import { HomeMusicSection } from "../components/MusicPlayer";
 import { ProjectCard } from "../components/ProjectCard";
 import { SectionHeader } from "../components/SectionHeader";
 import { ServerVisual } from "../components/ServerVisual";
+import { CoreServerMap } from "../components/interactive/CoreServerMap";
+import { PortfolioExplorer, PortfolioExplorerModal } from "../components/interactive/PortfolioExplorer";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { media } from "../data/media";
@@ -43,6 +46,8 @@ const values = [
 ];
 
 export function Home() {
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
+
   return (
     <>
       <section className="hero-section">
@@ -73,6 +78,9 @@ export function Home() {
                 Explore My Story <ArrowRight size={16} />
               </Button>
               <Button to="/projects">View Projects</Button>
+              <button className="quick-route-button" type="button" onClick={() => setIsExplorerOpen(true)}>
+                <Compass size={16} /> Choose Route
+              </button>
             </div>
           </div>
           <div className="hero-visual-stack">
@@ -131,7 +139,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id="who-am-i">
         <div className="container">
           <SectionHeader
             kicker="The selection I prepared for"
@@ -183,7 +191,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id="values">
         <div className="container">
           <Card className="big-quote">
             <p>
@@ -316,7 +324,7 @@ export function Home() {
         </div>
       </section>
 
-      <section className="mission-section">
+      <section className="mission-section" id="mission">
         <div className="container">
           <div className="section-kicker">My mission</div>
           <h2>To build useful systems that turn scattered problems into structured, accessible, and reliable solutions.</h2>
@@ -371,29 +379,9 @@ export function Home() {
         </div>
       </section>
 
-      <section>
-        <div className="container symbol-panel">
-          <div className="symbol-visual">
-            <ServerVisual />
-          </div>
-          <div className="symbol-content">
-            <div className="section-kicker">Self-symbol</div>
-            <h2>Why a core server?</h2>
-            <p>
-              A core server is not always seen, but it keeps the system connected. It receives, processes, organizes,
-              and distributes. It supports many connections at once, but still needs structure to keep everything stable.
-            </p>
-            <p>
-              That is why I chose it as my self-symbol — not because I only like technology, but because it reflects how
-              I understand myself: someone who tries to create stability, organize complexity, and help systems work
-              better.
-            </p>
-            <Button to="/lead-self#self-symbol" variant="primary">
-              Read My Self-Symbol Reflection <ArrowRight size={16} />
-            </Button>
-          </div>
-        </div>
-      </section>
+      <CoreServerMap />
+
+      <PortfolioExplorer />
 
       <HomeMusicSection />
 
@@ -419,6 +407,8 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      <PortfolioExplorerModal isOpen={isExplorerOpen} onClose={() => setIsExplorerOpen(false)} />
     </>
   );
 }
