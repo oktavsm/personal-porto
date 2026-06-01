@@ -67,7 +67,7 @@ jobs:
           : "${DOCKERHUB_USERNAME:?Missing DOCKERHUB_USERNAME secret}"
           : "${DOCKERHUB_TOKEN:?Missing DOCKERHUB_TOKEN secret}"
 
-          REPOSITORY="${DOCKERHUB_REPOSITORY:-teladan-porto}"
+          REPOSITORY="${DOCKERHUB_REPOSITORY:-personal-porto}"
           SHORT_SHA="${GITHUB_SHA::12}"
           IMAGE_NAME="$DOCKERHUB_USERNAME/$REPOSITORY"
 
