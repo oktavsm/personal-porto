@@ -1,5 +1,6 @@
 import { ArrowRight, Download, Mail } from "lucide-react";
 import { ExperienceCard } from "../components/ExperienceCard";
+import { HomeMusicSection } from "../components/MusicPlayer";
 import { ProjectCard } from "../components/ProjectCard";
 import { SectionHeader } from "../components/SectionHeader";
 import { ServerVisual } from "../components/ServerVisual";
@@ -393,6 +394,8 @@ export function Home() {
           </div>
         </div>
       </section>
+
+      <HomeMusicSection />
 
       <section className="closing-section">
         <div className="container">

@@ -2,7 +2,7 @@ import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { CustomCursor } from "./CustomCursor";
-import { MusicPlayer } from "./MusicPlayer";
+import { GlobalMusicPlayer, MusicProvider } from "./MusicPlayer";
 
 const links = [
   { to: "/", label: "Home" },
@@ -46,7 +46,7 @@ export function Layout() {
   }, [location.pathname]);
 
   return (
-    <>
+    <MusicProvider>
       <CustomCursor />
       <header className="site-nav">
         <div className="nav-inner">
@@ -69,13 +69,13 @@ export function Layout() {
       <main>
         <Outlet />
       </main>
-      <MusicPlayer />
+      <GlobalMusicPlayer />
       <footer className="site-footer">
         <div className="container footer-inner">
           <span>Built with reflection, structure, and purpose.</span>
           <span>Still improving, one system at a time.</span>
         </div>
       </footer>
-    </>
+    </MusicProvider>
   );
 }

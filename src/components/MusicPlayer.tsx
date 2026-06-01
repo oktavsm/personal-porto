@@ -1,5 +1,5 @@
 import { Music, Pause, Play, Volume2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { media } from "../data/media";
 
 type Track = {
@@ -9,6 +9,16 @@ type Track = {
   src: string;
   cover: string;
   note: string;
+};
+
+type MusicContextValue = {
+  track: Track;
+  tracks: Track[];
+  playing: boolean;
+  blocked: boolean;
+  setTrack: (track: Track) => void;
+  play: () => Promise<void>;
+  pause: () => void;
 };
 
 const tracks: Track[] = [
@@ -30,13 +40,25 @@ const tracks: Track[] = [
   },
 ];
 
-export function MusicPlayer() {
+const MusicContext = createContext<MusicContextValue | null>(null);
+
+function useMusic() {
+  const value = useContext(MusicContext);
+
+  if (!value) {
+    throw new Error("useMusic must be used inside MusicProvider");
+  }
+
+  return value;
+}
+
+export function MusicProvider({ children }: { children: ReactNode }) {
   const [track, setTrack] = useState<Track>(tracks[0]);
   const [playing, setPlaying] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const play = async () => {
+  const play = useCallback(async () => {
     try {
       await audioRef.current?.play();
       setPlaying(true);
@@ -45,25 +67,64 @@ export function MusicPlayer() {
       setBlocked(true);
       setPlaying(false);
     }
-  };
+  }, []);
 
-  const pause = () => {
+  const pause = useCallback(() => {
     audioRef.current?.pause();
     setPlaying(false);
-  };
+  }, []);
 
   useEffect(() => {
     audioRef.current?.load();
     void play();
     // Browser autoplay policies may block this until the visitor interacts.
-    // The visible play button is the fallback.
-  }, [track]);
+  }, [play, track]);
+
+  const value = useMemo(
+    () => ({ track, tracks, playing, blocked, setTrack, play, pause }),
+    [blocked, pause, play, playing, track],
+  );
 
   return (
-    <section className="music-section" data-reveal>
+    <MusicContext.Provider value={value}>
       <audio ref={audioRef} loop preload="metadata">
         <source src={track.src} type="audio/mpeg" />
       </audio>
+      {children}
+    </MusicContext.Provider>
+  );
+}
+
+export function GlobalMusicPlayer() {
+  const { track, tracks, playing, play, pause, setTrack } = useMusic();
+
+  return (
+    <aside className="global-music-player" aria-label="Persistent music player">
+      <img src={track.cover} alt={`${track.title} cover`} />
+      <div className="global-music-copy">
+        <span>Now playing</span>
+        <strong>{track.title}</strong>
+      </div>
+      <button className="global-music-control" type="button" onClick={playing ? pause : play} aria-label={playing ? "Pause music" : "Play music"}>
+        {playing ? <Pause size={16} /> : <Play size={16} />}
+      </button>
+      <button
+        className="global-music-control"
+        type="button"
+        onClick={() => setTrack(track.id === "evaluasi" ? tracks[1] : tracks[0])}
+        aria-label="Switch music track"
+      >
+        <Music size={16} />
+      </button>
+    </aside>
+  );
+}
+
+export function HomeMusicSection() {
+  const { track, tracks, playing, blocked, play, pause, setTrack } = useMusic();
+
+  return (
+    <section className="music-section" data-reveal>
       <div className="container music-grid">
         <div>
           <div className="section-kicker">Songs that give me space</div>
