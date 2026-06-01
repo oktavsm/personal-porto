@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
   deploy:
-    name: Deploy to EC2
+    name: Build Image and Deploy to EC2
     runs-on: ubuntu-latest
     needs: check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -41,30 +41,59 @@ jobs:
       cancel-in-progress: false
     environment: production
     env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DOCKERHUB_REPOSITORY: ${{ secrets.DOCKERHUB_REPOSITORY }}
       EC2_HOST: ${{ secrets.EC2_HOST }}
       EC2_USER: ${{ secrets.EC2_USER }}
       EC2_PORT: ${{ secrets.EC2_PORT }}
       EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
       EC2_APP_DIR: ${{ secrets.EC2_APP_DIR }}
-      RELEASE_SHA: ${{ github.sha }}
+      EC2_SERVER_NAME: ${{ secrets.EC2_SERVER_NAME }}
+      EC2_NGINX_CONF: ${{ secrets.EC2_NGINX_CONF }}
+      EC2_BLUE_PORT: ${{ secrets.EC2_BLUE_PORT }}
+      EC2_GREEN_PORT: ${{ secrets.EC2_GREEN_PORT }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Resolve image name
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          : "${DOCKERHUB_USERNAME:?Missing DOCKERHUB_USERNAME secret}"
+          : "${DOCKERHUB_TOKEN:?Missing DOCKERHUB_TOKEN secret}"
+
+          REPOSITORY="${DOCKERHUB_REPOSITORY:-teladan-porto}"
+          SHORT_SHA="${GITHUB_SHA::12}"
+          IMAGE_NAME="$DOCKERHUB_USERNAME/$REPOSITORY"
+
+          echo "name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=$IMAGE_NAME:sha-$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "latest_tag=$IMAGE_NAME:latest" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          node-version: 22
-          cache: npm
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        run: npm run build
-
-      - name: Package release
-        run: tar -czf release.tar.gz -C dist .
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.sha_tag }}
+            ${{ steps.image.outputs.latest_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Configure SSH
         shell: bash
@@ -83,62 +112,138 @@ jobs:
           chmod 600 ~/.ssh/ec2_key
           ssh-keyscan -p "$EC2_PORT" -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
-      - name: Upload release archive
+      - name: Upload Compose file
         shell: bash
         run: |
           set -euo pipefail
 
           EC2_PORT="${EC2_PORT:-22}"
-          scp -i ~/.ssh/ec2_key -P "$EC2_PORT" release.tar.gz "$EC2_USER@$EC2_HOST:/tmp/teladan-porto-$RELEASE_SHA.tar.gz"
+          REMOTE_APP_DIR="${EC2_APP_DIR:-/opt/teladan-porto}"
 
-      - name: Activate release with blue-green switch
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" "mkdir -p '$REMOTE_APP_DIR'"
+          scp -i ~/.ssh/ec2_key -P "$EC2_PORT" deploy/compose.portfolio.yml "$EC2_USER@$EC2_HOST:$REMOTE_APP_DIR/compose.portfolio.yml"
+
+      - name: Deploy blue-green slot
         shell: bash
         run: |
           set -euo pipefail
 
           EC2_PORT="${EC2_PORT:-22}"
-          REMOTE_APP_DIR="${EC2_APP_DIR:-/var/www/teladan-porto}"
+          REMOTE_APP_DIR="${EC2_APP_DIR:-/opt/teladan-porto}"
+          SERVER_NAME="${EC2_SERVER_NAME:-_}"
+          NGINX_CONF="${EC2_NGINX_CONF:-/etc/nginx/conf.d/teladan-porto.conf}"
+          BLUE_PORT="${EC2_BLUE_PORT:-8081}"
+          GREEN_PORT="${EC2_GREEN_PORT:-8082}"
+          IMAGE="${{ steps.image.outputs.sha_tag }}"
 
-          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
-            "APP_DIR='$REMOTE_APP_DIR' RELEASE_SHA='$RELEASE_SHA' bash -s" <<'REMOTE_SCRIPT'
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" bash -s -- \
+            "$REMOTE_APP_DIR" \
+            "$IMAGE" \
+            "$DOCKERHUB_USERNAME" \
+            "$DOCKERHUB_TOKEN" \
+            "$SERVER_NAME" \
+            "$NGINX_CONF" \
+            "$BLUE_PORT" \
+            "$GREEN_PORT" <<'REMOTE_SCRIPT'
           set -euo pipefail
 
-          APP_DIR="${APP_DIR:-/var/www/teladan-porto}"
-          RELEASE_SHA="${RELEASE_SHA:?Missing RELEASE_SHA}"
-          RELEASES_DIR="$APP_DIR/releases"
-          RELEASE_DIR="$RELEASES_DIR/$RELEASE_SHA"
-          ARCHIVE="/tmp/teladan-porto-$RELEASE_SHA.tar.gz"
-          PREVIOUS_RELEASE=""
+          APP_DIR="$1"
+          IMAGE="$2"
+          DOCKERHUB_USERNAME="$3"
+          DOCKERHUB_TOKEN="$4"
+          SERVER_NAME="$5"
+          NGINX_CONF="$6"
+          BLUE_PORT="$7"
+          GREEN_PORT="$8"
 
-          if [ -L "$APP_DIR/current" ]; then
-            PREVIOUS_RELEASE="$(readlink -f "$APP_DIR/current" || true)"
-          fi
+          APP_NAME="teladan-porto"
+          ACTIVE_SLOT_FILE="$APP_DIR/active_slot"
+          COMPOSE_FILE="$APP_DIR/compose.portfolio.yml"
 
-          mkdir -p "$RELEASE_DIR"
-          tar -xzf "$ARCHIVE" -C "$RELEASE_DIR"
-          rm -f "$ARCHIVE"
-
-          if [ ! -f "$RELEASE_DIR/index.html" ]; then
-            echo "Release is invalid: index.html not found."
-            rm -rf "$RELEASE_DIR"
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "Docker is not installed on the EC2 instance."
             exit 1
           fi
 
-          ln -sfn "$RELEASE_DIR" "$APP_DIR/current.next"
-          mv -Tf "$APP_DIR/current.next" "$APP_DIR/current"
-
-          if command -v nginx >/dev/null 2>&1; then
-            if sudo -n nginx -t; then
-              sudo -n systemctl reload nginx || sudo -n nginx -s reload
-            else
-              echo "Nginx config test failed. Rolling back."
-              if [ -n "$PREVIOUS_RELEASE" ] && [ -d "$PREVIOUS_RELEASE" ]; then
-                ln -sfn "$PREVIOUS_RELEASE" "$APP_DIR/current"
-                sudo -n nginx -t && (sudo -n systemctl reload nginx || sudo -n nginx -s reload)
-              fi
-              exit 1
-            fi
+          if ! docker compose version >/dev/null 2>&1; then
+            echo "Docker Compose plugin is not installed on the EC2 instance."
+            exit 1
           fi
 
-          find "$RELEASES_DIR" -mindepth 1 -maxdepth 1 -type d | sort | head -n -5 | xargs -r rm -rf
+          mkdir -p "$APP_DIR"
+          echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          docker pull "$IMAGE"
+
+          ACTIVE_SLOT="green"
+          if [ -f "$ACTIVE_SLOT_FILE" ]; then
+            ACTIVE_SLOT="$(cat "$ACTIVE_SLOT_FILE")"
+          fi
+
+          if [ "$ACTIVE_SLOT" = "blue" ]; then
+            INACTIVE_SLOT="green"
+            INACTIVE_PORT="$GREEN_PORT"
+          else
+            INACTIVE_SLOT="blue"
+            INACTIVE_PORT="$BLUE_PORT"
+          fi
+
+          ENV_FILE="$APP_DIR/.env.$INACTIVE_SLOT"
+          cat > "$ENV_FILE" <<ENV
+          PORTFOLIO_IMAGE=$IMAGE
+          PORTFOLIO_CONTAINER_NAME=$APP_NAME-$INACTIVE_SLOT
+          PORTFOLIO_PORT=$INACTIVE_PORT
+          ENV
+
+          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -p "$APP_NAME-$INACTIVE_SLOT" up -d --remove-orphans
+
+          for attempt in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:$INACTIVE_PORT/" >/dev/null; then
+              break
+            fi
+
+            if [ "$attempt" -eq 30 ]; then
+              echo "New $INACTIVE_SLOT slot failed health check."
+              docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -p "$APP_NAME-$INACTIVE_SLOT" logs --tail=80
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          TMP_CONF="$APP_DIR/nginx.$INACTIVE_SLOT.conf"
+          cat > "$TMP_CONF" <<NGINX
+          server {
+            listen 80;
+            server_name $SERVER_NAME;
+
+            location / {
+              proxy_pass http://127.0.0.1:$INACTIVE_PORT;
+              proxy_http_version 1.1;
+              proxy_set_header Host \$host;
+              proxy_set_header X-Real-IP \$remote_addr;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto \$scheme;
+            }
+          }
+          NGINX
+
+          if [ -f "$NGINX_CONF" ]; then
+            sudo -n cp "$NGINX_CONF" "$APP_DIR/nginx.previous.conf"
+          fi
+
+          sudo -n mv "$TMP_CONF" "$NGINX_CONF"
+
+          if sudo -n nginx -t; then
+            sudo -n systemctl reload nginx || sudo -n nginx -s reload
+            echo "$INACTIVE_SLOT" > "$ACTIVE_SLOT_FILE"
+          else
+            echo "Nginx config test failed. Rolling back config."
+            if [ -f "$APP_DIR/nginx.previous.conf" ]; then
+              sudo -n cp "$APP_DIR/nginx.previous.conf" "$NGINX_CONF"
+              sudo -n nginx -t && (sudo -n systemctl reload nginx || sudo -n nginx -s reload)
+            fi
+            exit 1
+          fi
+
+          docker image prune -f
           REMOTE_SCRIPT
