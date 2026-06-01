@@ -1672,6 +1672,217 @@ li + li {
   background: rgba(242, 238, 232, 0.09);
 }
 
+.portfolio-chat {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 90;
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.chat-fab,
+.chat-panel {
+  pointer-events: auto;
+}
+
+.chat-fab {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 16px;
+  border: 1px solid rgba(216, 211, 200, 0.18);
+  border-radius: 999px;
+  background: rgba(8, 9, 11, 0.84);
+  color: var(--text);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(18px);
+  font-weight: 800;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.chat-fab:hover {
+  transform: translateY(-2px);
+  border-color: rgba(242, 238, 232, 0.38);
+  background: rgba(20, 21, 25, 0.92);
+}
+
+.chat-panel {
+  width: min(420px, calc(100vw - 36px));
+  max-height: min(720px, calc(100vh - 110px));
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  overflow: hidden;
+  border: 1px solid rgba(216, 211, 200, 0.18);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(216, 211, 200, 0.08), transparent 36%),
+    linear-gradient(180deg, rgba(242, 238, 232, 0.035), transparent 48%),
+    rgba(7, 8, 10, 0.96);
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.58);
+  backdrop-filter: blur(22px);
+}
+
+.chat-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border-bottom: 1px solid rgba(216, 211, 200, 0.12);
+}
+
+.chat-head span,
+.chat-head strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.chat-head span {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.chat-head strong {
+  margin-top: 4px;
+  color: var(--text);
+}
+
+.chat-head button,
+.chat-form button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(216, 211, 200, 0.16);
+  border-radius: 50%;
+  background: rgba(242, 238, 232, 0.04);
+  color: var(--text);
+}
+
+.chat-messages {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+  padding: 18px;
+  overflow: auto;
+}
+
+.chat-message {
+  display: grid;
+  gap: 8px;
+}
+
+.chat-message-user {
+  justify-items: end;
+}
+
+.chat-avatar {
+  color: var(--muted-2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.chat-bubble {
+  max-width: 92%;
+  padding: 13px 14px;
+  border: 1px solid rgba(216, 211, 200, 0.12);
+  border-radius: 18px;
+  background: rgba(242, 238, 232, 0.035);
+}
+
+.chat-message-user .chat-bubble {
+  background: rgba(216, 211, 200, 0.1);
+}
+
+.chat-bubble p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.chat-links,
+.chat-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chat-links {
+  margin-top: 12px;
+}
+
+.chat-links a,
+.chat-suggestions button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(216, 211, 200, 0.16);
+  border-radius: 999px;
+  background: rgba(7, 8, 10, 0.38);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.chat-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.chat-loading svg {
+  animation: spin 1s linear infinite;
+}
+
+.chat-suggestions {
+  padding: 0 18px 14px;
+}
+
+.chat-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid rgba(216, 211, 200, 0.12);
+}
+
+.chat-form input {
+  min-height: 40px;
+  min-width: 0;
+  border: 1px solid rgba(216, 211, 200, 0.14);
+  border-radius: 999px;
+  background: rgba(242, 238, 232, 0.035);
+  color: var(--text);
+  padding: 0 14px;
+  outline: none;
+}
+
+.chat-form input:focus {
+  border-color: rgba(242, 238, 232, 0.34);
+}
+
+.chat-form button:disabled {
+  color: var(--muted-2);
+  opacity: 0.6;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .site-footer {
   border-top: 1px solid var(--border);
   padding: 28px 0;
@@ -1804,6 +2015,15 @@ li + li {
 
   .global-music-jump {
     grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .portfolio-chat {
+    left: 14px;
+    bottom: 78px;
+  }
+
+  .chat-panel {
+    max-height: calc(100vh - 156px);
   }
 
   .interactive-section {

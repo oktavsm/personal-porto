@@ -54,6 +54,7 @@ jobs:
       EC2_NGINX_CONF: ${{ secrets.EC2_NGINX_CONF }}
       EC2_BLUE_PORT: ${{ secrets.EC2_BLUE_PORT }}
       EC2_GREEN_PORT: ${{ secrets.EC2_GREEN_PORT }}
+      VITE_PORTFOLIO_CHAT_WEBHOOK_URL: ${{ secrets.VITE_PORTFOLIO_CHAT_WEBHOOK_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -95,6 +96,8 @@ jobs:
             ${{ steps.image.outputs.latest_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          build-args: |
+            VITE_PORTFOLIO_CHAT_WEBHOOK_URL=${{ env.VITE_PORTFOLIO_CHAT_WEBHOOK_URL }}
 
       - name: Configure SSH
         shell: bash

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { CustomCursor } from "./CustomCursor";
 import { GlobalMusicPlayer, MusicProvider } from "./MusicPlayer";
+import { AskPortfolioChat } from "./interactive/AskPortfolioChat";
 
 const links = [
   { to: "/", label: "Home" },
@@ -72,6 +73,7 @@ export function Layout() {
       <main>
         <Outlet />
       </main>
+      <AskPortfolioChat />
       <GlobalMusicPlayer />
       <footer className="site-footer">
         <div className="container footer-inner">
