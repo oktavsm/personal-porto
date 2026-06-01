@@ -121,7 +121,8 @@ jobs:
           EC2_PORT="${EC2_PORT:-22}"
           REMOTE_APP_DIR="${EC2_APP_DIR:-/opt/teladan-porto}"
 
-          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" "mkdir -p '$REMOTE_APP_DIR'"
+          ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
+            "sudo -n mkdir -p '$REMOTE_APP_DIR' && sudo -n chown '$EC2_USER:$EC2_USER' '$REMOTE_APP_DIR'"
           scp -i ~/.ssh/ec2_key -P "$EC2_PORT" deploy/compose.portfolio.yml "$EC2_USER@$EC2_HOST:$REMOTE_APP_DIR/compose.portfolio.yml"
 
       - name: Deploy blue-green slot
