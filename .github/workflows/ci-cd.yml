@@ -132,8 +132,8 @@ jobs:
 
           EC2_PORT="${EC2_PORT:-22}"
           REMOTE_APP_DIR="${EC2_APP_DIR:-/opt/teladan-porto}"
-          SERVER_NAME="${EC2_SERVER_NAME:-_}"
-          NGINX_CONF="${EC2_NGINX_CONF:-/etc/nginx/conf.d/teladan-porto.conf}"
+          SERVER_NAME="${EC2_SERVER_NAME:-muelsm.site}"
+          NGINX_CONF="${EC2_NGINX_CONF:-/etc/nginx/sites-available/muelsm.site}"
           BLUE_PORT="${EC2_BLUE_PORT:-8081}"
           GREEN_PORT="${EC2_GREEN_PORT:-8082}"
           IMAGE="${{ steps.image.outputs.sha_tag }}"
@@ -212,11 +212,44 @@ jobs:
             sleep 2
           done
 
+          PRIMARY_SERVER_NAME="${SERVER_NAME%% *}"
+          SERVER_NAMES="$SERVER_NAME"
+          if [ "$SERVER_NAME" = "$PRIMARY_SERVER_NAME" ] && [ "$PRIMARY_SERVER_NAME" != "_" ]; then
+            SERVER_NAMES="$PRIMARY_SERVER_NAME www.$PRIMARY_SERVER_NAME"
+          fi
+
+          CERT_DIR="/etc/letsencrypt/live/$PRIMARY_SERVER_NAME"
+          SSL_OPTIONS="/etc/letsencrypt/options-ssl-nginx.conf"
+          SSL_DHPARAM="/etc/letsencrypt/ssl-dhparams.pem"
           TMP_CONF="$APP_DIR/nginx.$INACTIVE_SLOT.conf"
-          cat > "$TMP_CONF" <<NGINX
+
+          if [ -f "$CERT_DIR/fullchain.pem" ] && [ -f "$CERT_DIR/privkey.pem" ]; then
+            INCLUDE_SSL_OPTIONS=""
+            SSL_DHPARAM_LINE=""
+
+            if [ -f "$SSL_OPTIONS" ]; then
+              INCLUDE_SSL_OPTIONS="include $SSL_OPTIONS;"
+            fi
+
+            if [ -f "$SSL_DHPARAM" ]; then
+              SSL_DHPARAM_LINE="ssl_dhparam $SSL_DHPARAM;"
+            fi
+
+            cat > "$TMP_CONF" <<NGINX
           server {
             listen 80;
-            server_name $SERVER_NAME;
+            server_name $SERVER_NAMES;
+            return 301 https://\$host\$request_uri;
+          }
+
+          server {
+            listen 443 ssl;
+            server_name $SERVER_NAMES;
+
+            ssl_certificate $CERT_DIR/fullchain.pem;
+            ssl_certificate_key $CERT_DIR/privkey.pem;
+            $INCLUDE_SSL_OPTIONS
+            $SSL_DHPARAM_LINE
 
             location / {
               proxy_pass http://127.0.0.1:$INACTIVE_PORT;
@@ -228,6 +261,23 @@ jobs:
             }
           }
           NGINX
+          else
+            cat > "$TMP_CONF" <<NGINX
+          server {
+            listen 80;
+            server_name $SERVER_NAMES;
+
+            location / {
+              proxy_pass http://127.0.0.1:$INACTIVE_PORT;
+              proxy_http_version 1.1;
+              proxy_set_header Host \$host;
+              proxy_set_header X-Real-IP \$remote_addr;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto \$scheme;
+            }
+          }
+          NGINX
+          fi
 
           if [ -f "$NGINX_CONF" ]; then
             sudo -n cp "$NGINX_CONF" "$APP_DIR/nginx.previous.conf"
