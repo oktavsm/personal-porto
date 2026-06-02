@@ -108,7 +108,7 @@ export function Home() {
     () =>
       cardBlocks(homeSections, "early-story", earlyCards).map((card, index) => ({
         ...card,
-        image: card.imageKey ? cardImageByKey[card.imageKey] ?? earlyCards[index]?.image ?? media.profile : earlyCards[index]?.image ?? media.profile,
+        image: card.imageUrl ?? (card.imageKey ? cardImageByKey[card.imageKey] ?? earlyCards[index]?.image ?? media.profile : earlyCards[index]?.image ?? media.profile),
       })),
     [homeSections],
   );

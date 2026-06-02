@@ -16,6 +16,8 @@ export type CardBlock = {
   title: string;
   text: string;
   imageKey?: string;
+  imageUrl?: string;
+  mediaAssetId?: string;
 };
 
 export function resolveSections(slug: string, page?: PublicSitePage | null) {
@@ -77,8 +79,10 @@ function normalizeCardBlock(value: Record<string, unknown>): CardBlock | null {
   const title = typeof value.title === "string" ? value.title : "";
   const text = typeof value.text === "string" ? value.text : "";
   const imageKey = typeof value.imageKey === "string" ? value.imageKey : undefined;
+  const imageUrl = typeof value.imageUrl === "string" ? value.imageUrl : undefined;
+  const mediaAssetId = typeof value.mediaAssetId === "string" ? value.mediaAssetId : undefined;
   if (!title && !text) return null;
-  return { title, text, imageKey };
+  return { title, text, imageKey, imageUrl, mediaAssetId };
 }
 
 function normalizeObject(value: unknown): Record<string, unknown> {

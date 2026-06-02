@@ -16,6 +16,7 @@ import { liveSystemRoutes } from "./routes/liveSystems.js";
 import { mediaRoutes } from "./routes/media.js";
 import { musicRoutes } from "./routes/music.js";
 import { pageRoutes } from "./routes/pages.js";
+import { portfolioContextRoutes } from "./routes/portfolioContext.js";
 import { projectRoutes } from "./routes/projects.js";
 import { resumeRoutes } from "./routes/resume.js";
 import "./types.js";
@@ -65,6 +66,7 @@ export async function buildApp() {
   await app.register(contactRoutes);
   await app.register(musicRoutes);
   await app.register(pageRoutes);
+  await app.register(portfolioContextRoutes);
 
   app.setNotFoundHandler((request, reply) => {
     reply.code(404).send({ message: `Route not found: ${request.method} ${request.url}` });

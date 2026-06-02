@@ -36,7 +36,7 @@ type DeleteTarget =
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
 type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "pages";
-type MediaPickerTarget = "projectGallery" | "experienceGallery";
+type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -149,6 +149,8 @@ const emptyPageBlock = {
   title: "",
   text: "",
   imageKey: "",
+  mediaAssetId: "",
+  imageUrl: "",
   sortOrder: 0,
   isPublished: true,
 };
@@ -262,6 +264,7 @@ function GalleryMediaPickerModal({
   title,
   assets,
   selectedIds,
+  multiple = true,
   saving,
   onCancel,
   onSave,
@@ -269,6 +272,7 @@ function GalleryMediaPickerModal({
   title: string;
   assets: AdminMediaAsset[];
   selectedIds: string[];
+  multiple?: boolean;
   saving: boolean;
   onCancel: () => void;
   onSave: (selectedIds: string[]) => void;
@@ -290,7 +294,10 @@ function GalleryMediaPickerModal({
   }, []);
 
   function toggleAsset(assetId: string) {
-    setDraftIds((current) => (current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]));
+    setDraftIds((current) => {
+      if (!multiple) return current.includes(assetId) ? [] : [assetId];
+      return current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId];
+    });
   }
 
   return createPortal(
@@ -470,9 +477,15 @@ function AdminListTools({
   );
 }
 
-function blockField(block: { contentJson: unknown }, field: "title" | "text" | "imageKey") {
+function blockField(block: { contentJson: unknown }, field: "title" | "text" | "imageKey" | "mediaAssetId" | "imageUrl") {
   const content = block.contentJson && typeof block.contentJson === "object" && !Array.isArray(block.contentJson) ? (block.contentJson as Record<string, unknown>) : {};
   return typeof content[field] === "string" ? content[field] : "";
+}
+
+function publicPagePath(slug: string) {
+  if (slug === "home") return "/";
+  if (slug === "lead-self") return "/lead-self";
+  return `/${slug}`;
 }
 
 export function Admin() {
@@ -590,6 +603,17 @@ export function Admin() {
 
     if (mediaPickerTarget === "experienceGallery") {
       setExperienceForm((current) => ({ ...current, galleryMediaAssetIds: selectedIds }));
+    }
+
+    if (mediaPickerTarget === "pageBlockImage") {
+      const mediaAssetId = selectedIds[0] ?? "";
+      const asset = mediaById.get(mediaAssetId);
+      setPageBlockForm((current) => ({
+        ...current,
+        mediaAssetId,
+        imageUrl: asset?.publicUrl ?? "",
+        imageKey: mediaAssetId ? "" : current.imageKey,
+      }));
     }
 
     setMediaPickerTarget(null);
@@ -853,6 +877,8 @@ export function Admin() {
           title: pageBlockForm.title,
           text: pageBlockForm.text,
           imageKey: pageBlockForm.imageKey || undefined,
+          mediaAssetId: pageBlockForm.mediaAssetId || undefined,
+          imageUrl: pageBlockForm.imageUrl || undefined,
         },
         sortOrder: pageBlockForm.sortOrder,
         isPublished: pageBlockForm.isPublished,
@@ -1227,6 +1253,8 @@ export function Admin() {
       title: blockField(block, "title"),
       text: blockField(block, "text"),
       imageKey: blockField(block, "imageKey"),
+      mediaAssetId: blockField(block, "mediaAssetId"),
+      imageUrl: blockField(block, "imageUrl"),
       sortOrder: block.sortOrder,
       isPublished: block.isPublished,
     });
@@ -2223,8 +2251,21 @@ export function Admin() {
                   <label>
                     Image Key
                     <input value={pageBlockForm.imageKey} onChange={(event) => setPageBlockForm({ ...pageBlockForm, imageKey: event.target.value })} placeholder="Optional, e.g. earlySilat" />
-                    <span className="admin-help">Currently used by Home early-story cards. Leave empty for text-only cards.</span>
+                    <span className="admin-help">Static fallback key. Choosing media below will override this image on the frontend.</span>
                   </label>
+                  <div className="admin-media-picker-field">
+                    <div>
+                      <span>Bound Media</span>
+                      <small>{pageBlockForm.mediaAssetId ? mediaById.get(pageBlockForm.mediaAssetId)?.originalName ?? "Selected media" : "No image selected"}</small>
+                    </div>
+                    <button className="icon-btn" type="button" aria-label="Choose block image" onClick={() => setMediaPickerTarget("pageBlockImage")}>
+                      <FileText size={15} />
+                    </button>
+                  </div>
+                  <MediaSelectionPreview
+                    asset={pageBlockForm.mediaAssetId ? mediaById.get(pageBlockForm.mediaAssetId) : undefined}
+                    onClear={() => setPageBlockForm({ ...pageBlockForm, mediaAssetId: "", imageUrl: "" })}
+                  />
                   <label>
                     Display Order
                     <input value={pageBlockForm.sortOrder} onChange={(event) => setPageBlockForm({ ...pageBlockForm, sortOrder: Number(event.target.value) })} type="number" />
@@ -2246,6 +2287,7 @@ export function Admin() {
                         <div className="admin-badges">
                           <span className="admin-badge">{block.type}</span>
                           <span className={`admin-badge${block.isPublished ? "" : " is-muted"}`}>{block.isPublished ? "Published" : "Draft"}</span>
+                          {blockField(block, "imageUrl") ? <span className="admin-badge">Media bound</span> : null}
                         </div>
                       </div>
                       <div className="admin-row-actions">
@@ -2276,7 +2318,21 @@ export function Admin() {
           </Card>
 
           <Card className="admin-card-pages">
-            <h3>{selectedSitePage?.title ?? "CMS Pages"}</h3>
+            <div className="admin-card-head">
+              <h3>{selectedSitePage?.title ?? "CMS Pages"}</h3>
+              {selectedSitePage ? (
+                <a className="icon-btn" href={publicPagePath(selectedSitePage.slug)} target="_blank" rel="noreferrer" aria-label={`Preview ${selectedSitePage.title}`}>
+                  <ExternalLink size={15} />
+                </a>
+              ) : null}
+            </div>
+            {selectedSitePage ? (
+              <div className="actions admin-preview-actions">
+                <a className="btn" href={publicPagePath(selectedSitePage.slug)} target="_blank" rel="noreferrer">
+                  <ExternalLink size={15} /> Preview {selectedSitePage.title}
+                </a>
+              </div>
+            ) : null}
             <div className="admin-list">
               {selectedSitePage?.sections.map((section) => (
                 <div className="admin-list-item" key={section.id}>
@@ -2308,9 +2364,10 @@ export function Admin() {
       </div>
       {mediaPickerTarget ? (
         <GalleryMediaPickerModal
-          title={mediaPickerTarget === "projectGallery" ? "Choose project gallery images" : "Choose experience gallery images"}
+          title={mediaPickerTarget === "projectGallery" ? "Choose project gallery images" : mediaPickerTarget === "experienceGallery" ? "Choose experience gallery images" : "Choose section card image"}
           assets={imageMediaAssets}
-          selectedIds={mediaPickerTarget === "projectGallery" ? projectForm.galleryMediaAssetIds : experienceForm.galleryMediaAssetIds}
+          selectedIds={mediaPickerTarget === "projectGallery" ? projectForm.galleryMediaAssetIds : mediaPickerTarget === "experienceGallery" ? experienceForm.galleryMediaAssetIds : pageBlockForm.mediaAssetId ? [pageBlockForm.mediaAssetId] : []}
+          multiple={mediaPickerTarget !== "pageBlockImage"}
           saving={saving}
           onCancel={() => setMediaPickerTarget(null)}
           onSave={handleSaveGallerySelection}

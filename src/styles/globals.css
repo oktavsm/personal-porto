@@ -2373,6 +2373,10 @@ body.is-embedded .chat-panel {
   font-size: 20px;
 }
 
+.admin-preview-actions {
+  margin-top: 10px;
+}
+
 .admin-form input:focus,
 .admin-form select:focus,
 .admin-form textarea:focus {
