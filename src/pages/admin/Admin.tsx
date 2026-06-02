@@ -168,6 +168,12 @@ function moveId<T extends { id: string }>(items: T[], id: string, direction: "up
   return nextItems;
 }
 
+function matchesSearch(query: string, values: Array<string | number | boolean | null | undefined>) {
+  const normalizedQuery = query.toLowerCase().trim();
+  if (!normalizedQuery) return true;
+  return values.some((value) => String(value ?? "").toLowerCase().includes(normalizedQuery));
+}
+
 function DeleteConfirmModal({
   target,
   saving,
@@ -313,6 +319,34 @@ function AdminSelect({
   );
 }
 
+function AdminListTools({
+  label,
+  value,
+  placeholder,
+  count,
+  total,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  placeholder: string;
+  count: number;
+  total: number;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="admin-list-tools">
+      <label>
+        <span>{label}</span>
+        <input value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+      </label>
+      <span className="admin-help">
+        {count} of {total}
+      </span>
+    </div>
+  );
+}
+
 export function Admin() {
   const [state, setState] = useState<AdminState>({ user: null, loading: true, error: null });
   const [email, setEmail] = useState("");
@@ -345,6 +379,13 @@ export function Admin() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [mediaSearch, setMediaSearch] = useState("");
+  const [projectSearch, setProjectSearch] = useState("");
+  const [experienceSearch, setExperienceSearch] = useState("");
+  const [musicSearch, setMusicSearch] = useState("");
+  const [resumeSearch, setResumeSearch] = useState("");
+  const [certificationSearch, setCertificationSearch] = useState("");
+  const [systemSearch, setSystemSearch] = useState("");
+  const [contactSearch, setContactSearch] = useState("");
   const imageMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("image/")), [mediaAssets]);
   const audioMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("audio/")), [mediaAssets]);
   const filteredImageMediaAssets = useMemo(
@@ -369,6 +410,37 @@ export function Admin() {
     [filteredAudioMediaAssets],
   );
   const mediaById = useMemo(() => new Map(mediaAssets.map((asset) => [asset.id, asset])), [mediaAssets]);
+  const filteredProjects = useMemo(
+    () => projects.filter((project) => matchesSearch(projectSearch, [project.title, project.slug, project.category, project.priority, project.status, project.summary, project.isFeatured, project.isPublished])),
+    [projects, projectSearch],
+  );
+  const filteredExperiences = useMemo(
+    () =>
+      experiences.filter((experience) =>
+        matchesSearch(experienceSearch, [experience.title, experience.slug, experience.organization, experience.period, experience.category, experience.summary, experience.isFeatured, experience.isPublished]),
+      ),
+    [experiences, experienceSearch],
+  );
+  const filteredMusicTracks = useMemo(
+    () => musicTracks.filter((track) => matchesSearch(musicSearch, [track.title, track.artist, track.note, track.audioOriginalName, track.isActive])),
+    [musicTracks, musicSearch],
+  );
+  const filteredResumeVersions = useMemo(
+    () => resumeVersions.filter((resume) => matchesSearch(resumeSearch, [resume.label, resume.notes, resume.mediaAsset?.originalName, resume.isActive])),
+    [resumeVersions, resumeSearch],
+  );
+  const filteredCertifications = useMemo(
+    () => certifications.filter((certification) => matchesSearch(certificationSearch, [certification.title, certification.issuer, certification.issuedAt, certification.expiresAt, certification.skills.join(" "), certification.isFeatured])),
+    [certifications, certificationSearch],
+  );
+  const filteredSystems = useMemo(
+    () => systems.filter((system) => matchesSearch(systemSearch, [system.title, system.description, system.url, system.embedUrl, system.isPublished, system.isEmbeddable])),
+    [systems, systemSearch],
+  );
+  const filteredContacts = useMemo(
+    () => contacts.filter((contact) => matchesSearch(contactSearch, [contact.type, contact.label, contact.value, contact.url, contact.isPrimary])),
+    [contacts, contactSearch],
+  );
 
   async function loadAdminData() {
     const [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse] = await Promise.allSettled([
@@ -1129,38 +1201,50 @@ export function Admin() {
 
           <Card className="admin-card-projects">
             <h3>Projects</h3>
+            <AdminListTools
+              label="Search projects"
+              value={projectSearch}
+              placeholder="Title, category, status, or summary"
+              count={filteredProjects.length}
+              total={projects.length}
+              onChange={setProjectSearch}
+            />
             <div className="admin-list">
-              {projects.map((project, index) => (
-                <div className="admin-list-item" key={project.id}>
-                  <div>
-                    <strong>{project.title}</strong>
-                    <span>
-                      {project.category} · {project.status}
-                    </span>
-                    <div className="admin-badges">
-                      {project.isFeatured ? <span className="admin-badge">Featured</span> : null}
-                      <span className={`admin-badge${project.isPublished ? "" : " is-muted"}`}>{project.isPublished ? "Published" : "Draft"}</span>
+              {filteredProjects.map((project) => {
+                const projectIndex = projects.findIndex((item) => item.id === project.id);
+                return (
+                  <div className="admin-list-item" key={project.id}>
+                    <div>
+                      <strong>{project.title}</strong>
+                      <span>
+                        {project.category} · {project.status}
+                      </span>
+                      <div className="admin-badges">
+                        {project.isFeatured ? <span className="admin-badge">Featured</span> : null}
+                        <span className={`admin-badge${project.isPublished ? "" : " is-muted"}`}>{project.isPublished ? "Published" : "Draft"}</span>
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      <a className="icon-btn" href={`/projects/${project.slug}`} target="_blank" rel="noreferrer" aria-label={`Open ${project.title}`}>
+                        <ExternalLink size={15} />
+                      </a>
+                      <button className="icon-btn" type="button" aria-label={`Move ${project.title} up`} onClick={() => void handleReorderProjects(project.id, "up")} disabled={projectIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${project.title} down`} onClick={() => void handleReorderProjects(project.id, "down")} disabled={projectIndex === projects.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${project.title}`} onClick={() => editProject(project)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${project.title}`} onClick={() => setDeleteTarget({ type: "project", id: project.id, label: project.title })}>
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                  <div className="admin-row-actions">
-                    <a className="icon-btn" href={`/projects/${project.slug}`} target="_blank" rel="noreferrer" aria-label={`Open ${project.title}`}>
-                      <ExternalLink size={15} />
-                    </a>
-                    <button className="icon-btn" type="button" aria-label={`Move ${project.title} up`} onClick={() => void handleReorderProjects(project.id, "up")} disabled={index === 0 || saving}>
-                      <ArrowUp size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Move ${project.title} down`} onClick={() => void handleReorderProjects(project.id, "down")} disabled={index === projects.length - 1 || saving}>
-                      <ArrowDown size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Edit ${project.title}`} onClick={() => editProject(project)}>
-                      <Pencil size={15} />
-                    </button>
-                    <button className="icon-btn danger" type="button" aria-label={`Delete ${project.title}`} onClick={() => setDeleteTarget({ type: "project", id: project.id, label: project.title })}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {filteredProjects.length === 0 ? <p className="admin-empty">No projects matched this search.</p> : null}
             </div>
           </Card>
 
@@ -1276,38 +1360,50 @@ export function Admin() {
 
           <Card className="admin-card-experiences">
             <h3>Experiences</h3>
+            <AdminListTools
+              label="Search experiences"
+              value={experienceSearch}
+              placeholder="Title, organization, category, or period"
+              count={filteredExperiences.length}
+              total={experiences.length}
+              onChange={setExperienceSearch}
+            />
             <div className="admin-list">
-              {experiences.map((experience, index) => (
-                <div className="admin-list-item" key={experience.id}>
-                  <div>
-                    <strong>{experience.title}</strong>
-                    <span>
-                      {experience.category} · {experience.period}
-                    </span>
-                    <div className="admin-badges">
-                      {experience.isFeatured ? <span className="admin-badge">Featured</span> : null}
-                      <span className={`admin-badge${experience.isPublished ? "" : " is-muted"}`}>{experience.isPublished ? "Published" : "Draft"}</span>
+              {filteredExperiences.map((experience) => {
+                const experienceIndex = experiences.findIndex((item) => item.id === experience.id);
+                return (
+                  <div className="admin-list-item" key={experience.id}>
+                    <div>
+                      <strong>{experience.title}</strong>
+                      <span>
+                        {experience.category} · {experience.period}
+                      </span>
+                      <div className="admin-badges">
+                        {experience.isFeatured ? <span className="admin-badge">Featured</span> : null}
+                        <span className={`admin-badge${experience.isPublished ? "" : " is-muted"}`}>{experience.isPublished ? "Published" : "Draft"}</span>
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      <a className="icon-btn" href={`/experiences/${experience.slug}`} target="_blank" rel="noreferrer" aria-label={`Open ${experience.title}`}>
+                        <ExternalLink size={15} />
+                      </a>
+                      <button className="icon-btn" type="button" aria-label={`Move ${experience.title} up`} onClick={() => void handleReorderExperiences(experience.id, "up")} disabled={experienceIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${experience.title} down`} onClick={() => void handleReorderExperiences(experience.id, "down")} disabled={experienceIndex === experiences.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${experience.title}`} onClick={() => editExperience(experience)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${experience.title}`} onClick={() => setDeleteTarget({ type: "experience", id: experience.id, label: experience.title })}>
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                  <div className="admin-row-actions">
-                    <a className="icon-btn" href={`/experiences/${experience.slug}`} target="_blank" rel="noreferrer" aria-label={`Open ${experience.title}`}>
-                      <ExternalLink size={15} />
-                    </a>
-                    <button className="icon-btn" type="button" aria-label={`Move ${experience.title} up`} onClick={() => void handleReorderExperiences(experience.id, "up")} disabled={index === 0 || saving}>
-                      <ArrowUp size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Move ${experience.title} down`} onClick={() => void handleReorderExperiences(experience.id, "down")} disabled={index === experiences.length - 1 || saving}>
-                      <ArrowDown size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Edit ${experience.title}`} onClick={() => editExperience(experience)}>
-                      <Pencil size={15} />
-                    </button>
-                    <button className="icon-btn danger" type="button" aria-label={`Delete ${experience.title}`} onClick={() => setDeleteTarget({ type: "experience", id: experience.id, label: experience.title })}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {filteredExperiences.length === 0 ? <p className="admin-empty">No experiences matched this search.</p> : null}
             </div>
           </Card>
 
@@ -1369,33 +1465,45 @@ export function Admin() {
 
           <Card className="admin-card-music">
             <h3>Music tracks</h3>
+            <AdminListTools
+              label="Search music"
+              value={musicSearch}
+              placeholder="Title, artist, note, or audio file"
+              count={filteredMusicTracks.length}
+              total={musicTracks.length}
+              onChange={setMusicSearch}
+            />
             <div className="admin-list">
-              {musicTracks.map((track, index) => (
-                <div className="admin-list-item" key={track.id}>
-                  <div>
-                    <strong>{track.title}</strong>
-                    <span>
-                      {track.artist}
-                      {track.isActive ? " · Active" : " · Hidden"}
-                      {track.audioOriginalName ? ` · ${track.audioOriginalName}` : " · No audio"}
-                    </span>
+              {filteredMusicTracks.map((track) => {
+                const trackIndex = musicTracks.findIndex((item) => item.id === track.id);
+                return (
+                  <div className="admin-list-item" key={track.id}>
+                    <div>
+                      <strong>{track.title}</strong>
+                      <span>
+                        {track.artist}
+                        {track.isActive ? " · Active" : " · Hidden"}
+                        {track.audioOriginalName ? ` · ${track.audioOriginalName}` : " · No audio"}
+                      </span>
+                    </div>
+                    <div className="admin-row-actions">
+                      <button className="icon-btn" type="button" aria-label={`Move ${track.title} up`} onClick={() => void handleReorderMusic(track.id, "up")} disabled={trackIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${track.title} down`} onClick={() => void handleReorderMusic(track.id, "down")} disabled={trackIndex === musicTracks.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${track.title}`} onClick={() => editMusic(track)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${track.title}`} onClick={() => setDeleteTarget({ type: "music", id: track.id, label: track.title })}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="admin-row-actions">
-                    <button className="icon-btn" type="button" aria-label={`Move ${track.title} up`} onClick={() => void handleReorderMusic(track.id, "up")} disabled={index === 0 || saving}>
-                      <ArrowUp size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Move ${track.title} down`} onClick={() => void handleReorderMusic(track.id, "down")} disabled={index === musicTracks.length - 1 || saving}>
-                      <ArrowDown size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Edit ${track.title}`} onClick={() => editMusic(track)}>
-                      <Pencil size={15} />
-                    </button>
-                    <button className="icon-btn danger" type="button" aria-label={`Delete ${track.title}`} onClick={() => setDeleteTarget({ type: "music", id: track.id, label: track.title })}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {filteredMusicTracks.length === 0 ? <p className="admin-empty">No music tracks matched this search.</p> : null}
             </div>
           </Card>
 
@@ -1425,8 +1533,16 @@ export function Admin() {
 
           <Card className="admin-card-resume-media">
             <h3>Resume versions</h3>
+            <AdminListTools
+              label="Search resumes"
+              value={resumeSearch}
+              placeholder="Label, note, or PDF filename"
+              count={filteredResumeVersions.length}
+              total={resumeVersions.length}
+              onChange={setResumeSearch}
+            />
             <div className="admin-list">
-              {resumeVersions.map((resume) => (
+              {filteredResumeVersions.map((resume) => (
                 <div className="admin-list-item" key={resume.id}>
                   <div>
                     <strong>{resume.label}</strong>
@@ -1447,6 +1563,7 @@ export function Admin() {
                   </div>
                 </div>
               ))}
+              {filteredResumeVersions.length === 0 ? <p className="admin-empty">No resume versions matched this search.</p> : null}
             </div>
           </Card>
 
@@ -1469,14 +1586,15 @@ export function Admin() {
           <Card className="admin-card-resume-media">
             <div className="admin-card-head">
               <h3>Media library</h3>
-              <span className="admin-help">
-                {filteredMediaAssets.length} of {mediaAssets.length}
-              </span>
             </div>
-            <label>
-              Search media
-              <input value={mediaSearch} onChange={(event) => setMediaSearch(event.target.value)} placeholder="Search image, PDF, audio, or video" />
-            </label>
+            <AdminListTools
+              label="Search media"
+              value={mediaSearch}
+              placeholder="Search image, PDF, audio, or video"
+              count={filteredMediaAssets.length}
+              total={mediaAssets.length}
+              onChange={setMediaSearch}
+            />
             <div className="admin-list">
               {filteredMediaAssets.map((asset) => (
                 <div className="admin-list-item" key={asset.id}>
@@ -1550,37 +1668,49 @@ export function Admin() {
 
           <Card className="admin-card-certifications">
             <h3>Certifications</h3>
+            <AdminListTools
+              label="Search certifications"
+              value={certificationSearch}
+              placeholder="Title, issuer, skill, or issued date"
+              count={filteredCertifications.length}
+              total={certifications.length}
+              onChange={setCertificationSearch}
+            />
             <div className="admin-list">
-              {certifications.map((certification, index) => (
-                <div className="admin-list-item" key={certification.id}>
-                  <div>
-                    <strong>{certification.title}</strong>
-                    <span>{certification.issuer} · {certification.issuedAt}</span>
-                    <div className="admin-badges">
-                      {certification.isFeatured ? <span className="admin-badge">Featured</span> : null}
+              {filteredCertifications.map((certification) => {
+                const certificationIndex = certifications.findIndex((item) => item.id === certification.id);
+                return (
+                  <div className="admin-list-item" key={certification.id}>
+                    <div>
+                      <strong>{certification.title}</strong>
+                      <span>{certification.issuer} · {certification.issuedAt}</span>
+                      <div className="admin-badges">
+                        {certification.isFeatured ? <span className="admin-badge">Featured</span> : null}
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      {certification.credentialUrl ? (
+                        <a className="icon-btn" href={certification.credentialUrl} target="_blank" rel="noreferrer" aria-label={`Open ${certification.title}`}>
+                          <ExternalLink size={15} />
+                        </a>
+                      ) : null}
+                      <button className="icon-btn" type="button" aria-label={`Move ${certification.title} up`} onClick={() => void handleReorderCertifications(certification.id, "up")} disabled={certificationIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${certification.title} down`} onClick={() => void handleReorderCertifications(certification.id, "down")} disabled={certificationIndex === certifications.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${certification.title}`} onClick={() => editCertification(certification)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${certification.title}`} onClick={() => setDeleteTarget({ type: "certification", id: certification.id, label: certification.title })}>
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                  <div className="admin-row-actions">
-                    {certification.credentialUrl ? (
-                      <a className="icon-btn" href={certification.credentialUrl} target="_blank" rel="noreferrer" aria-label={`Open ${certification.title}`}>
-                        <ExternalLink size={15} />
-                      </a>
-                    ) : null}
-                    <button className="icon-btn" type="button" aria-label={`Move ${certification.title} up`} onClick={() => void handleReorderCertifications(certification.id, "up")} disabled={index === 0 || saving}>
-                      <ArrowUp size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Move ${certification.title} down`} onClick={() => void handleReorderCertifications(certification.id, "down")} disabled={index === certifications.length - 1 || saving}>
-                      <ArrowDown size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Edit ${certification.title}`} onClick={() => editCertification(certification)}>
-                      <Pencil size={15} />
-                    </button>
-                    <button className="icon-btn danger" type="button" aria-label={`Delete ${certification.title}`} onClick={() => setDeleteTarget({ type: "certification", id: certification.id, label: certification.title })}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {filteredCertifications.length === 0 ? <p className="admin-empty">No certifications matched this search.</p> : null}
             </div>
           </Card>
 
@@ -1630,36 +1760,48 @@ export function Admin() {
 
           <Card className="admin-card-systems">
             <h3>Live systems</h3>
+            <AdminListTools
+              label="Search systems"
+              value={systemSearch}
+              placeholder="Title, URL, description, or embed"
+              count={filteredSystems.length}
+              total={systems.length}
+              onChange={setSystemSearch}
+            />
             <div className="admin-list">
-              {systems.map((system, index) => (
-                <div className="admin-list-item" key={system.id}>
-                  <div>
-                    <strong>{system.title}</strong>
-                    <span>{system.url}</span>
-                    <div className="admin-badges">
-                      <span className={`admin-badge${system.isPublished ? "" : " is-muted"}`}>{system.isPublished ? "Published" : "Draft"}</span>
-                      {system.isEmbeddable ? <span className="admin-badge">Embeddable</span> : null}
+              {filteredSystems.map((system) => {
+                const systemIndex = systems.findIndex((item) => item.id === system.id);
+                return (
+                  <div className="admin-list-item" key={system.id}>
+                    <div>
+                      <strong>{system.title}</strong>
+                      <span>{system.url}</span>
+                      <div className="admin-badges">
+                        <span className={`admin-badge${system.isPublished ? "" : " is-muted"}`}>{system.isPublished ? "Published" : "Draft"}</span>
+                        {system.isEmbeddable ? <span className="admin-badge">Embeddable</span> : null}
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      <a className="icon-btn" href={system.url} target="_blank" rel="noreferrer" aria-label={`Open ${system.title}`}>
+                        <ExternalLink size={15} />
+                      </a>
+                      <button className="icon-btn" type="button" aria-label={`Move ${system.title} up`} onClick={() => void handleReorderSystems(system.id, "up")} disabled={systemIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${system.title} down`} onClick={() => void handleReorderSystems(system.id, "down")} disabled={systemIndex === systems.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${system.title}`} onClick={() => editSystem(system)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${system.title}`} onClick={() => setDeleteTarget({ type: "system", id: system.id, label: system.title })}>
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                  <div className="admin-row-actions">
-                    <a className="icon-btn" href={system.url} target="_blank" rel="noreferrer" aria-label={`Open ${system.title}`}>
-                      <ExternalLink size={15} />
-                    </a>
-                    <button className="icon-btn" type="button" aria-label={`Move ${system.title} up`} onClick={() => void handleReorderSystems(system.id, "up")} disabled={index === 0 || saving}>
-                      <ArrowUp size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Move ${system.title} down`} onClick={() => void handleReorderSystems(system.id, "down")} disabled={index === systems.length - 1 || saving}>
-                      <ArrowDown size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Edit ${system.title}`} onClick={() => editSystem(system)}>
-                      <Pencil size={15} />
-                    </button>
-                    <button className="icon-btn danger" type="button" aria-label={`Delete ${system.title}`} onClick={() => setDeleteTarget({ type: "system", id: system.id, label: system.title })}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {filteredSystems.length === 0 ? <p className="admin-empty">No live systems matched this search.</p> : null}
             </div>
           </Card>
 
@@ -1702,36 +1844,48 @@ export function Admin() {
 
           <Card className="admin-card-contacts">
             <h3>Contact links</h3>
+            <AdminListTools
+              label="Search contacts"
+              value={contactSearch}
+              placeholder="Label, type, value, or URL"
+              count={filteredContacts.length}
+              total={contacts.length}
+              onChange={setContactSearch}
+            />
             <div className="admin-list">
-              {contacts.map((contact, index) => (
-                <div className="admin-list-item" key={contact.id}>
-                  <div>
-                    <strong>{contact.label}</strong>
-                    <span>{contact.url}</span>
-                    <div className="admin-badges">
-                      <span className="admin-badge">{contact.type}</span>
-                      {contact.isPrimary ? <span className="admin-badge">Primary</span> : null}
+              {filteredContacts.map((contact) => {
+                const contactIndex = contacts.findIndex((item) => item.id === contact.id);
+                return (
+                  <div className="admin-list-item" key={contact.id}>
+                    <div>
+                      <strong>{contact.label}</strong>
+                      <span>{contact.url}</span>
+                      <div className="admin-badges">
+                        <span className="admin-badge">{contact.type}</span>
+                        {contact.isPrimary ? <span className="admin-badge">Primary</span> : null}
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      <a className="icon-btn" href={contact.url} target="_blank" rel="noreferrer" aria-label={`Open ${contact.label}`}>
+                        <ExternalLink size={15} />
+                      </a>
+                      <button className="icon-btn" type="button" aria-label={`Move ${contact.label} up`} onClick={() => void handleReorderContact(contact.id, "up")} disabled={contactIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${contact.label} down`} onClick={() => void handleReorderContact(contact.id, "down")} disabled={contactIndex === contacts.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${contact.label}`} onClick={() => editContact(contact)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${contact.label}`} onClick={() => setDeleteTarget({ type: "contact", id: contact.id, label: contact.label })}>
+                        <Trash2 size={15} />
+                      </button>
                     </div>
                   </div>
-                  <div className="admin-row-actions">
-                    <a className="icon-btn" href={contact.url} target="_blank" rel="noreferrer" aria-label={`Open ${contact.label}`}>
-                      <ExternalLink size={15} />
-                    </a>
-                    <button className="icon-btn" type="button" aria-label={`Move ${contact.label} up`} onClick={() => void handleReorderContact(contact.id, "up")} disabled={index === 0 || saving}>
-                      <ArrowUp size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Move ${contact.label} down`} onClick={() => void handleReorderContact(contact.id, "down")} disabled={index === contacts.length - 1 || saving}>
-                      <ArrowDown size={15} />
-                    </button>
-                    <button className="icon-btn" type="button" aria-label={`Edit ${contact.label}`} onClick={() => editContact(contact)}>
-                      <Pencil size={15} />
-                    </button>
-                    <button className="icon-btn danger" type="button" aria-label={`Delete ${contact.label}`} onClick={() => setDeleteTarget({ type: "contact", id: contact.id, label: contact.label })}>
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              {filteredContacts.length === 0 ? <p className="admin-empty">No contact links matched this search.</p> : null}
             </div>
           </Card>
         </div>

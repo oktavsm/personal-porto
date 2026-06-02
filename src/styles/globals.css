@@ -2094,6 +2094,46 @@ body.is-embedded .chat-panel {
   margin: 0;
 }
 
+.admin-list-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.admin-list-tools label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-list-tools input {
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: rgba(5, 6, 8, 0.74);
+  color: var(--text);
+  font: inherit;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.admin-list-tools input:hover,
+.admin-list-tools input:focus {
+  border-color: rgba(216, 211, 200, 0.36);
+  background: rgba(5, 6, 8, 0.92);
+}
+
+.admin-list-tools .admin-help {
+  margin: 0 0 11px;
+  white-space: nowrap;
+}
+
 .admin-form input,
 .admin-form select,
 .admin-form textarea {
