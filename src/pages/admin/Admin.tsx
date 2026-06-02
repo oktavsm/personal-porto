@@ -32,6 +32,7 @@ type DeleteTarget =
   | { type: "music"; id: string; label: string };
 
 type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts";
+type MediaPickerTarget = "projectGallery" | "experienceGallery";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -235,6 +236,106 @@ function MediaSelectionPreview({
   );
 }
 
+function GalleryMediaPickerModal({
+  title,
+  assets,
+  selectedIds,
+  saving,
+  onCancel,
+  onSave,
+}: {
+  title: string;
+  assets: AdminMediaAsset[];
+  selectedIds: string[];
+  saving: boolean;
+  onCancel: () => void;
+  onSave: (selectedIds: string[]) => void;
+}) {
+  const [draftIds, setDraftIds] = useState(selectedIds);
+  const [search, setSearch] = useState("");
+  const filteredAssets = useMemo(() => {
+    const query = search.toLowerCase().trim();
+    if (!query) return assets;
+    return assets.filter((asset) => `${asset.originalName} ${asset.mimeType}`.toLowerCase().includes(query));
+  }, [assets, search]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  function toggleAsset(assetId: string) {
+    setDraftIds((current) => (current.includes(assetId) ? current.filter((id) => id !== assetId) : [...current, assetId]));
+  }
+
+  return createPortal(
+    <div className="admin-modal-backdrop" role="presentation">
+      <div className="admin-modal admin-media-picker-modal" role="dialog" aria-modal="true" aria-labelledby="media-picker-title">
+        <div className="admin-card-head">
+          <div>
+            <div className="section-kicker">Media Picker</div>
+            <h3 id="media-picker-title">{title}</h3>
+          </div>
+          <button className="icon-btn" type="button" aria-label="Close media picker" onClick={onCancel} disabled={saving}>
+            <X size={15} />
+          </button>
+        </div>
+        <AdminListTools
+          label="Search images"
+          value={search}
+          placeholder="Search uploaded gallery image"
+          count={filteredAssets.length}
+          total={assets.length}
+          onChange={setSearch}
+        />
+        <div className="admin-media-picker-grid">
+          {filteredAssets.map((asset) => {
+            const selected = draftIds.includes(asset.id);
+            return (
+              <button
+                className={`admin-media-picker-item${selected ? " is-selected" : ""}`}
+                key={asset.id}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => toggleAsset(asset.id)}
+              >
+                <span className="admin-media-picker-thumb">
+                  <img src={asset.publicUrl} alt={asset.originalName} />
+                  {selected ? (
+                    <span className="admin-media-picker-check">
+                      <Check size={16} />
+                    </span>
+                  ) : null}
+                </span>
+                <span>{asset.originalName}</span>
+              </button>
+            );
+          })}
+          {filteredAssets.length === 0 ? <p className="admin-empty">No image media matched this search.</p> : null}
+        </div>
+        <div className="admin-media-picker-footer">
+          <span className="admin-help">{draftIds.length} selected</span>
+          <div className="actions">
+            <button className="btn" type="button" onClick={() => setDraftIds([])} disabled={saving || draftIds.length === 0}>
+              Clear
+            </button>
+            <button className="btn" type="button" onClick={onCancel} disabled={saving}>
+              Cancel
+            </button>
+            <button className="btn btn-primary" type="button" onClick={() => onSave(draftIds)} disabled={saving}>
+              <Check size={16} /> Use Selection
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function AdminSelect({
   label,
   value,
@@ -375,6 +476,7 @@ export function Admin() {
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   const [editingMusicId, setEditingMusicId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [mediaPickerTarget, setMediaPickerTarget] = useState<MediaPickerTarget | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -441,6 +543,18 @@ export function Admin() {
     () => contacts.filter((contact) => matchesSearch(contactSearch, [contact.type, contact.label, contact.value, contact.url, contact.isPrimary])),
     [contacts, contactSearch],
   );
+
+  function handleSaveGallerySelection(selectedIds: string[]) {
+    if (mediaPickerTarget === "projectGallery") {
+      setProjectForm((current) => ({ ...current, galleryMediaAssetIds: selectedIds }));
+    }
+
+    if (mediaPickerTarget === "experienceGallery") {
+      setExperienceForm((current) => ({ ...current, galleryMediaAssetIds: selectedIds }));
+    }
+
+    setMediaPickerTarget(null);
+  }
 
   async function loadAdminData() {
     const [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse] = await Promise.allSettled([
@@ -1154,26 +1268,15 @@ export function Admin() {
                 onChange={(coverMediaAssetId) => setProjectForm({ ...projectForm, coverMediaAssetId })}
               />
               <MediaSelectionPreview asset={mediaById.get(projectForm.coverMediaAssetId)} onClear={() => setProjectForm({ ...projectForm, coverMediaAssetId: "" })} />
-              <label>
-                Gallery Images
-                <select
-                  multiple
-                  value={projectForm.galleryMediaAssetIds}
-                  onChange={(event) =>
-                    setProjectForm({
-                      ...projectForm,
-                      galleryMediaAssetIds: Array.from(event.target.selectedOptions).map((option) => option.value),
-                    })
-                  }
-                >
-                  {filteredImageMediaAssets.map((asset) => (
-                    <option value={asset.id} key={asset.id}>
-                      {asset.originalName}
-                    </option>
-                  ))}
-                </select>
-                <span className="admin-help">Hold Ctrl or Shift to select multiple gallery images.</span>
-              </label>
+              <div className="admin-media-picker-field">
+                <div>
+                  <span>Gallery Images</span>
+                  <small>{projectForm.galleryMediaAssetIds.length} selected</small>
+                </div>
+                <button className="btn" type="button" onClick={() => setMediaPickerTarget("projectGallery")}>
+                  Choose Gallery Images
+                </button>
+              </div>
               {projectForm.galleryMediaAssetIds.length > 0 ? (
                 <div className="admin-selected-media-grid">
                   {projectForm.galleryMediaAssetIds.map((id) => (
@@ -1313,26 +1416,15 @@ export function Admin() {
                 onChange={(coverMediaAssetId) => setExperienceForm({ ...experienceForm, coverMediaAssetId })}
               />
               <MediaSelectionPreview asset={mediaById.get(experienceForm.coverMediaAssetId)} onClear={() => setExperienceForm({ ...experienceForm, coverMediaAssetId: "" })} />
-              <label>
-                Gallery Images
-                <select
-                  multiple
-                  value={experienceForm.galleryMediaAssetIds}
-                  onChange={(event) =>
-                    setExperienceForm({
-                      ...experienceForm,
-                      galleryMediaAssetIds: Array.from(event.target.selectedOptions).map((option) => option.value),
-                    })
-                  }
-                >
-                  {filteredImageMediaAssets.map((asset) => (
-                    <option value={asset.id} key={asset.id}>
-                      {asset.originalName}
-                    </option>
-                  ))}
-                </select>
-                <span className="admin-help">Hold Ctrl or Shift to select multiple gallery images.</span>
-              </label>
+              <div className="admin-media-picker-field">
+                <div>
+                  <span>Gallery Images</span>
+                  <small>{experienceForm.galleryMediaAssetIds.length} selected</small>
+                </div>
+                <button className="btn" type="button" onClick={() => setMediaPickerTarget("experienceGallery")}>
+                  Choose Gallery Images
+                </button>
+              </div>
               {experienceForm.galleryMediaAssetIds.length > 0 ? (
                 <div className="admin-selected-media-grid">
                   {experienceForm.galleryMediaAssetIds.map((id) => (
@@ -1894,6 +1986,16 @@ export function Admin() {
           <Button to="/">Back to portfolio</Button>
         </div>
       </div>
+      {mediaPickerTarget ? (
+        <GalleryMediaPickerModal
+          title={mediaPickerTarget === "projectGallery" ? "Choose project gallery images" : "Choose experience gallery images"}
+          assets={imageMediaAssets}
+          selectedIds={mediaPickerTarget === "projectGallery" ? projectForm.galleryMediaAssetIds : experienceForm.galleryMediaAssetIds}
+          saving={saving}
+          onCancel={() => setMediaPickerTarget(null)}
+          onSave={handleSaveGallerySelection}
+        />
+      ) : null}
       {deleteTarget ? <DeleteConfirmModal target={deleteTarget} saving={saving} onCancel={() => setDeleteTarget(null)} onConfirm={() => void confirmDelete()} /> : null}
     </section>
   );

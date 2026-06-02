@@ -2321,6 +2321,35 @@ body.is-embedded .chat-panel {
   gap: 8px;
 }
 
+.admin-media-picker-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(242, 238, 232, 0.025);
+}
+
+.admin-media-picker-field div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-media-picker-field span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-media-picker-field small {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .admin-form textarea {
   min-height: 112px;
   resize: vertical;
@@ -2481,6 +2510,15 @@ body.is-embedded .chat-panel {
   box-shadow: var(--shadow);
 }
 
+.admin-media-picker-modal {
+  width: min(920px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 16px;
+  overflow: hidden;
+}
+
 .admin-modal h3 {
   margin: 8px 0 10px;
 }
@@ -2492,6 +2530,86 @@ body.is-embedded .chat-panel {
 
 .danger-action {
   border-color: rgba(255, 180, 168, 0.28);
+}
+
+.admin-media-picker-grid {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(138px, 1fr));
+  gap: 10px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.admin-media-picker-item {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 8px;
+  background: rgba(5, 6, 8, 0.58);
+  color: var(--muted);
+  text-align: left;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.admin-media-picker-item:hover,
+.admin-media-picker-item.is-selected {
+  border-color: rgba(216, 211, 200, 0.4);
+  background: rgba(216, 211, 200, 0.06);
+  color: var(--text);
+}
+
+.admin-media-picker-thumb {
+  position: relative;
+  aspect-ratio: 1.32;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(242, 238, 232, 0.04);
+}
+
+.admin-media-picker-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(1);
+}
+
+.admin-media-picker-item span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-media-picker-check {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(242, 238, 232, 0.32);
+  border-radius: 999px;
+  background: rgba(5, 6, 8, 0.82);
+  color: var(--text);
+}
+
+.admin-media-picker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.admin-media-picker-footer .admin-help {
+  margin: 0;
 }
 
 .with-space {
