@@ -311,7 +311,7 @@ jobs:
           done
 
           docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run prisma:deploy
-          docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run admin:bootstrap
+          echo "API migrations applied."
 
           ACTIVE_SLOT="green"
           if [ -f "$ACTIVE_SLOT_FILE" ]; then
@@ -333,6 +333,7 @@ jobs:
           PORTFOLIO_PORT=$INACTIVE_PORT
           ENV
 
+          echo "Starting frontend slot: $INACTIVE_SLOT on port $INACTIVE_PORT"
           docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -p "$APP_NAME-$INACTIVE_SLOT" up -d --remove-orphans --force-recreate
 
           for attempt in $(seq 1 30); do
@@ -479,6 +480,12 @@ jobs:
               sudo -n nginx -t && (sudo -n systemctl reload nginx || sudo -n nginx -s reload)
             fi
             exit 1
+          fi
+
+          if docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run admin:bootstrap; then
+            echo "Admin user bootstrapped."
+          else
+            echo "Warning: admin bootstrap failed after frontend switch. Check API logs and ADMIN_EMAIL/ADMIN_PASSWORD secrets."
           fi
 
           NORMALIZED_RUN_SEED="$(printf '%s' "$RUN_SEED" | tr '[:upper:]' '[:lower:]')"
