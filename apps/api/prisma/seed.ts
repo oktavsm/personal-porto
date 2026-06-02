@@ -15,6 +15,10 @@ const prisma = new PrismaClient();
 const uploadDir = process.env.UPLOAD_DIR ? (process.env.UPLOAD_DIR.startsWith("/") ? process.env.UPLOAD_DIR : resolve(process.cwd(), process.env.UPLOAD_DIR)) : resolve(process.cwd(), "uploads");
 const publicUploadBaseUrl = (process.env.PUBLIC_UPLOAD_BASE_URL ?? "/uploads").replace(/\/$/, "");
 
+function inputJson(value?: Record<string, unknown>) {
+  return value ? (value as Prisma.InputJsonObject) : Prisma.JsonNull;
+}
+
 const mimeByExtension: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
@@ -148,7 +152,7 @@ async function main() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
-          settingsJson: section.settingsJson ?? Prisma.JsonNull,
+          settingsJson: inputJson(section.settingsJson),
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },
@@ -158,7 +162,7 @@ async function main() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
-          settingsJson: section.settingsJson ?? Prisma.JsonNull,
+          settingsJson: inputJson(section.settingsJson),
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },
@@ -170,7 +174,7 @@ async function main() {
           data: section.blocks.map((block) => ({
             sectionId: savedSection.id,
             type: block.type,
-            contentJson: block.contentJson,
+            contentJson: inputJson(block.contentJson),
             sortOrder: block.sortOrder,
             isPublished: block.isPublished ?? true,
           })),

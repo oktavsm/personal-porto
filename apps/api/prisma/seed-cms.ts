@@ -3,6 +3,10 @@ import { siteContentPages } from "../../../src/data/siteContent.js";
 
 const prisma = new PrismaClient();
 
+function inputJson(value?: Record<string, unknown>) {
+  return value ? (value as Prisma.InputJsonObject) : Prisma.JsonNull;
+}
+
 async function seedCms() {
   for (const page of siteContentPages) {
     const savedPage = await prisma.sitePage.upsert({
@@ -25,7 +29,7 @@ async function seedCms() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
-          settingsJson: section.settingsJson ?? Prisma.JsonNull,
+          settingsJson: inputJson(section.settingsJson),
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },
@@ -35,7 +39,7 @@ async function seedCms() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
-          settingsJson: section.settingsJson ?? Prisma.JsonNull,
+          settingsJson: inputJson(section.settingsJson),
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },
@@ -47,7 +51,7 @@ async function seedCms() {
           data: section.blocks.map((block) => ({
             sectionId: savedSection.id,
             type: block.type,
-            contentJson: block.contentJson,
+            contentJson: inputJson(block.contentJson),
             sortOrder: block.sortOrder,
             isPublished: block.isPublished ?? true,
           })),
