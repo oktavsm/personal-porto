@@ -259,6 +259,14 @@ jobs:
 
           mkdir -p "$APP_DIR"
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+
+          echo "Docker disk usage before cleanup:"
+          docker system df || true
+          docker system prune -af || true
+          docker builder prune -af || true
+          echo "Docker disk usage after cleanup:"
+          docker system df || true
+
           docker pull "$IMAGE"
           docker pull "$API_IMAGE"
 
@@ -471,5 +479,6 @@ jobs:
           echo "Active frontend image: $IMAGE"
           echo "API image: $API_IMAGE"
 
-          docker image prune -f
+          docker system prune -af
+          docker builder prune -af || true
           REMOTE_SCRIPT
