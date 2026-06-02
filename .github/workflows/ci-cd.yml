@@ -305,11 +305,6 @@ jobs:
           docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run prisma:deploy
           docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run admin:bootstrap
 
-          NORMALIZED_RUN_SEED="$(printf '%s' "$RUN_SEED" | tr '[:upper:]' '[:lower:]')"
-          if [ "$NORMALIZED_RUN_SEED" = "true" ] || [ "$NORMALIZED_RUN_SEED" = "1" ] || [ "$NORMALIZED_RUN_SEED" = "yes" ]; then
-            docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run seed
-          fi
-
           ACTIVE_SLOT="green"
           if [ -f "$ACTIVE_SLOT_FILE" ]; then
             ACTIVE_SLOT="$(cat "$ACTIVE_SLOT_FILE")"
@@ -466,6 +461,15 @@ jobs:
             fi
             exit 1
           fi
+
+          NORMALIZED_RUN_SEED="$(printf '%s' "$RUN_SEED" | tr '[:upper:]' '[:lower:]')"
+          if [ "$NORMALIZED_RUN_SEED" = "true" ] || [ "$NORMALIZED_RUN_SEED" = "1" ] || [ "$NORMALIZED_RUN_SEED" = "yes" ]; then
+            docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run seed
+          fi
+
+          echo "Active frontend slot: $INACTIVE_SLOT"
+          echo "Active frontend image: $IMAGE"
+          echo "API image: $API_IMAGE"
 
           docker image prune -f
           REMOTE_SCRIPT
