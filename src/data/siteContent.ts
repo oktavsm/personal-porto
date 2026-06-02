@@ -41,7 +41,7 @@ export const siteContentPages: SiteContentPage[] = [
           secondaryCtaLabel: "View Projects",
           secondaryCtaHref: "/projects",
           tertiaryCtaLabel: "Choose Route",
-          profileImageKey: "profile",
+          imageKey: "profile",
         },
         sortOrder: 1,
       },
@@ -108,12 +108,55 @@ export const siteContentPages: SiteContentPage[] = [
         sortOrder: 4,
       },
       {
+        key: "route-changed",
+        title: "But not every path opens the way we expect.",
+        subtitle: "When the route changed",
+        body:
+          "The selection process started well. I passed SKD. I passed the academic test. Then came the health selection — the stage where everything changed.\n\nIt hurt, because it was not only a failed selection. It felt like losing a version of myself that I had been building for years.\n\nThe dream was still there, but the route had to change.",
+        sortOrder: 5,
+      },
+      {
+        key: "route-mission",
+        title: "The route changed.\nThe mission didn't.",
+        body:
+          "At the last moment, I decided to take UTBK. I started almost from zero, because I had never fully prepared for that path before. In around one and a half months, I joined more than 20 tryouts, reviewed my mistakes, rebuilt my study rhythm, and forced myself to adapt quickly.\n\nEventually, I entered Informatics at Universitas Brawijaya. It was not an escape. It was a conscious choice. I realized that my dream did not have to disappear. I could still learn technology, build systems, and prepare myself to contribute through software, AI, networks, and maybe one day, government technology.",
+        sortOrder: 6,
+      },
+      {
+        key: "rebuilding-direction",
+        title: "After entering UB, I tried to accelerate my growth.",
+        subtitle: "Rebuilding my direction",
+        body:
+          "Entering Informatics UB gave me a new route, but I knew that I still had to rebuild myself. I started applying for scholarships and development opportunities. I was rejected many times, revised my applications, improved my essays, reflected on my experiences, and tried again.\n\nEventually, I became a Tanoto Scholar through the TELADAN program. But more than the title, TELADAN became a space where I had to ask a deeper question: who am I, beyond everything I have achieved?",
+        settingsJson: {
+          imageKey: "tanoto",
+        },
+        sortOrder: 7,
+      },
+      {
+        key: "many-things",
+        title: "From the outside, it looked like progress.",
+        subtitle: "Then I became many things",
+        body:
+          "I became a scholar. I joined organizations. I became a project leader. I joined competitions. I became a speaker. I built projects and took more responsibilities.\n\nBut somewhere along the way, I started to feel tired. I was moving, but not always steering. I was doing many things, but I was not always becoming myself.",
+        settingsJson: {
+          imageKey: "tanoto",
+        },
+        sortOrder: 8,
+      },
+      {
+        key: "quiet-pattern",
+        body:
+          "When the titles became too loud, I found what stayed quiet.\n\nIt was never the title.\n\nIt was the moment when something I built actually helped someone.\n\nA small script. An automation. A mobile app. A tool that reduces repetitive work. A system that makes scattered things easier to use.\n\nSince my first semester, I have built small tools and projects not because they were impressive, but because they solved something around me.\n\nThat is where I feel most like myself.",
+        sortOrder: 9,
+      },
+      {
         key: "identity",
         title: "A steady mind who turns scattered problems into systems that help.",
         subtitle: "So, who am I?",
         body:
           "I am not only a winner, speaker, leader, scholar, or developer. Those are moments, roles, and responsibilities.\n\nThe pattern behind them is clearer: I tend to observe scattered problems, organize them into structure, and build systems that help people move easier.",
-        sortOrder: 5,
+        sortOrder: 10,
       },
       {
         key: "empathy",
@@ -124,14 +167,14 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "pldVolunteer",
         },
-        sortOrder: 6,
+        sortOrder: 11,
       },
       {
         key: "values",
         title: "The values I keep returning to",
         subtitle: "Core values",
         body: "Stability, structure, usefulness, and empathy are the values I keep seeing across the way I learn, serve, and build.",
-        sortOrder: 7,
+        sortOrder: 12,
         blocks: [
           {
             type: "card",
@@ -173,7 +216,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "My mission",
         body:
           "This is the pattern I keep returning to. I like helping unclear things become clearer, repetitive things become lighter, and scattered flows become easier to use.",
-        sortOrder: 8,
+        sortOrder: 13,
       },
       {
         key: "featured-projects",
@@ -184,7 +227,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "Explore My Projects",
           ctaHref: "/projects",
         },
-        sortOrder: 9,
+        sortOrder: 14,
       },
       {
         key: "featured-experiences",
@@ -195,7 +238,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "See My Experiences",
           ctaHref: "/experiences",
         },
-        sortOrder: 10,
+        sortOrder: 15,
       },
       {
         key: "closing",
@@ -211,7 +254,7 @@ export const siteContentPages: SiteContentPage[] = [
           tertiaryCtaLabel: "Contact Me",
           tertiaryCtaHref: "/contact",
         },
-        sortOrder: 11,
+        sortOrder: 16,
       },
     ],
   },

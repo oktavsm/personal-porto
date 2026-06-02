@@ -125,10 +125,17 @@ export function Home() {
   const featuredProjectsSettings = sectionSettings(homeSections, "featured-projects");
   const featuredExperiencesSettings = sectionSettings(homeSections, "featured-experiences");
   const closingSettings = sectionSettings(homeSections, "closing");
+  const routeChanged = sectionCopy(homeSections, "route-changed");
+  const routeMission = sectionCopy(homeSections, "route-mission");
+  const rebuildingDirection = sectionCopy(homeSections, "rebuilding-direction");
+  const manyThings = sectionCopy(homeSections, "many-things");
+  const quietPattern = sectionCopy(homeSections, "quiet-pattern");
   const heroBody = bodyParagraphs(hero.body);
   const heroTagline = heroBody.at(-1) ?? "I let things flow, but I stand my ground.";
   const heroProfileImage = settingImage(heroSettings, cmsImageByKey, media.profile);
   const empathyImage = settingImage(empathySettings, cmsImageByKey, media.pldVolunteer);
+  const rebuildingImage = settingImage(sectionSettings(homeSections, "rebuilding-direction"), cmsImageByKey, media.tanoto);
+  const manyThingsImage = settingImage(sectionSettings(homeSections, "many-things"), cmsImageByKey, media.tanoto);
   const heroPrimaryHref = resolveCtaHref(settingString(heroSettings, "primaryCtaHref"), "/#story");
   const heroSecondaryHref = resolveCtaHref(settingString(heroSettings, "secondaryCtaHref"), "/projects");
   const projectsCtaHref = resolveCtaHref(settingString(featuredProjectsSettings, "ctaHref"), "/projects");
@@ -307,21 +314,13 @@ export function Home() {
       <section>
         <div className="container split">
           <Card className="big-quote">
-            <p>But not every path opens the way we expect.</p>
+            <p>{routeChanged.title}</p>
           </Card>
           <div>
-            <div className="section-kicker">When the route changed</div>
-            <p className="section-desc">
-              The selection process started well. I passed SKD. I passed the academic test. Then came the health
-              selection — the stage where everything changed.
-              <br />
-              <br />
-              It hurt, because it was not only a failed selection. It felt like losing a version of myself that I had
-              been building for years.
-              <br />
-              <br />
-              The dream was still there, but the route had to change.
-            </p>
+            <div className="section-kicker">{routeChanged.subtitle}</div>
+            {bodyParagraphs(routeChanged.body).map((paragraph) => (
+              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            ))}
           </div>
         </div>
       </section>
@@ -330,42 +329,32 @@ export function Home() {
         <div className="container">
           <Card className="big-quote">
             <p>
-              The route changed.
-              <br />
-              The mission didn&apos;t.
+              {(routeMission.title ?? "").split("\n").map((line, index, lines) => (
+                <Fragment key={line}>
+                  {line}
+                  {index < lines.length - 1 ? <br /> : null}
+                </Fragment>
+              ))}
             </p>
           </Card>
           <div className="thin-divider" />
-          <p className="section-desc wide">
-            At the last moment, I decided to take UTBK. I started almost from zero, because I had never fully prepared
-            for that path before. In around one and a half months, I joined more than 20 tryouts, reviewed my mistakes,
-            rebuilt my study rhythm, and forced myself to adapt quickly.
-            <br />
-            <br />
-            Eventually, I entered Informatics at Universitas Brawijaya. It was not an escape. It was a conscious choice.
-            I realized that my dream did not have to disappear. I could still learn technology, build systems, and
-            prepare myself to contribute through software, AI, networks, and maybe one day, government technology.
-          </p>
+          {bodyParagraphs(routeMission.body).map((paragraph) => (
+            <p className="section-desc wide with-space" key={paragraph}>{paragraph}</p>
+          ))}
         </div>
       </section>
 
       <section id="core-values">
         <div className="container split">
           <div>
-            <div className="section-kicker">Rebuilding my direction</div>
-            <h2>After entering UB, I tried to accelerate my growth.</h2>
-            <p className="section-desc with-space">
-              Entering Informatics UB gave me a new route, but I knew that I still had to rebuild myself. I started
-              applying for scholarships and development opportunities. I was rejected many times, revised my
-              applications, improved my essays, reflected on my experiences, and tried again.
-            </p>
-            <p className="section-desc with-space">
-              Eventually, I became a Tanoto Scholar through the TELADAN program. But more than the title, TELADAN became
-              a space where I had to ask a deeper question: who am I, beyond everything I have achieved?
-            </p>
+            <div className="section-kicker">{rebuildingDirection.subtitle}</div>
+            <h2>{rebuildingDirection.title}</h2>
+            {bodyParagraphs(rebuildingDirection.body).map((paragraph) => (
+              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            ))}
           </div>
           <Card className="image-card tall">
-            <img src={media.tanoto} alt="TELADAN scholarship journey" loading="lazy" />
+            <img src={rebuildingImage} alt="TELADAN scholarship journey" loading="lazy" />
           </Card>
         </div>
       </section>
@@ -373,19 +362,14 @@ export function Home() {
       <section>
         <div className="container split">
           <div>
-            <div className="section-kicker">Then I became many things</div>
-            <h2>From the outside, it looked like progress.</h2>
-            <p className="section-desc with-space">
-              I became a scholar. I joined organizations. I became a project leader. I joined competitions. I became a
-              speaker. I built projects and took more responsibilities.
-            </p>
-            <p className="section-desc with-space">
-              But somewhere along the way, I started to feel tired. I was moving, but not always steering. I was doing
-              many things, but I was not always becoming myself.
-            </p>
+            <div className="section-kicker">{manyThings.subtitle}</div>
+            <h2>{manyThings.title}</h2>
+            {bodyParagraphs(manyThings.body).map((paragraph) => (
+              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            ))}
           </div>
           <div className="stacked-photos">
-            <img src={media.tanoto} alt="TELADAN scholarship moment" loading="lazy" />
+            <img src={manyThingsImage} alt="TELADAN scholarship moment" loading="lazy" />
             <img src={media.speakerTeladan} alt="Speaking and mentoring moment" loading="lazy" />
             <img src={media.campDanielWide} alt="Camp Daniel leadership moment" loading="lazy" />
           </div>
@@ -394,15 +378,9 @@ export function Home() {
 
       <section>
         <div className="container narrative">
-          <p>When the titles became too loud, I found what stayed quiet.</p>
-          <p className="muted">It was never the title.</p>
-          <p>It was the moment when something I built actually helped someone.</p>
-          <p className="muted">
-            A small script. An automation. A mobile app. A tool that reduces repetitive work. A system that makes
-            scattered things easier to use.
-          </p>
-          <p>Since my first semester, I have built small tools and projects not because they were impressive, but because they solved something around me.</p>
-          <p className="muted">That is where I feel most like myself.</p>
+          {bodyParagraphs(quietPattern.body).map((paragraph, index) => (
+            <p className={index % 2 === 1 ? "muted" : undefined} key={paragraph}>{paragraph}</p>
+          ))}
         </div>
       </section>
 
