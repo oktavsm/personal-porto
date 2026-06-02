@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
+import { Admin } from "./pages/admin/Admin";
 import { Contact } from "./pages/Contact";
+import { ExperienceDetail } from "./pages/ExperienceDetail";
 import { Experiences } from "./pages/Experiences";
 import { Home } from "./pages/Home";
 import { LeadSelf } from "./pages/LeadSelf";
@@ -17,11 +19,13 @@ export default function App() {
         <Route path="projects" element={<Projects />} />
         <Route path="projects/:slug" element={<ProjectDetail />} />
         <Route path="experiences" element={<Experiences />} />
+        <Route path="experiences/:slug" element={<ExperienceDetail />} />
         <Route path="lead-self" element={<LeadSelf />} />
         <Route path="resume" element={<Resume />} />
         <Route path="systems" element={<Live />} />
         <Route path="live" element={<Navigate to="/systems" replace />} />
         <Route path="contact" element={<Contact />} />
+        <Route path="admin" element={<Admin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

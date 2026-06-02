@@ -1,0 +1,32 @@
+{
+  "name": "@teladan-porto/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/with-root-env.mjs tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "db:wait": "node scripts/with-root-env.mjs node scripts/wait-for-db.mjs",
+    "prisma:generate": "node scripts/with-root-env.mjs prisma generate",
+    "prisma:migrate": "node scripts/with-root-env.mjs prisma migrate dev",
+    "prisma:deploy": "node scripts/with-root-env.mjs prisma migrate deploy",
+    "seed": "node scripts/with-root-env.mjs tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/multipart": "^9.3.0",
+    "@fastify/static": "^8.3.0",
+    "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "prisma": "^6.19.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

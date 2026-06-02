@@ -1,4 +1,5 @@
 import { ArrowUpRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Experience } from "../data/experiences";
 import { Badge } from "./ui/Badge";
 import { Card } from "./ui/Card";
@@ -23,9 +24,9 @@ export function ExperienceCard({ experience }: ExperienceCardProps) {
       <p className="organization">{experience.organization}</p>
       <p>{experience.summary}</p>
       <div className="quote-line">{experience.reflection}</div>
-      <a className="inline-link" href={`/experiences#${experience.slug}`}>
+      <Link className="inline-link" to={`/experiences/${experience.slug}`}>
         Read context <ArrowUpRight size={15} />
-      </a>
+      </Link>
     </Card>
   );
 }

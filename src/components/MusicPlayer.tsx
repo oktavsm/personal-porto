@@ -2,9 +2,10 @@ import { Music, Pause, Play, Volume2 } from "lucide-react";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { media } from "../data/media";
+import { publicApi } from "../lib/publicApi";
 
 type Track = {
-  id: "evaluasi" | "everything";
+  id: string;
   title: string;
   subtitle: string;
   src: string;
@@ -18,11 +19,12 @@ type MusicContextValue = {
   playing: boolean;
   blocked: boolean;
   setTrack: (track: Track) => void;
+  nextTrack: () => void;
   play: () => Promise<void>;
   pause: () => void;
 };
 
-const tracks: Track[] = [
+const fallbackTracks: Track[] = [
   {
     id: "evaluasi",
     title: "Evaluasi (Reprise)",
@@ -54,10 +56,19 @@ function useMusic() {
 }
 
 export function MusicProvider({ children }: { children: ReactNode }) {
-  const [track, setTrack] = useState<Track>(tracks[0]);
+  const [tracks, setTracks] = useState<Track[]>(fallbackTracks);
+  const [track, setTrack] = useState<Track>(fallbackTracks[0]);
   const [playing, setPlaying] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const nextTrack = useCallback(() => {
+    setTrack((currentTrack) => {
+      const currentIndex = tracks.findIndex((item) => item.id === currentTrack.id);
+      const nextIndex = currentIndex >= 0 ? (currentIndex + 1) % tracks.length : 0;
+      return tracks[nextIndex];
+    });
+  }, [tracks]);
 
   const play = useCallback(async () => {
     try {
@@ -81,14 +92,42 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     // Browser autoplay policies may block this until the visitor interacts.
   }, [play, track]);
 
+  useEffect(() => {
+    let active = true;
+
+    publicApi.music().then((response) => {
+      if (!active || response.data.length === 0) return;
+
+      const apiTracks = response.data
+        .filter((item) => item.audioUrl && item.coverUrl)
+        .map((item) => ({
+          id: item.id,
+          title: item.title,
+          subtitle: item.artist,
+          src: item.audioUrl as string,
+          cover: item.coverUrl as string,
+          note: item.note,
+        }));
+
+      if (apiTracks.length > 0) {
+        setTracks(apiTracks);
+        setTrack(apiTracks[0]);
+      }
+    }).catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const value = useMemo(
-    () => ({ track, tracks, playing, blocked, setTrack, play, pause }),
-    [blocked, pause, play, playing, track],
+    () => ({ track, tracks, playing, blocked, setTrack, nextTrack, play, pause }),
+    [blocked, nextTrack, pause, play, playing, track],
   );
 
   return (
     <MusicContext.Provider value={value}>
-      <audio ref={audioRef} loop preload="metadata">
+      <audio ref={audioRef} preload="metadata" onEnded={nextTrack}>
         <source src={track.src} type="audio/mpeg" />
       </audio>
       {children}
@@ -97,7 +136,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
 }
 
 export function GlobalMusicPlayer() {
-  const { track, tracks, playing, play, pause, setTrack } = useMusic();
+  const { track, playing, play, pause, nextTrack } = useMusic();
 
   return (
     <aside className="global-music-player" aria-label="Persistent music player">
@@ -114,7 +153,7 @@ export function GlobalMusicPlayer() {
       <button
         className="global-music-control"
         type="button"
-        onClick={() => setTrack(track.id === "evaluasi" ? tracks[1] : tracks[0])}
+        onClick={nextTrack}
         aria-label="Switch music track"
       >
         <Music size={16} />
@@ -161,7 +200,7 @@ export function HomeMusicSection() {
                 {playing ? "Pause" : "Play"}
               </button>
               <span className="music-loop">
-                <Volume2 size={15} /> Looping
+                <Volume2 size={15} /> Playlist loop
               </span>
             </div>
           </div>

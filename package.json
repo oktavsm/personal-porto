@@ -3,9 +3,20 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
+  "workspaces": [
+    "apps/api"
+  ],
   "scripts": {
     "dev": "vite --host 0.0.0.0",
+    "dev:api": "npm run dev -w apps/api",
+    "db:local": "docker compose -f deploy/compose.local.yml up -d --force-recreate postgres",
+    "db:logs": "docker compose -f deploy/compose.local.yml logs --tail=80 postgres",
+    "db:wait": "npm run db:wait -w apps/api",
     "build": "tsc -b && vite build",
+    "build:api": "npm run build -w apps/api",
+    "prisma:generate": "npm run prisma:generate -w apps/api",
+    "prisma:migrate": "npm run prisma:migrate -w apps/api",
+    "seed:api": "npm run seed -w apps/api",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

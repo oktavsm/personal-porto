@@ -17,6 +17,7 @@ const links = [
 export function Layout() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const isAdmin = location.pathname.startsWith("/admin");
 
   useEffect(() => {
     try {
@@ -42,7 +43,7 @@ export function Layout() {
   }, [location.pathname, location.hash]);
 
   useEffect(() => {
-    const elements = document.querySelectorAll("[data-reveal], section, .card");
+    const revealSelector = "[data-reveal], section, .card";
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -54,8 +55,36 @@ export function Layout() {
       { threshold: 0.08 },
     );
 
-    elements.forEach((element) => observer.observe(element));
-    return () => observer.disconnect();
+    const observed = new Set<Element>();
+    const observeElements = (root: ParentNode = document) => {
+      root.querySelectorAll(revealSelector).forEach((element) => {
+        if (observed.has(element)) return;
+        observed.add(element);
+        observer.observe(element);
+      });
+    };
+
+    observeElements();
+
+    const mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (!(node instanceof Element)) return;
+          if (node.matches(revealSelector) && !observed.has(node)) {
+            observed.add(node);
+            observer.observe(node);
+          }
+          observeElements(node);
+        });
+      });
+    });
+
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      mutationObserver.disconnect();
+      observer.disconnect();
+    };
   }, [location.pathname]);
 
   return (
@@ -85,14 +114,18 @@ export function Layout() {
       <main>
         <Outlet />
       </main>
-      <AskPortfolioChat />
-      <GlobalMusicPlayer />
-      <footer className="site-footer">
-        <div className="container footer-inner">
-          <span>Built with reflection, structure, and purpose.</span>
-          <span>Still improving, one system at a time.</span>
-        </div>
-      </footer>
+      {isAdmin ? null : (
+        <>
+          <AskPortfolioChat />
+          <GlobalMusicPlayer />
+          <footer className="site-footer">
+            <div className="container footer-inner">
+              <span>Built with reflection, structure, and purpose.</span>
+              <span>Still improving, one system at a time.</span>
+            </div>
+          </footer>
+        </>
+      )}
     </MusicProvider>
   );
 }

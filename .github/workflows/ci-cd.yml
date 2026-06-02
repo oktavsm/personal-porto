@@ -29,8 +29,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build frontend
         run: npm run build
+
+      - name: Build API
+        run: npm run build:api
 
   deploy:
     name: Build Image and Deploy to EC2
@@ -45,6 +48,7 @@ jobs:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       DOCKERHUB_REPOSITORY: ${{ secrets.DOCKERHUB_REPOSITORY }}
+      DOCKERHUB_API_REPOSITORY: ${{ secrets.DOCKERHUB_API_REPOSITORY }}
       EC2_HOST: ${{ secrets.EC2_HOST }}
       EC2_USER: ${{ secrets.EC2_USER }}
       EC2_PORT: ${{ secrets.EC2_PORT }}
@@ -54,7 +58,20 @@ jobs:
       EC2_NGINX_CONF: ${{ secrets.EC2_NGINX_CONF }}
       EC2_BLUE_PORT: ${{ secrets.EC2_BLUE_PORT }}
       EC2_GREEN_PORT: ${{ secrets.EC2_GREEN_PORT }}
+      EC2_API_PORT: ${{ secrets.EC2_API_PORT }}
       VITE_PORTFOLIO_CHAT_WEBHOOK_URL: ${{ secrets.VITE_PORTFOLIO_CHAT_WEBHOOK_URL }}
+      PROD_POSTGRES_DB: ${{ secrets.PROD_POSTGRES_DB }}
+      PROD_POSTGRES_USER: ${{ secrets.PROD_POSTGRES_USER }}
+      PROD_POSTGRES_PASSWORD: ${{ secrets.PROD_POSTGRES_PASSWORD }}
+      PROD_CORS_ORIGIN: ${{ secrets.PROD_CORS_ORIGIN }}
+      PROD_COOKIE_SECRET: ${{ secrets.PROD_COOKIE_SECRET }}
+      PROD_SESSION_SECRET: ${{ secrets.PROD_SESSION_SECRET }}
+      PROD_ADMIN_EMAIL: ${{ secrets.PROD_ADMIN_EMAIL }}
+      PROD_ADMIN_PASSWORD: ${{ secrets.PROD_ADMIN_PASSWORD }}
+      PROD_SESSION_DAYS: ${{ secrets.PROD_SESSION_DAYS }}
+      PROD_MAX_UPLOAD_MB: ${{ secrets.PROD_MAX_UPLOAD_MB }}
+      PROD_PUBLIC_UPLOAD_BASE_URL: ${{ secrets.PROD_PUBLIC_UPLOAD_BASE_URL }}
+      RUN_PROD_SEED: ${{ secrets.RUN_PROD_SEED }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -69,12 +86,17 @@ jobs:
           : "${DOCKERHUB_TOKEN:?Missing DOCKERHUB_TOKEN secret}"
 
           REPOSITORY="${DOCKERHUB_REPOSITORY:-personal-porto}"
+          API_REPOSITORY="${DOCKERHUB_API_REPOSITORY:-personal-porto-api}"
           SHORT_SHA="${GITHUB_SHA::12}"
           IMAGE_NAME="$DOCKERHUB_USERNAME/$REPOSITORY"
+          API_IMAGE_NAME="$DOCKERHUB_USERNAME/$API_REPOSITORY"
 
           echo "name=$IMAGE_NAME" >> "$GITHUB_OUTPUT"
           echo "sha_tag=$IMAGE_NAME:sha-$SHORT_SHA" >> "$GITHUB_OUTPUT"
           echo "latest_tag=$IMAGE_NAME:latest" >> "$GITHUB_OUTPUT"
+          echo "api_name=$API_IMAGE_NAME" >> "$GITHUB_OUTPUT"
+          echo "api_sha_tag=$API_IMAGE_NAME:sha-$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "api_latest_tag=$API_IMAGE_NAME:latest" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -99,6 +121,19 @@ jobs:
           build-args: |
             VITE_PORTFOLIO_CHAT_WEBHOOK_URL=${{ env.VITE_PORTFOLIO_CHAT_WEBHOOK_URL }}
 
+      - name: Build and push API Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.api
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.image.outputs.api_sha_tag }}
+            ${{ steps.image.outputs.api_latest_tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
       - name: Configure SSH
         shell: bash
         run: |
@@ -116,7 +151,7 @@ jobs:
           chmod 600 ~/.ssh/ec2_key
           ssh-keyscan -p "$EC2_PORT" -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
-      - name: Upload Compose file
+      - name: Upload Compose files
         shell: bash
         run: |
           set -euo pipefail
@@ -127,6 +162,7 @@ jobs:
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" \
             "sudo -n mkdir -p '$REMOTE_APP_DIR' && sudo -n chown '$EC2_USER:$EC2_USER' '$REMOTE_APP_DIR'"
           scp -i ~/.ssh/ec2_key -P "$EC2_PORT" deploy/compose.portfolio.yml "$EC2_USER@$EC2_HOST:$REMOTE_APP_DIR/compose.portfolio.yml"
+          scp -i ~/.ssh/ec2_key -P "$EC2_PORT" deploy/compose.api.yml "$EC2_USER@$EC2_HOST:$REMOTE_APP_DIR/compose.api.yml"
 
       - name: Deploy blue-green slot
         shell: bash
@@ -139,31 +175,75 @@ jobs:
           NGINX_CONF="${EC2_NGINX_CONF:-/etc/nginx/sites-available/muelsm.site}"
           BLUE_PORT="${EC2_BLUE_PORT:-8081}"
           GREEN_PORT="${EC2_GREEN_PORT:-8082}"
+          API_PORT="${EC2_API_PORT:-3000}"
           IMAGE="${{ steps.image.outputs.sha_tag }}"
+          API_IMAGE="${{ steps.image.outputs.api_sha_tag }}"
+          POSTGRES_DB="${PROD_POSTGRES_DB:-teladan_portfolio}"
+          POSTGRES_USER="${PROD_POSTGRES_USER:-teladan_portfolio}"
+          POSTGRES_PASSWORD="${PROD_POSTGRES_PASSWORD:-}"
+          CORS_ORIGIN="${PROD_CORS_ORIGIN:-https://$SERVER_NAME,https://www.$SERVER_NAME}"
+          COOKIE_SECRET="${PROD_COOKIE_SECRET:-}"
+          SESSION_SECRET="${PROD_SESSION_SECRET:-}"
+          ADMIN_EMAIL="${PROD_ADMIN_EMAIL:-}"
+          ADMIN_PASSWORD="${PROD_ADMIN_PASSWORD:-}"
+          SESSION_DAYS="${PROD_SESSION_DAYS:-7}"
+          MAX_UPLOAD_MB="${PROD_MAX_UPLOAD_MB:-25}"
+          PUBLIC_UPLOAD_BASE_URL="${PROD_PUBLIC_UPLOAD_BASE_URL:-/uploads}"
+          RUN_SEED="${RUN_PROD_SEED:-false}"
 
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" bash -s -- \
             "$REMOTE_APP_DIR" \
             "$IMAGE" \
+            "$API_IMAGE" \
             "$DOCKERHUB_USERNAME" \
             "$DOCKERHUB_TOKEN" \
             "$SERVER_NAME" \
             "$NGINX_CONF" \
             "$BLUE_PORT" \
-            "$GREEN_PORT" <<'REMOTE_SCRIPT'
+            "$GREEN_PORT" \
+            "$API_PORT" \
+            "$POSTGRES_DB" \
+            "$POSTGRES_USER" \
+            "$POSTGRES_PASSWORD" \
+            "$CORS_ORIGIN" \
+            "$COOKIE_SECRET" \
+            "$SESSION_SECRET" \
+            "$ADMIN_EMAIL" \
+            "$ADMIN_PASSWORD" \
+            "$SESSION_DAYS" \
+            "$MAX_UPLOAD_MB" \
+            "$PUBLIC_UPLOAD_BASE_URL" \
+            "$RUN_SEED" <<'REMOTE_SCRIPT'
           set -euo pipefail
 
           APP_DIR="$1"
           IMAGE="$2"
-          DOCKERHUB_USERNAME="$3"
-          DOCKERHUB_TOKEN="$4"
-          SERVER_NAME="$5"
-          NGINX_CONF="$6"
-          BLUE_PORT="$7"
-          GREEN_PORT="$8"
+          API_IMAGE="$3"
+          DOCKERHUB_USERNAME="$4"
+          DOCKERHUB_TOKEN="$5"
+          SERVER_NAME="$6"
+          NGINX_CONF="$7"
+          BLUE_PORT="$8"
+          GREEN_PORT="$9"
+          API_PORT="${10}"
+          POSTGRES_DB="${11}"
+          POSTGRES_USER="${12}"
+          POSTGRES_PASSWORD="${13}"
+          CORS_ORIGIN="${14}"
+          COOKIE_SECRET="${15}"
+          SESSION_SECRET="${16}"
+          ADMIN_EMAIL="${17}"
+          ADMIN_PASSWORD="${18}"
+          SESSION_DAYS="${19}"
+          MAX_UPLOAD_MB="${20}"
+          PUBLIC_UPLOAD_BASE_URL="${21}"
+          RUN_SEED="${22}"
 
           APP_NAME="teladan-porto"
           ACTIVE_SLOT_FILE="$APP_DIR/active_slot"
           COMPOSE_FILE="$APP_DIR/compose.portfolio.yml"
+          API_COMPOSE_FILE="$APP_DIR/compose.api.yml"
+          API_ENV_FILE="$APP_DIR/.env.api"
 
           if ! command -v docker >/dev/null 2>&1; then
             echo "Docker is not installed on the EC2 instance."
@@ -178,6 +258,53 @@ jobs:
           mkdir -p "$APP_DIR"
           echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
           docker pull "$IMAGE"
+          docker pull "$API_IMAGE"
+
+          : "${POSTGRES_PASSWORD:?Missing production Postgres password}"
+          : "${COOKIE_SECRET:?Missing production cookie secret}"
+          : "${SESSION_SECRET:?Missing production session secret}"
+          : "${ADMIN_EMAIL:?Missing production admin email}"
+          : "${ADMIN_PASSWORD:?Missing production admin password}"
+
+          cat > "$API_ENV_FILE" <<ENV
+          API_IMAGE=$API_IMAGE
+          API_CONTAINER_NAME=$APP_NAME-api
+          API_PORT=$API_PORT
+          POSTGRES_CONTAINER_NAME=$APP_NAME-postgres
+          POSTGRES_DB=$POSTGRES_DB
+          POSTGRES_USER=$POSTGRES_USER
+          POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+          CORS_ORIGIN=$CORS_ORIGIN
+          COOKIE_SECRET=$COOKIE_SECRET
+          SESSION_SECRET=$SESSION_SECRET
+          SESSION_DAYS=$SESSION_DAYS
+          ADMIN_EMAIL=$ADMIN_EMAIL
+          ADMIN_PASSWORD=$ADMIN_PASSWORD
+          MAX_UPLOAD_MB=$MAX_UPLOAD_MB
+          PUBLIC_UPLOAD_BASE_URL=$PUBLIC_UPLOAD_BASE_URL
+          ENV
+
+          docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" up -d --remove-orphans
+
+          for attempt in $(seq 1 40); do
+            if curl -fsS "http://127.0.0.1:$API_PORT/api/health" >/dev/null; then
+              break
+            fi
+
+            if [ "$attempt" -eq 40 ]; then
+              echo "API stack failed health check."
+              docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" logs --tail=120
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run prisma:deploy
+
+          if [ "$RUN_SEED" = "true" ]; then
+            docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run seed
+          fi
 
           ACTIVE_SLOT="green"
           if [ -f "$ACTIVE_SLOT_FILE" ]; then
@@ -254,6 +381,24 @@ jobs:
             $INCLUDE_SSL_OPTIONS
             $SSL_DHPARAM_LINE
 
+            location /api/ {
+              proxy_pass http://127.0.0.1:$API_PORT;
+              proxy_http_version 1.1;
+              proxy_set_header Host \$host;
+              proxy_set_header X-Real-IP \$remote_addr;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto \$scheme;
+            }
+
+            location /uploads/ {
+              proxy_pass http://127.0.0.1:$API_PORT;
+              proxy_http_version 1.1;
+              proxy_set_header Host \$host;
+              proxy_set_header X-Real-IP \$remote_addr;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto \$scheme;
+            }
+
             location / {
               proxy_pass http://127.0.0.1:$INACTIVE_PORT;
               proxy_http_version 1.1;
@@ -269,6 +414,24 @@ jobs:
           server {
             listen 80;
             server_name $SERVER_NAMES;
+
+            location /api/ {
+              proxy_pass http://127.0.0.1:$API_PORT;
+              proxy_http_version 1.1;
+              proxy_set_header Host \$host;
+              proxy_set_header X-Real-IP \$remote_addr;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto \$scheme;
+            }
+
+            location /uploads/ {
+              proxy_pass http://127.0.0.1:$API_PORT;
+              proxy_http_version 1.1;
+              proxy_set_header Host \$host;
+              proxy_set_header X-Real-IP \$remote_addr;
+              proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto \$scheme;
+            }
 
             location / {
               proxy_pass http://127.0.0.1:$INACTIVE_PORT;

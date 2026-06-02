@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: teladan-porto-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-teladan_portfolio}
+      POSTGRES_USER: ${POSTGRES_USER:-teladan_portfolio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-teladan_portfolio}
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - teladan-porto-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  teladan-porto-postgres:

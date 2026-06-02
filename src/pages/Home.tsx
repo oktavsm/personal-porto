@@ -1,5 +1,5 @@
 import { ArrowRight, Compass, Download, Mail } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ExperienceCard } from "../components/ExperienceCard";
 import { HomeMusicSection } from "../components/MusicPlayer";
 import { ProjectCard } from "../components/ProjectCard";
@@ -10,8 +10,9 @@ import { PortfolioExplorer, PortfolioExplorerModal } from "../components/interac
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { media } from "../data/media";
-import { featuredExperiences } from "../data/experiences";
-import { featuredProjects } from "../data/projects";
+import { experiences, featuredExperiences, type Experience } from "../data/experiences";
+import { featuredProjects, projects, type Project } from "../data/projects";
+import { publicApi, type PublicExperience, type PublicProject } from "../lib/publicApi";
 
 const earlyCards = [
   { title: "Silat", image: media.earlySilat, text: "Discipline, physical control, consistency, and courage to train through repetition." },
@@ -45,8 +46,83 @@ const values = [
   },
 ];
 
+function mapPublicProject(project: PublicProject, staticProject?: Project): Project {
+  return {
+    slug: project.slug,
+    title: project.title,
+    ecosystem: project.ecosystem ?? undefined,
+    category: project.category as Project["category"],
+    priority: project.priority as Project["priority"],
+    summary: project.summary,
+    problem: project.problem,
+    solution: project.solution,
+    role: project.roles,
+    status: project.status as Project["status"],
+    techStack: project.techStack,
+    links: {
+      demo: project.links.demo,
+      github: project.links.github,
+      download: project.links.download,
+    },
+    images: project.images.length > 0 ? project.images : staticProject?.images ?? [],
+    learnings: project.learnings,
+  };
+}
+
+function mapPublicExperience(experience: PublicExperience, staticExperience?: Experience): Experience {
+  return {
+    slug: experience.slug,
+    title: experience.title,
+    organization: experience.organization,
+    period: experience.period,
+    category: experience.category as Experience["category"],
+    summary: experience.summary,
+    responsibilities: experience.responsibilities,
+    impact: experience.impact,
+    reflection: experience.reflection,
+    values: experience.values,
+    image: experience.images[0] ?? staticExperience?.image,
+  };
+}
+
 export function Home() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
+  const [apiProjects, setApiProjects] = useState<PublicProject[] | null>(null);
+  const [apiExperiences, setApiExperiences] = useState<PublicExperience[] | null>(null);
+  const staticProjectBySlug = useMemo(() => new Map(projects.map((project) => [project.slug, project])), []);
+  const staticExperienceBySlug = useMemo(() => new Map(experiences.map((experience) => [experience.slug, experience])), []);
+  const homeProjects = useMemo(
+    () =>
+      apiProjects
+        ?.filter((project) => project.isFeatured)
+        .map((project) => mapPublicProject(project, staticProjectBySlug.get(project.slug)))
+        .slice(0, 3) ?? featuredProjects.slice(0, 3),
+    [apiProjects, staticProjectBySlug],
+  );
+  const homeExperiences = useMemo(
+    () =>
+      apiExperiences
+        ?.filter((experience) => experience.isFeatured)
+        .map((experience) => mapPublicExperience(experience, staticExperienceBySlug.get(experience.slug)))
+        .slice(0, 3) ?? featuredExperiences.slice(0, 3),
+    [apiExperiences, staticExperienceBySlug],
+  );
+
+  useEffect(() => {
+    let active = true;
+
+    publicApi.projects().then((response) => {
+      if (active && response.data.length > 0) setApiProjects(response.data);
+    }).catch(() => undefined);
+
+    publicApi.experiences().then((response) => {
+      if (active && response.data.length > 0) setApiExperiences(response.data);
+    }).catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <>
@@ -347,7 +423,7 @@ export function Home() {
             description="I do not build projects just to fill my portfolio. I build them because I notice small frictions around me — and I want to reduce them through software."
           />
           <div className="grid grid-3">
-            {featuredProjects.slice(0, 3).map((project) => (
+            {homeProjects.map((project) => (
               <ProjectCard key={project.slug} project={project} />
             ))}
           </div>
@@ -367,7 +443,7 @@ export function Home() {
             description="These are not just roles. They shaped how I understand people, systems, leadership, and impact."
           />
           <div className="grid grid-3">
-            {featuredExperiences.slice(0, 3).map((experience) => (
+            {homeExperiences.map((experience) => (
               <ExperienceCard key={experience.slug} experience={experience} />
             ))}
           </div>

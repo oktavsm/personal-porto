@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  sessions     Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MediaAsset {
+  id            String   @id @default(cuid())
+  filename      String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  storagePath   String
+  publicUrl     String
+  altText       String?
+  caption       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  projectMedia  ProjectMedia[]
+  experienceMedia ExperienceMedia[]
+  resumeVersions ResumeVersion[]
+  musicAudioTracks MusicTrack[] @relation("MusicAudioAsset")
+  musicCoverTracks MusicTrack[] @relation("MusicCoverAsset")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  ecosystem   String?
+  category    String
+  priority    String
+  summary     String
+  problem     String
+  solution    String
+  status      String
+  isFeatured  Boolean  @default(false)
+  isPublished Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  roles       ProjectRole[]
+  techStack   ProjectTechStack[]
+  links       ProjectLink[]
+  media       ProjectMedia[]
+  learnings   ProjectLearning[]
+}
+
+model ProjectRole {
+  id        String  @id @default(cuid())
+  projectId String
+  label     String
+  sortOrder Int     @default(0)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectTechStack {
+  id        String  @id @default(cuid())
+  projectId String
+  label     String
+  sortOrder Int     @default(0)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectLink {
+  id        String  @id @default(cuid())
+  projectId String
+  type      String
+  label     String
+  url       String
+  sortOrder Int     @default(0)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model ProjectMedia {
+  id           String     @id @default(cuid())
+  projectId    String
+  mediaAssetId String
+  kind         String     @default("image")
+  sortOrder    Int        @default(0)
+  project      Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+}
+
+model ProjectLearning {
+  id        String  @id @default(cuid())
+  projectId String
+  text      String
+  sortOrder Int     @default(0)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Experience {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  organization String
+  period      String
+  category    String
+  summary     String
+  reflection  String
+  isFeatured  Boolean  @default(false)
+  isPublished Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  responsibilities ExperienceResponsibility[]
+  impacts     ExperienceImpact[]
+  values      ExperienceValue[]
+  media       ExperienceMedia[]
+}
+
+model ExperienceResponsibility {
+  id           String     @id @default(cuid())
+  experienceId String
+  text         String
+  sortOrder    Int        @default(0)
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+}
+
+model ExperienceImpact {
+  id           String     @id @default(cuid())
+  experienceId String
+  text         String
+  sortOrder    Int        @default(0)
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+}
+
+model ExperienceValue {
+  id           String     @id @default(cuid())
+  experienceId String
+  label        String
+  sortOrder    Int        @default(0)
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+}
+
+model ExperienceMedia {
+  id           String     @id @default(cuid())
+  experienceId String
+  mediaAssetId String
+  kind         String     @default("image")
+  sortOrder    Int        @default(0)
+  experience   Experience @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+}
+
+model Certification {
+  id            String   @id @default(cuid())
+  title         String
+  issuer        String
+  issuedAt      String
+  expiresAt     String?
+  credentialUrl String?
+  isFeatured    Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  skills        CertificationSkill[]
+}
+
+model CertificationSkill {
+  id              String        @id @default(cuid())
+  certificationId String
+  label           String
+  sortOrder       Int           @default(0)
+  certification   Certification @relation(fields: [certificationId], references: [id], onDelete: Cascade)
+}
+
+model ResumeVersion {
+  id           String     @id @default(cuid())
+  label        String
+  mediaAssetId String?
+  isActive     Boolean    @default(false)
+  uploadedAt   DateTime   @default(now())
+  notes        String?
+  mediaAsset   MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+}
+
+model LiveSystem {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  url         String
+  embedUrl    String?
+  isEmbeddable Boolean @default(true)
+  isPublished Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ContactLink {
+  id        String  @id @default(cuid())
+  type      String
+  label     String
+  value     String?
+  url       String
+  isPrimary Boolean @default(false)
+  sortOrder Int     @default(0)
+}
+
+model MusicTrack {
+  id           String      @id @default(cuid())
+  title        String
+  artist       String
+  audioAssetId String?
+  coverAssetId String?
+  note         String
+  isActive     Boolean     @default(true)
+  sortOrder    Int         @default(0)
+  audioAsset   MediaAsset? @relation("MusicAudioAsset", fields: [audioAssetId], references: [id], onDelete: SetNull)
+  coverAsset   MediaAsset? @relation("MusicCoverAsset", fields: [coverAssetId], references: [id], onDelete: SetNull)
+}
+
+model SitePage {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  description String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  sections    SiteSection[]
+}
+
+model SiteSection {
+  id          String         @id @default(cuid())
+  pageId      String
+  key         String
+  title       String?
+  subtitle    String?
+  body        String?
+  settingsJson Json?
+  sortOrder   Int            @default(0)
+  isPublished Boolean        @default(true)
+  page        SitePage       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  blocks      ContentBlock[]
+
+  @@unique([pageId, key])
+}
+
+model ContentBlock {
+  id          String      @id @default(cuid())
+  sectionId   String
+  type        String
+  contentJson Json
+  sortOrder   Int         @default(0)
+  isPublished Boolean     @default(true)
+  section     SiteSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+}
+
+model PortfolioContextVersion {
+  id                String   @id @default(cuid())
+  label             String
+  generatedMarkdown String?
+  manualMarkdown    String?
+  finalMarkdown     String
+  isActive          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

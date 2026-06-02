@@ -1,7 +1,9 @@
 import { ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
 import { SectionHeader } from "../components/SectionHeader";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
+import { publicApi, type PublicLiveSystem } from "../lib/publicApi";
 
 const liveProjects = [
   {
@@ -16,7 +18,39 @@ const liveProjects = [
   },
 ];
 
+type LiveProjectView = {
+  title: string;
+  url: string;
+  description: string;
+  embedUrl?: string | null;
+  isEmbeddable: boolean;
+};
+
 export function Live() {
+  const [apiProjects, setApiProjects] = useState<PublicLiveSystem[] | null>(null);
+  const projects: LiveProjectView[] =
+    apiProjects && apiProjects.length > 0
+      ? apiProjects
+      : liveProjects.map((project) => ({
+          ...project,
+          embedUrl: project.url,
+          isEmbeddable: true,
+        }));
+
+  useEffect(() => {
+    let active = true;
+
+    publicApi.systems().then((response) => {
+      if (active && response.data.length > 0) {
+        setApiProjects(response.data);
+      }
+    }).catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section className="page-section">
       <div className="container">
@@ -30,7 +64,7 @@ export function Live() {
           provided as the reliable route.
         </p>
         <div className="live-grid">
-          {liveProjects.map((project) => (
+          {projects.map((project) => (
             <Card className="live-card" key={project.title}>
               <div>
                 <h3>{project.title}</h3>
@@ -39,9 +73,15 @@ export function Live() {
                   Open Site <ExternalLink size={16} />
                 </Button>
               </div>
-              <div className="live-frame">
-                <iframe src={project.url} title={`${project.title} live preview`} loading="lazy" />
-              </div>
+              {!project.isEmbeddable ? (
+                <div className="live-frame live-frame-placeholder">
+                  <p>Preview disabled for this system.</p>
+                </div>
+              ) : (
+                <div className="live-frame">
+                  <iframe src={project.embedUrl ?? project.url} title={`${project.title} live preview`} loading="lazy" />
+                </div>
+              )}
             </Card>
           ))}
         </div>

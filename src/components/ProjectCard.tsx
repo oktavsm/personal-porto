@@ -11,9 +11,15 @@ type ProjectCardProps = {
 export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Card className="project-card">
-      <div className="card-media">
-        <img src={project.images[0]} alt={`${project.title} preview`} loading="lazy" />
-      </div>
+      {project.images[0] ? (
+        <div className="card-media">
+          <img src={project.images[0]} alt={`${project.title} preview`} loading="lazy" />
+        </div>
+      ) : (
+        <div className="card-media project-card-placeholder">
+          <span>{project.category}</span>
+        </div>
+      )}
       <div className="card-body">
         <div className="card-meta">
           <Badge tone={project.priority === "Flagship" ? "bright" : "default"}>{project.priority}</Badge>
