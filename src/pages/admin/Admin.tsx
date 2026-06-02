@@ -11,6 +11,8 @@ import {
   type AdminMusicTrack,
   type AdminProject,
   type AdminResumeVersion,
+  type AdminSitePage,
+  type AdminSiteSection,
   type AdminUser,
 } from "../../lib/adminApi";
 import { Button } from "../../components/ui/Button";
@@ -31,7 +33,7 @@ type DeleteTarget =
   | { type: "experience"; id: string; label: string }
   | { type: "music"; id: string; label: string };
 
-type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts";
+type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "pages";
 type MediaPickerTarget = "projectGallery" | "experienceGallery";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
@@ -43,6 +45,7 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "certifications", label: "Certifications" },
   { id: "systems", label: "Systems" },
   { id: "contacts", label: "Contacts" },
+  { id: "pages", label: "Pages" },
 ];
 
 const emptyCertification = {
@@ -129,6 +132,15 @@ const emptyMusic = {
   coverAssetId: "",
   isActive: true,
   sortOrder: 0,
+};
+
+const emptyPageSection = {
+  key: "",
+  title: "",
+  subtitle: "",
+  body: "",
+  sortOrder: 0,
+  isPublished: true,
 };
 
 const projectCategoryOptions = ["Android", "Web", "Automation", "AI", "Networking", "Academic", "Utility"].map((value) => ({ value, label: value }));
@@ -460,6 +472,7 @@ export function Admin() {
   const [projects, setProjects] = useState<AdminProject[]>([]);
   const [experiences, setExperiences] = useState<AdminExperience[]>([]);
   const [musicTracks, setMusicTracks] = useState<AdminMusicTrack[]>([]);
+  const [sitePages, setSitePages] = useState<AdminSitePage[]>([]);
   const [certForm, setCertForm] = useState(emptyCertification);
   const [systemForm, setSystemForm] = useState(emptySystem);
   const [contactForm, setContactForm] = useState(emptyContact);
@@ -467,6 +480,7 @@ export function Admin() {
   const [projectForm, setProjectForm] = useState(emptyProject);
   const [experienceForm, setExperienceForm] = useState(emptyExperience);
   const [musicForm, setMusicForm] = useState(emptyMusic);
+  const [pageSectionForm, setPageSectionForm] = useState(emptyPageSection);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [editingCertificationId, setEditingCertificationId] = useState<string | null>(null);
@@ -475,6 +489,8 @@ export function Admin() {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   const [editingMusicId, setEditingMusicId] = useState<string | null>(null);
+  const [editingPageSectionKey, setEditingPageSectionKey] = useState<string | null>(null);
+  const [selectedPageSlug, setSelectedPageSlug] = useState("home");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<MediaPickerTarget | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
@@ -543,6 +559,8 @@ export function Admin() {
     () => contacts.filter((contact) => matchesSearch(contactSearch, [contact.type, contact.label, contact.value, contact.url, contact.isPrimary])),
     [contacts, contactSearch],
   );
+  const selectedSitePage = useMemo(() => sitePages.find((page) => page.slug === selectedPageSlug) ?? sitePages[0] ?? null, [sitePages, selectedPageSlug]);
+  const pageOptions = useMemo(() => sitePages.map((page) => ({ value: page.slug, label: page.title })), [sitePages]);
 
   function handleSaveGallerySelection(selectedIds: string[]) {
     if (mediaPickerTarget === "projectGallery") {
@@ -557,7 +575,7 @@ export function Admin() {
   }
 
   async function loadAdminData() {
-    const [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse] = await Promise.allSettled([
+    const [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse] = await Promise.allSettled([
       adminApi.certifications(),
       adminApi.systems(),
       adminApi.contact(),
@@ -566,6 +584,7 @@ export function Admin() {
       adminApi.projects(),
       adminApi.experiences(),
       adminApi.music(),
+      adminApi.pages(),
     ]);
 
     if (certificationResponse.status === "fulfilled") setCertifications(certificationResponse.value.data);
@@ -576,8 +595,12 @@ export function Admin() {
     if (projectResponse.status === "fulfilled") setProjects(projectResponse.value.data);
     if (experienceResponse.status === "fulfilled") setExperiences(experienceResponse.value.data);
     if (musicResponse.status === "fulfilled") setMusicTracks(musicResponse.value.data);
+    if (pagesResponse.status === "fulfilled") {
+      setSitePages(pagesResponse.value.data);
+      setSelectedPageSlug((current) => pagesResponse.value.data.some((page) => page.slug === current) ? current : pagesResponse.value.data[0]?.slug ?? "home");
+    }
 
-    const failures = [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse].filter(
+    const failures = [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse].filter(
       (response) => response.status === "rejected",
     );
     if (failures.length > 0) {
@@ -619,6 +642,7 @@ export function Admin() {
     setProjects([]);
     setExperiences([]);
     setMusicTracks([]);
+    setSitePages([]);
   }
 
   async function handleCreateCertification(event: FormEvent<HTMLFormElement>) {
@@ -760,6 +784,32 @@ export function Admin() {
       setNotice(wasEditing ? "Music track updated." : "Music track added.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to save music track.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleUpdatePageSection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedSitePage || !editingPageSectionKey) {
+      setNotice("Choose a page section first.");
+      return;
+    }
+
+    setSaving(true);
+    setNotice(null);
+    try {
+      await adminApi.updatePageSection(selectedSitePage.slug, editingPageSectionKey, {
+        title: pageSectionForm.title,
+        subtitle: pageSectionForm.subtitle,
+        body: pageSectionForm.body,
+        sortOrder: pageSectionForm.sortOrder,
+        isPublished: pageSectionForm.isPublished,
+      });
+      await loadAdminData();
+      setNotice(`${selectedSitePage.title} section updated.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to update page section.");
     } finally {
       setSaving(false);
     }
@@ -964,6 +1014,11 @@ export function Admin() {
     setEditingMusicId(null);
   }
 
+  function resetPageSectionForm() {
+    setPageSectionForm(emptyPageSection);
+    setEditingPageSectionKey(null);
+  }
+
   function editCertification(certification: AdminCertification) {
     setActiveTab("certifications");
     setEditingCertificationId(certification.id);
@@ -1066,6 +1121,19 @@ export function Admin() {
       coverAssetId: track.coverAssetId ?? "",
       isActive: track.isActive,
       sortOrder: track.sortOrder,
+    });
+  }
+
+  function editPageSection(section: AdminSiteSection) {
+    setActiveTab("pages");
+    setEditingPageSectionKey(section.key);
+    setPageSectionForm({
+      key: section.key,
+      title: section.title ?? "",
+      subtitle: section.subtitle ?? "",
+      body: section.body ?? "",
+      sortOrder: section.sortOrder,
+      isPublished: section.isPublished,
     });
   }
 
@@ -1193,6 +1261,10 @@ export function Admin() {
           <div className="admin-stat">
             <span>Music Tracks</span>
             <strong>{musicTracks.length}</strong>
+          </div>
+          <div className="admin-stat">
+            <span>CMS Pages</span>
+            <strong>{sitePages.length}</strong>
           </div>
         </div>
 
@@ -1978,6 +2050,86 @@ export function Admin() {
                 );
               })}
               {filteredContacts.length === 0 ? <p className="admin-empty">No contact links matched this search.</p> : null}
+            </div>
+          </Card>
+
+          <Card className="admin-card-pages">
+            <div className="admin-card-head">
+              <h3>{editingPageSectionKey ? "Edit page copy" : "Choose page copy"}</h3>
+              {editingPageSectionKey ? (
+                <button className="icon-btn" type="button" aria-label="Cancel page section edit" onClick={resetPageSectionForm}>
+                  <X size={15} />
+                </button>
+              ) : null}
+            </div>
+            {pageOptions.length > 0 ? (
+              <AdminSelect
+                label="Page"
+                value={selectedSitePage?.slug ?? selectedPageSlug}
+                options={pageOptions}
+                onChange={(slug) => {
+                  setSelectedPageSlug(slug);
+                  resetPageSectionForm();
+                }}
+              />
+            ) : (
+              <p className="admin-empty">No CMS pages found. Run the seed once to create Home and Lead Self copy.</p>
+            )}
+            <form className="admin-form" onSubmit={handleUpdatePageSection}>
+              <label>
+                Section Key
+                <input value={pageSectionForm.key} disabled />
+              </label>
+              <label>
+                Kicker / Subtitle
+                <input value={pageSectionForm.subtitle} onChange={(event) => setPageSectionForm({ ...pageSectionForm, subtitle: event.target.value })} />
+              </label>
+              <label>
+                Title
+                <textarea value={pageSectionForm.title} onChange={(event) => setPageSectionForm({ ...pageSectionForm, title: event.target.value })} />
+              </label>
+              <label>
+                Body
+                <textarea className="admin-copy-textarea" value={pageSectionForm.body} onChange={(event) => setPageSectionForm({ ...pageSectionForm, body: event.target.value })} />
+                <span className="admin-help">Use blank lines to separate paragraphs. Frontend keeps static fallback if this section is unavailable.</span>
+              </label>
+              <label>
+                Display Order
+                <input value={pageSectionForm.sortOrder} onChange={(event) => setPageSectionForm({ ...pageSectionForm, sortOrder: Number(event.target.value) })} type="number" />
+              </label>
+              <label className="admin-check">
+                <input checked={pageSectionForm.isPublished} onChange={(event) => setPageSectionForm({ ...pageSectionForm, isPublished: event.target.checked })} type="checkbox" />
+                Published
+              </label>
+              <button className="btn btn-primary" type="submit" disabled={saving || !editingPageSectionKey}>
+                <Plus size={16} /> Update Section Copy
+              </button>
+            </form>
+          </Card>
+
+          <Card className="admin-card-pages">
+            <h3>{selectedSitePage?.title ?? "CMS Pages"}</h3>
+            <div className="admin-list">
+              {selectedSitePage?.sections.map((section) => (
+                <div className="admin-list-item" key={section.id}>
+                  <div>
+                    <strong>{section.title || section.key}</strong>
+                    <span>
+                      {section.key}
+                      {section.subtitle ? ` · ${section.subtitle}` : ""}
+                    </span>
+                    <div className="admin-badges">
+                      <span className={`admin-badge${section.isPublished ? "" : " is-muted"}`}>{section.isPublished ? "Published" : "Draft"}</span>
+                    </div>
+                  </div>
+                  <div className="admin-row-actions">
+                    <button className="icon-btn" type="button" aria-label={`Edit ${section.key}`} onClick={() => editPageSection(section)}>
+                      <Pencil size={15} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {selectedSitePage && selectedSitePage.sections.length === 0 ? <p className="admin-empty">No sections found for this page.</p> : null}
             </div>
           </Card>
         </div>

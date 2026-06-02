@@ -189,6 +189,36 @@ export type AdminExperience = {
   }[];
 };
 
+export type AdminSiteBlock = {
+  id: string;
+  type: string;
+  contentJson: unknown;
+  sortOrder: number;
+  isPublished: boolean;
+};
+
+export type AdminSiteSection = {
+  id: string;
+  key: string;
+  title?: string | null;
+  subtitle?: string | null;
+  body?: string | null;
+  settingsJson?: unknown;
+  sortOrder: number;
+  isPublished: boolean;
+  blocks: AdminSiteBlock[];
+};
+
+export type AdminSitePage = {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  sections: AdminSiteSection[];
+};
+
 type CertificationPayload = {
   title: string;
   issuer: string;
@@ -275,6 +305,20 @@ type MusicPayload = {
   coverAssetId?: string;
   isActive?: boolean;
   sortOrder?: number;
+};
+
+type PagePayload = {
+  title: string;
+  description?: string;
+};
+
+type PageSectionPayload = {
+  title?: string;
+  subtitle?: string;
+  body?: string;
+  settingsJson?: unknown;
+  sortOrder?: number;
+  isPublished?: boolean;
 };
 
 type ReorderPayload = {
@@ -416,6 +460,18 @@ export const adminApi = {
   reorderMusic: (payload: ReorderPayload) =>
     request<{ ok: boolean }>("/api/admin/music/reorder", {
       method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  pages: () => request<{ data: AdminSitePage[] }>("/api/admin/pages"),
+  page: (slug: string) => request<{ data: AdminSitePage }>(`/api/admin/pages/${slug}`),
+  updatePage: (slug: string, payload: PagePayload) =>
+    request<{ data: AdminSitePage }>(`/api/admin/pages/${slug}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  updatePageSection: (slug: string, key: string, payload: PageSectionPayload) =>
+    request<{ data: AdminSiteSection }>(`/api/admin/pages/${slug}/sections/${key}`, {
+      method: "PATCH",
       body: JSON.stringify(payload),
     }),
 };

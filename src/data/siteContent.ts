@@ -1,0 +1,185 @@
+export type SiteContentSection = {
+  key: string;
+  title?: string;
+  subtitle?: string;
+  body?: string;
+  sortOrder: number;
+  isPublished?: boolean;
+};
+
+export type SiteContentPage = {
+  slug: string;
+  title: string;
+  description?: string;
+  sections: SiteContentSection[];
+};
+
+export const siteContentPages: SiteContentPage[] = [
+  {
+    slug: "home",
+    title: "Home",
+    description: "Main portfolio storytelling page.",
+    sections: [
+      {
+        key: "hero",
+        title: "Winner?\nSpeaker?\nLeader?\nNo, I'm not.",
+        subtitle: "Personal Portfolio · Systems, Stories, and Useful Work",
+        body:
+          "I've been there. But those are not who I am.\n\nI'm Oktavianus Samuel Minarto — an Informatics student who learns by building, thinks in systems, and tries to make scattered things work better.\n\nI let things flow, but I stand my ground.",
+        sortOrder: 1,
+      },
+      {
+        key: "early-story",
+        title: "Before I knew who I was, I tried many things.",
+        subtitle: "Before I knew myself",
+        body:
+          "Since I was young, I joined many activities. Silat, PMR, Jumbara, Pramuka, OSIS, and competitions taught me discipline, independence, care, responsibility, focus, and growth. But at that time, I was still too young to define who I was. I was only collecting pieces of myself.",
+        sortOrder: 2,
+      },
+      {
+        key: "chosen-path",
+        title: "Then I found a path I wanted to fight for.",
+        subtitle: "A path I chose early",
+        body:
+          "In high school, I started to take technology seriously. I joined Informatics Olympiad and IT knowledge competitions. I began to see technology not only as something I liked, but as a path I wanted to pursue.\n\nAt that time, my dream was clear: Poltek SSN. I wanted to be part of cybersecurity, public service, and technology for the country.\n\nFor the first time, I thought: maybe this is really me.",
+        sortOrder: 3,
+      },
+      {
+        key: "ssn-route",
+        title: "For three years, I prepared for one route.",
+        subtitle: "The selection I prepared for",
+        body:
+          "While many of my friends prepared for UTBK, I focused on a different path. I prepared for Poltek SSN because I believed it was the closest route to the future I imagined: technology, cybersecurity, public service, and contribution to the country.",
+        sortOrder: 4,
+      },
+      {
+        key: "identity",
+        title: "A steady mind who turns scattered problems into systems that help.",
+        subtitle: "So, who am I?",
+        body:
+          "I am not only a winner, speaker, leader, scholar, or developer. Those are moments, roles, and responsibilities.\n\nThe pattern behind them is clearer: I tend to observe scattered problems, organize them into structure, and build systems that help people move easier.",
+        sortOrder: 5,
+      },
+      {
+        key: "empathy",
+        title: "One early experience changed how I see useful systems.",
+        subtitle: "Empathy in practice",
+        body:
+          "Before many of my technical projects, I volunteered at Pusat Layanan Disabilitas Universitas Brawijaya. That experience taught me that useful systems are not only efficient. They also need to be accessible, considerate, and aware of people whose needs are not always visible.",
+        sortOrder: 6,
+      },
+      {
+        key: "values",
+        title: "The values I keep returning to",
+        subtitle: "Core values",
+        body: "Stability, structure, usefulness, and empathy are the values I keep seeing across the way I learn, serve, and build.",
+        sortOrder: 7,
+      },
+      {
+        key: "mission",
+        title: "To build useful systems that turn scattered problems into structured, accessible, and reliable solutions.",
+        subtitle: "My mission",
+        body:
+          "This is the pattern I keep returning to. I like helping unclear things become clearer, repetitive things become lighter, and scattered flows become easier to use.",
+        sortOrder: 8,
+      },
+      {
+        key: "featured-projects",
+        title: "Things I built when I noticed friction",
+        subtitle: "Selected work",
+        body: "Each project started from a small friction: scattered information, repetitive work, unclear flow, or a need that could be made easier through software.",
+        sortOrder: 9,
+      },
+      {
+        key: "featured-experiences",
+        title: "Experiences that shaped how I build and serve",
+        subtitle: "Experiences",
+        body: "I treat experiences as evidence of how values show up in real situations: service, leadership, teaching, technical growth, and community contribution.",
+        sortOrder: 10,
+      },
+      {
+        key: "closing",
+        title: "This portfolio is still running.",
+        subtitle: "Still running",
+        body:
+          "It is not a finished archive. It is a living system for my projects, reflections, and the things I am still learning to build.\n\nI build systems that help.",
+        sortOrder: 11,
+      },
+    ],
+  },
+  {
+    slug: "lead-self",
+    title: "Lead Self",
+    description: "Lead Self reflection page.",
+    sections: [
+      {
+        key: "intro",
+        title: "Understanding the system within myself",
+        subtitle: "Lead Self Journey",
+        body:
+          "This page summarizes the reflections behind my identity, values, mission, and self-symbol during the Lead Self journey. It is not a collection of labels. It is a map of how I understand the way I think, respond, build, and grow.",
+        sortOrder: 1,
+      },
+      {
+        key: "identity",
+        title: "A steady mind who turns scattered problems into systems that help.",
+        subtitle: "Who am I?",
+        body:
+          "After going through The Weapon and The Self, I learned to see myself beyond labels such as scholar, student, leader, speaker, or organization member. Those roles are part of my journey, but they are not the deepest definition of who I am.\n\nI understand myself more through the way I think, respond, and build. I tend to observe before reacting, organize before executing, and look for ways to make things work better.",
+        sortOrder: 2,
+      },
+      {
+        key: "color-code",
+        title: "Color Code: White",
+        body:
+          "My dominant Color Code is White, with peace as the main motivation. For me, White does not mean being passive or avoiding responsibility. It means I naturally value calmness, emotional stability, and thoughtful response.\n\nCalmness is not passivity. It is the space I create before choosing a response.",
+        sortOrder: 3,
+      },
+      {
+        key: "strengths",
+        title: "Signature Strengths: Social Intelligence & Perseverance",
+        body:
+          "Social Intelligence helps me read situations, understand people's needs, and adjust how I communicate. Perseverance helps me continue even when the process feels tiring. My perseverance is not always loud or dramatic. It often appears as quiet consistency.",
+        sortOrder: 4,
+      },
+      {
+        key: "self-symbol",
+        title: "Core Server",
+        subtitle: "Self-symbol",
+        body:
+          "A core server is not always seen, but it keeps the system connected. It receives, processes, organizes, and distributes information. It supports many connections at once.\n\nThis symbol is close to the way I understand myself. I am not always the most vocal person in a group, but I often care about whether the system works: whether the timeline is clear, whether communication flows, whether people understand their roles, and whether the final result is useful.\n\nI do not need to be the loudest part of the system. I want to be a part that helps the system work better.",
+        sortOrder: 5,
+      },
+      {
+        key: "empathy",
+        title: "Accessibility taught me what usefulness really means.",
+        subtitle: "Empathy evidence",
+        body:
+          "My early experience as a volunteer typist at Pusat Layanan Disabilitas Universitas Brawijaya helped me see that support can be quiet but meaningful. It deepened my empathy and became one of the values I carried into my TELADAN journey.",
+        sortOrder: 6,
+      },
+      {
+        key: "mission",
+        title: "What I want to build from here",
+        subtitle: "Mission",
+        body:
+          "My mission is to build useful systems that turn scattered problems into structured, accessible, and reliable solutions.\n\nThis mission comes from the pattern I found in myself. I often feel meaningful when I can take something scattered, repetitive, inefficient, or unclear, then make it easier to understand and use.\n\nSoftware engineering, Android development, automation, AI, and network systems are different ways for me to build systems that help people.",
+        sortOrder: 7,
+      },
+      {
+        key: "evidence",
+        title: "Where this reflection appears in real life",
+        subtitle: "Evidence in practice",
+        body: "The reflection is not meant to stay abstract. It shows up in the way I serve, lead, teach, and build.",
+        sortOrder: 8,
+      },
+      {
+        key: "closing",
+        title: "I am still being built.",
+        body:
+          "Lead Self did not give me a final answer about who I am. Instead, it helped me see the pattern behind my choices, strengths, and struggles.\n\nI am still learning how to be more assertive, more focused, and more honest with what I want. But for now, I understand one thing more clearly: I feel most like myself when I build systems that help.",
+        sortOrder: 9,
+      },
+    ],
+  },
+];

@@ -1,5 +1,5 @@
 import { ArrowRight, Compass, Download, Mail } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { ExperienceCard } from "../components/ExperienceCard";
 import { HomeMusicSection } from "../components/MusicPlayer";
 import { ProjectCard } from "../components/ProjectCard";
@@ -12,7 +12,8 @@ import { Card } from "../components/ui/Card";
 import { media } from "../data/media";
 import { experiences, featuredExperiences, type Experience } from "../data/experiences";
 import { featuredProjects, projects, type Project } from "../data/projects";
-import { publicApi, type PublicExperience, type PublicProject } from "../lib/publicApi";
+import { publicApi, type PublicExperience, type PublicProject, type PublicSitePage } from "../lib/publicApi";
+import { bodyParagraphs, resolveSections, sectionCopy } from "../lib/siteContent";
 
 const earlyCards = [
   { title: "Silat", image: media.earlySilat, text: "Discipline, physical control, consistency, and courage to train through repetition." },
@@ -89,8 +90,13 @@ export function Home() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [apiProjects, setApiProjects] = useState<PublicProject[] | null>(null);
   const [apiExperiences, setApiExperiences] = useState<PublicExperience[] | null>(null);
+  const [homePage, setHomePage] = useState<PublicSitePage | null>(null);
   const staticProjectBySlug = useMemo(() => new Map(projects.map((project) => [project.slug, project])), []);
   const staticExperienceBySlug = useMemo(() => new Map(experiences.map((experience) => [experience.slug, experience])), []);
+  const homeSections = useMemo(() => resolveSections("home", homePage), [homePage]);
+  const hero = sectionCopy(homeSections, "hero");
+  const heroBody = bodyParagraphs(hero.body);
+  const heroTagline = heroBody.at(-1) ?? "I let things flow, but I stand my ground.";
   const homeProjects = useMemo(
     () =>
       apiProjects
@@ -119,6 +125,10 @@ export function Home() {
       if (active && response.data.length > 0) setApiExperiences(response.data);
     }).catch(() => undefined);
 
+    publicApi.page("home").then((response) => {
+      if (active) setHomePage(response.data);
+    }).catch(() => undefined);
+
     return () => {
       active = false;
     };
@@ -130,25 +140,31 @@ export function Home() {
         <div className="container hero-grid">
           <div className="hero-copy-wrap">
             <div className="eyebrow">
-              <span className="pulse" /> Personal Portfolio · Systems, Stories, and Useful Work
+              <span className="pulse" /> {hero.subtitle}
             </div>
             <h1>
-              Winner?
-              <br />
-              Speaker?
-              <br />
-              Leader?
-              <br />
-              <span>No, I&apos;m not.</span>
+              {(hero.title ?? "").split("\n").slice(0, -1).map((line) => (
+                <Fragment key={line}>
+                  {line}
+                  <br />
+                </Fragment>
+              ))}
+              <span>{(hero.title ?? "").split("\n").at(-1)}</span>
             </h1>
             <p className="hero-copy">
-              I&apos;ve been there. But those are not who I am.
-              <br />
-              <br />
-              I&apos;m <strong>Oktavianus Samuel Minarto</strong> — an Informatics student who learns by building,
-              thinks in systems, and tries to make scattered things work better.
+              {heroBody.slice(0, -1).map((paragraph, index) => (
+                <span key={paragraph}>
+                  {index > 0 ? (
+                    <>
+                      <br />
+                      <br />
+                    </>
+                  ) : null}
+                  {paragraph}
+                </span>
+              ))}
             </p>
-            <div className="tagline">I let things flow, but I stand my ground.</div>
+            <div className="tagline">{heroTagline}</div>
             <div className="actions">
               <Button to="/#story" variant="primary">
                 Explore My Story <ArrowRight size={16} />
@@ -175,9 +191,9 @@ export function Home() {
       <section id="story">
         <div className="container">
           <SectionHeader
-            kicker="Before I knew myself"
-            title="Before I knew who I was, I tried many things."
-            description="Since I was young, I joined many activities. Silat, PMR, Jumbara, Pramuka, OSIS, and competitions taught me discipline, independence, care, responsibility, focus, and growth. But at that time, I was still too young to define who I was. I was only collecting pieces of myself."
+            kicker={sectionCopy(homeSections, "early-story").subtitle ?? ""}
+            title={sectionCopy(homeSections, "early-story").title ?? ""}
+            description={sectionCopy(homeSections, "early-story").body ?? ""}
           />
           <div className="memory-grid">
             {earlyCards.map((card) => (
@@ -196,17 +212,12 @@ export function Home() {
       <section>
         <div className="container split">
           <div>
-            <div className="section-kicker">A path I chose early</div>
-            <h2>Then I found a path I wanted to fight for.</h2>
-            <p className="section-desc with-space">
-              In high school, I started to take technology seriously. I joined Informatics Olympiad and IT knowledge
-              competitions. I began to see technology not only as something I liked, but as a path I wanted to pursue.
-            </p>
-            <p className="section-desc with-space">
-              At that time, my dream was clear: Poltek SSN. I wanted to be part of cybersecurity, public service, and
-              technology for the country.
-            </p>
-            <div className="highlight-line">For the first time, I thought: maybe this is really me.</div>
+            <div className="section-kicker">{sectionCopy(homeSections, "chosen-path").subtitle}</div>
+            <h2>{sectionCopy(homeSections, "chosen-path").title}</h2>
+            {bodyParagraphs(sectionCopy(homeSections, "chosen-path").body).slice(0, -1).map((paragraph) => (
+              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            ))}
+            <div className="highlight-line">{bodyParagraphs(sectionCopy(homeSections, "chosen-path").body).at(-1)}</div>
           </div>
           <div className="photo-collage">
             <img src={media.highSchoolWinner} alt="High school technology competition" loading="lazy" />
@@ -218,9 +229,9 @@ export function Home() {
       <section id="who-am-i">
         <div className="container">
           <SectionHeader
-            kicker="The selection I prepared for"
-            title="For three years, I prepared for one route."
-            description="While many of my friends prepared for UTBK, I focused on a different path. I prepared for Poltek SSN because I believed it was the closest route to the future I imagined: technology, cybersecurity, public service, and contribution to the country."
+            kicker={sectionCopy(homeSections, "ssn-route").subtitle ?? ""}
+            title={sectionCopy(homeSections, "ssn-route").title ?? ""}
+            description={sectionCopy(homeSections, "ssn-route").body ?? ""}
           />
           <div className="selection-layout">
             <div className="grid grid-3">
@@ -350,13 +361,11 @@ export function Home() {
       <section>
         <div className="container">
           <Card className="identity-card">
-            <div className="section-kicker">So, who am I?</div>
-            <h2>A steady mind who turns scattered problems into systems that help.</h2>
-            <p>
-              I am not defined by the roles I have held. I am defined by the way I think, respond, and build. I am calm,
-              but not passive. I think before reacting. I prefer structure over noise. I feel most meaningful when what I
-              build can actually help people.
-            </p>
+            <div className="section-kicker">{sectionCopy(homeSections, "identity").subtitle}</div>
+            <h2>{sectionCopy(homeSections, "identity").title}</h2>
+            {bodyParagraphs(sectionCopy(homeSections, "identity").body).map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
           </Card>
         </div>
       </section>
@@ -364,17 +373,11 @@ export function Home() {
       <section>
         <div className="container split">
           <div>
-            <div className="section-kicker">Empathy in practice</div>
-            <h2>One early experience changed how I see useful systems.</h2>
-            <p className="section-desc with-space">
-              One of my earliest university experiences was becoming a volunteer typist at Pusat Layanan Disabilitas
-              Universitas Brawijaya. At first, I thought the role was only about typing what the lecturer said. But over
-              time, I realized that the real responsibility was bigger than that.
-            </p>
-            <p className="section-desc with-space">
-              I had to listen carefully, capture the meaning, and help lecture information become accessible for someone
-              else. That experience taught me that a system is truly useful when it helps people access what they need.
-            </p>
+            <div className="section-kicker">{sectionCopy(homeSections, "empathy").subtitle}</div>
+            <h2>{sectionCopy(homeSections, "empathy").title}</h2>
+            {bodyParagraphs(sectionCopy(homeSections, "empathy").body).map((paragraph) => (
+              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            ))}
           </div>
           <Card className="image-card tall pld-photo-card">
             <img src={media.pldVolunteer} alt="Volunteer experience at Pusat Layanan Disabilitas UB" loading="lazy" />
@@ -385,9 +388,9 @@ export function Home() {
       <section>
         <div className="container">
           <SectionHeader
-            kicker="Core values"
-            title="What guides the way I build"
-            description="These values come from how I learn, work, reflect, and respond to people around me."
+            kicker={sectionCopy(homeSections, "values").subtitle ?? ""}
+            title={sectionCopy(homeSections, "values").title ?? ""}
+            description={sectionCopy(homeSections, "values").body ?? ""}
           />
           <div className="grid grid-4">
             {values.map((value) => (
@@ -402,25 +405,20 @@ export function Home() {
 
       <section className="mission-section" id="mission">
         <div className="container">
-          <div className="section-kicker">My mission</div>
-          <h2>To build useful systems that turn scattered problems into structured, accessible, and reliable solutions.</h2>
-          <p>
-            Right now, I do this through software engineering, Android development, automation, AI, and network systems.
-            I am not only interested in building applications. I am interested in understanding the problem, designing
-            the flow, connecting the parts, and making sure the system works for real users.
-            <br />
-            <br />
-            For me, software engineering is a way to make scattered things easier to understand, access, and use.
-          </p>
+          <div className="section-kicker">{sectionCopy(homeSections, "mission").subtitle}</div>
+          <h2>{sectionCopy(homeSections, "mission").title}</h2>
+          {bodyParagraphs(sectionCopy(homeSections, "mission").body).map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
         </div>
       </section>
 
       <section>
         <div className="container">
           <SectionHeader
-            kicker="Featured works"
-            title="Things I build to solve real problems"
-            description="I do not build projects just to fill my portfolio. I build them because I notice small frictions around me — and I want to reduce them through software."
+            kicker={sectionCopy(homeSections, "featured-projects").subtitle ?? ""}
+            title={sectionCopy(homeSections, "featured-projects").title ?? ""}
+            description={sectionCopy(homeSections, "featured-projects").body ?? ""}
           />
           <div className="grid grid-3">
             {homeProjects.map((project) => (
@@ -438,9 +436,9 @@ export function Home() {
       <section>
         <div className="container">
           <SectionHeader
-            kicker="Experiences"
-            title="Experiences that shaped how I build"
-            description="These are not just roles. They shaped how I understand people, systems, leadership, and impact."
+            kicker={sectionCopy(homeSections, "featured-experiences").subtitle ?? ""}
+            title={sectionCopy(homeSections, "featured-experiences").title ?? ""}
+            description={sectionCopy(homeSections, "featured-experiences").body ?? ""}
           />
           <div className="grid grid-3">
             {homeExperiences.map((experience) => (
@@ -463,13 +461,12 @@ export function Home() {
 
       <section className="closing-section">
         <div className="container">
-          <div className="section-kicker">Still running</div>
-          <h2>This portfolio is still running.</h2>
-          <p>
-            Like every system, I am still being built, tested, debugged, and improved. I am still learning. Still
-            building. Still finding better ways to be useful. For now, this is the clearest version of myself:
-          </p>
-          <h2 className="closing-line">I build systems that help.</h2>
+          <div className="section-kicker">{sectionCopy(homeSections, "closing").subtitle}</div>
+          <h2>{sectionCopy(homeSections, "closing").title}</h2>
+          {bodyParagraphs(sectionCopy(homeSections, "closing").body).slice(0, -1).map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
+          <h2 className="closing-line">{bodyParagraphs(sectionCopy(homeSections, "closing").body).at(-1)}</h2>
           <div className="actions centered">
             <Button to="/projects" variant="primary">
               View Projects

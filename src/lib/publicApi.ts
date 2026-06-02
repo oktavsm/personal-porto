@@ -107,6 +107,34 @@ export type PublicMusicTrack = {
   sortOrder: number;
 };
 
+export type PublicSiteBlock = {
+  id: string;
+  type: string;
+  contentJson: unknown;
+  sortOrder: number;
+  isPublished: boolean;
+};
+
+export type PublicSiteSection = {
+  id: string;
+  key: string;
+  title?: string | null;
+  subtitle?: string | null;
+  body?: string | null;
+  settingsJson?: unknown;
+  sortOrder: number;
+  isPublished: boolean;
+  blocks: PublicSiteBlock[];
+};
+
+export type PublicSitePage = {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string | null;
+  sections: PublicSiteSection[];
+};
+
 export const publicApi = {
   certifications: () => request<{ data: PublicCertification[] }>("/api/public/certifications"),
   systems: () => request<{ data: PublicLiveSystem[] }>("/api/public/systems"),
@@ -117,4 +145,5 @@ export const publicApi = {
   experiences: () => request<{ data: PublicExperience[] }>("/api/public/experiences"),
   experience: (slug: string) => request<{ data: PublicExperience }>(`/api/public/experiences/${slug}`),
   music: () => request<{ data: PublicMusicTrack[] }>("/api/public/music"),
+  page: (slug: string) => request<{ data: PublicSitePage }>(`/api/public/pages/${slug}`),
 };

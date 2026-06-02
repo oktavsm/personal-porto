@@ -2059,7 +2059,8 @@ body.is-embedded .chat-panel {
 .admin-page[data-admin-tab="resume-media"] .admin-grid > .card:not(.admin-card-resume-media),
 .admin-page[data-admin-tab="certifications"] .admin-grid > .card:not(.admin-card-certifications),
 .admin-page[data-admin-tab="systems"] .admin-grid > .card:not(.admin-card-systems),
-.admin-page[data-admin-tab="contacts"] .admin-grid > .card:not(.admin-card-contacts) {
+.admin-page[data-admin-tab="contacts"] .admin-grid > .card:not(.admin-card-contacts),
+.admin-page[data-admin-tab="pages"] .admin-grid > .card:not(.admin-card-pages) {
   display: none;
 }
 
@@ -2353,6 +2354,11 @@ body.is-embedded .chat-panel {
 .admin-form textarea {
   min-height: 112px;
   resize: vertical;
+}
+
+.admin-form .admin-copy-textarea {
+  min-height: 190px;
+  line-height: 1.65;
 }
 
 .admin-form input:focus,
