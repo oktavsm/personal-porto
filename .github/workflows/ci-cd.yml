@@ -394,6 +394,7 @@ jobs:
           server {
             listen 443 ssl;
             server_name $SERVER_NAMES;
+            client_max_body_size ${MAX_UPLOAD_MB}m;
 
             ssl_certificate $CERT_DIR/fullchain.pem;
             ssl_certificate_key $CERT_DIR/privkey.pem;
@@ -433,6 +434,7 @@ jobs:
           server {
             listen 80;
             server_name $SERVER_NAMES;
+            client_max_body_size ${MAX_UPLOAD_MB}m;
 
             location /api/ {
               proxy_pass http://127.0.0.1:$API_PORT;

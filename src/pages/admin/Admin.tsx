@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, CheckCircle, ExternalLink, FileText, LogOut, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Upload, X } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, Check, CheckCircle, ChevronDown, ExternalLink, FileText, LogOut, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Upload, X } from "lucide-react";
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   adminApi,
@@ -130,6 +130,25 @@ const emptyMusic = {
   sortOrder: 0,
 };
 
+const projectCategoryOptions = ["Android", "Web", "Automation", "AI", "Networking", "Academic", "Utility"].map((value) => ({ value, label: value }));
+const projectPriorityOptions = ["Flagship", "Featured", "Archive"].map((value) => ({ value, label: value }));
+const projectStatusOptions = ["Deployed", "In Development", "Prototype", "Paused", "Archived"].map((value) => ({ value, label: value }));
+const experienceCategoryOptions = ["Leadership", "Teaching", "Scholarship", "Service", "Community", "Technical"].map((value) => ({ value, label: value }));
+const contactTypeOptions = [
+  { value: "email", label: "Email" },
+  { value: "github", label: "GitHub" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "instagram", label: "Instagram" },
+  { value: "website", label: "Website" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "custom", label: "Custom" },
+];
+
+type AdminSelectOption = {
+  value: string;
+  label: string;
+};
+
 function formatBytes(value: number) {
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
@@ -210,6 +229,90 @@ function MediaSelectionPreview({
   );
 }
 
+function AdminSelect({
+  label,
+  value,
+  options,
+  placeholder = "Choose one",
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: AdminSelectOption[];
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const selectedOption = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <label className="admin-select-field">
+      <span>{label}</span>
+      <div className="admin-select" ref={rootRef}>
+        <button
+          className="admin-select-trigger"
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={selectId}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span className={selectedOption ? "admin-select-value" : "admin-select-value is-placeholder"}>{selectedOption?.label ?? placeholder}</span>
+          <ChevronDown size={16} />
+        </button>
+        {open ? (
+          <div className="admin-select-menu" id={selectId} role="listbox" aria-label={label}>
+            {options.map((option) => {
+              const selected = option.value === value;
+              return (
+                <button
+                  className={`admin-select-option${selected ? " is-selected" : ""}`}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  key={`${label}-${option.value}`}
+                  onClick={() => {
+                    onChange(option.value);
+                    setOpen(false);
+                  }}
+                >
+                  <span>{option.label}</span>
+                  {selected ? <Check size={15} /> : null}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    </label>
+  );
+}
+
 export function Admin() {
   const [state, setState] = useState<AdminState>({ user: null, loading: true, error: null });
   const [email, setEmail] = useState("");
@@ -248,9 +351,22 @@ export function Admin() {
     () => imageMediaAssets.filter((asset) => asset.originalName.toLowerCase().includes(mediaSearch.toLowerCase().trim())),
     [imageMediaAssets, mediaSearch],
   );
+  const filteredMediaAssets = useMemo(() => {
+    const query = mediaSearch.toLowerCase().trim();
+    if (!query) return mediaAssets;
+    return mediaAssets.filter((asset) => `${asset.originalName} ${asset.mimeType}`.toLowerCase().includes(query));
+  }, [mediaAssets, mediaSearch]);
   const filteredAudioMediaAssets = useMemo(
     () => audioMediaAssets.filter((asset) => asset.originalName.toLowerCase().includes(mediaSearch.toLowerCase().trim())),
     [audioMediaAssets, mediaSearch],
+  );
+  const imageMediaOptions = useMemo(
+    () => filteredImageMediaAssets.map((asset) => ({ value: asset.id, label: asset.originalName })),
+    [filteredImageMediaAssets],
+  );
+  const audioMediaOptions = useMemo(
+    () => filteredAudioMediaAssets.map((asset) => ({ value: asset.id, label: asset.originalName })),
+    [filteredAudioMediaAssets],
   );
   const mediaById = useMemo(() => new Map(mediaAssets.map((asset) => [asset.id, asset])), [mediaAssets]);
 
@@ -914,37 +1030,10 @@ export function Admin() {
                 <input value={projectForm.slug} onChange={(event) => setProjectForm({ ...projectForm, slug: event.target.value })} placeholder="auto from title if empty" />
               </label>
               <div className="admin-form-pair">
-                <label>
-                  Category
-                  <select value={projectForm.category} onChange={(event) => setProjectForm({ ...projectForm, category: event.target.value })}>
-                    <option>Android</option>
-                    <option>Web</option>
-                    <option>Automation</option>
-                    <option>AI</option>
-                    <option>Networking</option>
-                    <option>Academic</option>
-                    <option>Utility</option>
-                  </select>
-                </label>
-                <label>
-                  Priority
-                  <select value={projectForm.priority} onChange={(event) => setProjectForm({ ...projectForm, priority: event.target.value })}>
-                    <option>Flagship</option>
-                    <option>Featured</option>
-                    <option>Archive</option>
-                  </select>
-                </label>
+                <AdminSelect label="Category" value={projectForm.category} options={projectCategoryOptions} onChange={(category) => setProjectForm({ ...projectForm, category })} />
+                <AdminSelect label="Priority" value={projectForm.priority} options={projectPriorityOptions} onChange={(priority) => setProjectForm({ ...projectForm, priority })} />
               </div>
-              <label>
-                Status
-                <select value={projectForm.status} onChange={(event) => setProjectForm({ ...projectForm, status: event.target.value })}>
-                  <option>Deployed</option>
-                  <option>In Development</option>
-                  <option>Prototype</option>
-                  <option>Paused</option>
-                  <option>Archived</option>
-                </select>
-              </label>
+              <AdminSelect label="Status" value={projectForm.status} options={projectStatusOptions} onChange={(status) => setProjectForm({ ...projectForm, status })} />
               <label>
                 Display Order
                 <input value={projectForm.sortOrder} onChange={(event) => setProjectForm({ ...projectForm, sortOrder: Number(event.target.value) })} type="number" />
@@ -985,17 +1074,13 @@ export function Admin() {
                 Media Search
                 <input value={mediaSearch} onChange={(event) => setMediaSearch(event.target.value)} placeholder="Search uploaded images" />
               </label>
-              <label>
-                Cover Image
-                <select value={projectForm.coverMediaAssetId} onChange={(event) => setProjectForm({ ...projectForm, coverMediaAssetId: event.target.value })}>
-                  <option value="">Use fallback or no cover</option>
-                  {filteredImageMediaAssets.map((asset) => (
-                    <option value={asset.id} key={asset.id}>
-                      {asset.originalName}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AdminSelect
+                label="Cover Image"
+                value={projectForm.coverMediaAssetId}
+                placeholder="Use fallback or no cover"
+                options={[{ value: "", label: "Use fallback or no cover" }, ...imageMediaOptions]}
+                onChange={(coverMediaAssetId) => setProjectForm({ ...projectForm, coverMediaAssetId })}
+              />
               <MediaSelectionPreview asset={mediaById.get(projectForm.coverMediaAssetId)} onClear={() => setProjectForm({ ...projectForm, coverMediaAssetId: "" })} />
               <label>
                 Gallery Images
@@ -1051,10 +1136,16 @@ export function Admin() {
                     <strong>{project.title}</strong>
                     <span>
                       {project.category} · {project.status}
-                      {project.isPublished ? "" : " · Draft"}
                     </span>
+                    <div className="admin-badges">
+                      {project.isFeatured ? <span className="admin-badge">Featured</span> : null}
+                      <span className={`admin-badge${project.isPublished ? "" : " is-muted"}`}>{project.isPublished ? "Published" : "Draft"}</span>
+                    </div>
                   </div>
                   <div className="admin-row-actions">
+                    <a className="icon-btn" href={`/projects/${project.slug}`} target="_blank" rel="noreferrer" aria-label={`Open ${project.title}`}>
+                      <ExternalLink size={15} />
+                    </a>
                     <button className="icon-btn" type="button" aria-label={`Move ${project.title} up`} onClick={() => void handleReorderProjects(project.id, "up")} disabled={index === 0 || saving}>
                       <ArrowUp size={15} />
                     </button>
@@ -1100,17 +1191,7 @@ export function Admin() {
                   Period
                   <input value={experienceForm.period} onChange={(event) => setExperienceForm({ ...experienceForm, period: event.target.value })} placeholder="2025 - Present" required />
                 </label>
-                <label>
-                  Category
-                  <select value={experienceForm.category} onChange={(event) => setExperienceForm({ ...experienceForm, category: event.target.value })}>
-                    <option>Leadership</option>
-                    <option>Teaching</option>
-                    <option>Scholarship</option>
-                    <option>Service</option>
-                    <option>Community</option>
-                    <option>Technical</option>
-                  </select>
-                </label>
+                <AdminSelect label="Category" value={experienceForm.category} options={experienceCategoryOptions} onChange={(category) => setExperienceForm({ ...experienceForm, category })} />
               </div>
               <label>
                 Display Order
@@ -1140,17 +1221,13 @@ export function Admin() {
                 Media Search
                 <input value={mediaSearch} onChange={(event) => setMediaSearch(event.target.value)} placeholder="Search uploaded images" />
               </label>
-              <label>
-                Cover Image
-                <select value={experienceForm.coverMediaAssetId} onChange={(event) => setExperienceForm({ ...experienceForm, coverMediaAssetId: event.target.value })}>
-                  <option value="">Use fallback or no cover</option>
-                  {filteredImageMediaAssets.map((asset) => (
-                    <option value={asset.id} key={asset.id}>
-                      {asset.originalName}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AdminSelect
+                label="Cover Image"
+                value={experienceForm.coverMediaAssetId}
+                placeholder="Use fallback or no cover"
+                options={[{ value: "", label: "Use fallback or no cover" }, ...imageMediaOptions]}
+                onChange={(coverMediaAssetId) => setExperienceForm({ ...experienceForm, coverMediaAssetId })}
+              />
               <MediaSelectionPreview asset={mediaById.get(experienceForm.coverMediaAssetId)} onClear={() => setExperienceForm({ ...experienceForm, coverMediaAssetId: "" })} />
               <label>
                 Gallery Images
@@ -1206,10 +1283,16 @@ export function Admin() {
                     <strong>{experience.title}</strong>
                     <span>
                       {experience.category} · {experience.period}
-                      {experience.isPublished ? "" : " · Draft"}
                     </span>
+                    <div className="admin-badges">
+                      {experience.isFeatured ? <span className="admin-badge">Featured</span> : null}
+                      <span className={`admin-badge${experience.isPublished ? "" : " is-muted"}`}>{experience.isPublished ? "Published" : "Draft"}</span>
+                    </div>
                   </div>
                   <div className="admin-row-actions">
+                    <a className="icon-btn" href={`/experiences/${experience.slug}`} target="_blank" rel="noreferrer" aria-label={`Open ${experience.title}`}>
+                      <ExternalLink size={15} />
+                    </a>
                     <button className="icon-btn" type="button" aria-label={`Move ${experience.title} up`} onClick={() => void handleReorderExperiences(experience.id, "up")} disabled={index === 0 || saving}>
                       <ArrowUp size={15} />
                     </button>
@@ -1258,29 +1341,21 @@ export function Admin() {
                 Media Search
                 <input value={mediaSearch} onChange={(event) => setMediaSearch(event.target.value)} placeholder="Search audio or cover files" />
               </label>
-              <label>
-                Audio File
-                <select value={musicForm.audioAssetId} onChange={(event) => setMusicForm({ ...musicForm, audioAssetId: event.target.value })}>
-                  <option value="">Choose uploaded audio</option>
-                  {filteredAudioMediaAssets.map((asset) => (
-                    <option value={asset.id} key={asset.id}>
-                      {asset.originalName}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AdminSelect
+                label="Audio File"
+                value={musicForm.audioAssetId}
+                placeholder="Choose uploaded audio"
+                options={[{ value: "", label: "Choose uploaded audio" }, ...audioMediaOptions]}
+                onChange={(audioAssetId) => setMusicForm({ ...musicForm, audioAssetId })}
+              />
               <MediaSelectionPreview asset={mediaById.get(musicForm.audioAssetId)} onClear={() => setMusicForm({ ...musicForm, audioAssetId: "" })} />
-              <label>
-                Cover Image
-                <select value={musicForm.coverAssetId} onChange={(event) => setMusicForm({ ...musicForm, coverAssetId: event.target.value })}>
-                  <option value="">Choose uploaded cover</option>
-                  {filteredImageMediaAssets.map((asset) => (
-                    <option value={asset.id} key={asset.id}>
-                      {asset.originalName}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <AdminSelect
+                label="Cover Image"
+                value={musicForm.coverAssetId}
+                placeholder="Choose uploaded cover"
+                options={[{ value: "", label: "Choose uploaded cover" }, ...imageMediaOptions]}
+                onChange={(coverAssetId) => setMusicForm({ ...musicForm, coverAssetId })}
+              />
               <MediaSelectionPreview asset={mediaById.get(musicForm.coverAssetId)} onClear={() => setMusicForm({ ...musicForm, coverAssetId: "" })} />
               <label className="admin-check">
                 <input checked={musicForm.isActive} onChange={(event) => setMusicForm({ ...musicForm, isActive: event.target.checked })} type="checkbox" />
@@ -1392,9 +1467,18 @@ export function Admin() {
           </Card>
 
           <Card className="admin-card-resume-media">
-            <h3>Media library</h3>
+            <div className="admin-card-head">
+              <h3>Media library</h3>
+              <span className="admin-help">
+                {filteredMediaAssets.length} of {mediaAssets.length}
+              </span>
+            </div>
+            <label>
+              Search media
+              <input value={mediaSearch} onChange={(event) => setMediaSearch(event.target.value)} placeholder="Search image, PDF, audio, or video" />
+            </label>
             <div className="admin-list">
-              {mediaAssets.slice(0, 8).map((asset) => (
+              {filteredMediaAssets.map((asset) => (
                 <div className="admin-list-item" key={asset.id}>
                   <div>
                     <strong>{asset.originalName}</strong>
@@ -1412,6 +1496,7 @@ export function Admin() {
                   </div>
                 </div>
               ))}
+              {filteredMediaAssets.length === 0 ? <p className="admin-empty">No media matched this search.</p> : null}
             </div>
           </Card>
 
@@ -1471,8 +1556,16 @@ export function Admin() {
                   <div>
                     <strong>{certification.title}</strong>
                     <span>{certification.issuer} · {certification.issuedAt}</span>
+                    <div className="admin-badges">
+                      {certification.isFeatured ? <span className="admin-badge">Featured</span> : null}
+                    </div>
                   </div>
                   <div className="admin-row-actions">
+                    {certification.credentialUrl ? (
+                      <a className="icon-btn" href={certification.credentialUrl} target="_blank" rel="noreferrer" aria-label={`Open ${certification.title}`}>
+                        <ExternalLink size={15} />
+                      </a>
+                    ) : null}
                     <button className="icon-btn" type="button" aria-label={`Move ${certification.title} up`} onClick={() => void handleReorderCertifications(certification.id, "up")} disabled={index === 0 || saving}>
                       <ArrowUp size={15} />
                     </button>
@@ -1543,8 +1636,15 @@ export function Admin() {
                   <div>
                     <strong>{system.title}</strong>
                     <span>{system.url}</span>
+                    <div className="admin-badges">
+                      <span className={`admin-badge${system.isPublished ? "" : " is-muted"}`}>{system.isPublished ? "Published" : "Draft"}</span>
+                      {system.isEmbeddable ? <span className="admin-badge">Embeddable</span> : null}
+                    </div>
                   </div>
                   <div className="admin-row-actions">
+                    <a className="icon-btn" href={system.url} target="_blank" rel="noreferrer" aria-label={`Open ${system.title}`}>
+                      <ExternalLink size={15} />
+                    </a>
                     <button className="icon-btn" type="button" aria-label={`Move ${system.title} up`} onClick={() => void handleReorderSystems(system.id, "up")} disabled={index === 0 || saving}>
                       <ArrowUp size={15} />
                     </button>
@@ -1573,18 +1673,7 @@ export function Admin() {
               ) : null}
             </div>
             <form className="admin-form" onSubmit={handleCreateContact}>
-              <label>
-                Type
-                <select value={contactForm.type} onChange={(event) => setContactForm({ ...contactForm, type: event.target.value })} required>
-                  <option value="email">Email</option>
-                  <option value="github">GitHub</option>
-                  <option value="linkedin">LinkedIn</option>
-                  <option value="instagram">Instagram</option>
-                  <option value="website">Website</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </label>
+              <AdminSelect label="Type" value={contactForm.type} options={contactTypeOptions} onChange={(type) => setContactForm({ ...contactForm, type })} />
               <label>
                 Label
                 <input value={contactForm.label} onChange={(event) => setContactForm({ ...contactForm, label: event.target.value })} required />
@@ -1619,8 +1708,15 @@ export function Admin() {
                   <div>
                     <strong>{contact.label}</strong>
                     <span>{contact.url}</span>
+                    <div className="admin-badges">
+                      <span className="admin-badge">{contact.type}</span>
+                      {contact.isPrimary ? <span className="admin-badge">Primary</span> : null}
+                    </div>
                   </div>
                   <div className="admin-row-actions">
+                    <a className="icon-btn" href={contact.url} target="_blank" rel="noreferrer" aria-label={`Open ${contact.label}`}>
+                      <ExternalLink size={15} />
+                    </a>
                     <button className="icon-btn" type="button" aria-label={`Move ${contact.label} up`} onClick={() => void handleReorderContact(contact.id, "up")} disabled={index === 0 || saving}>
                       <ArrowUp size={15} />
                     </button>

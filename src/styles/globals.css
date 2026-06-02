@@ -2127,6 +2127,122 @@ body.is-embedded .chat-panel {
   background-image: none;
 }
 
+.admin-select-field {
+  min-width: 0;
+}
+
+.admin-select {
+  position: relative;
+  min-width: 0;
+}
+
+.admin-select-trigger {
+  width: 100%;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(242, 238, 232, 0.04), rgba(242, 238, 232, 0.015)),
+    rgba(5, 6, 8, 0.78);
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  padding: 12px 14px;
+  text-align: left;
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-select-trigger:hover,
+.admin-select-trigger[aria-expanded="true"] {
+  border-color: rgba(242, 238, 232, 0.34);
+  background:
+    linear-gradient(180deg, rgba(242, 238, 232, 0.07), rgba(242, 238, 232, 0.022)),
+    rgba(10, 11, 14, 0.94);
+}
+
+.admin-select-trigger:focus-visible {
+  border-color: rgba(242, 238, 232, 0.5);
+  box-shadow: 0 0 0 4px rgba(242, 238, 232, 0.06);
+}
+
+.admin-select-trigger svg {
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.admin-select-trigger[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.admin-select-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-select-value.is-placeholder {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.admin-select-menu {
+  position: absolute;
+  z-index: 80;
+  inset: calc(100% + 8px) 0 auto;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid rgba(242, 238, 232, 0.18);
+  border-radius: 16px;
+  padding: 6px;
+  background:
+    linear-gradient(180deg, rgba(24, 25, 28, 0.98), rgba(8, 9, 12, 0.98)),
+    var(--surface);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.48);
+}
+
+.admin-select-option {
+  width: 100%;
+  min-height: 38px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.admin-select-option span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-select-option svg {
+  color: var(--text);
+}
+
+.admin-select-option:hover,
+.admin-select-option:focus-visible,
+.admin-select-option.is-selected {
+  background: rgba(242, 238, 232, 0.08);
+  color: var(--text);
+  outline: none;
+}
+
 .admin-help {
   margin-top: -8px;
   color: var(--muted);
@@ -2209,15 +2325,15 @@ body.is-embedded .chat-panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 16px;
+  padding: 10px 10px 10px 14px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: rgba(5, 6, 8, 0.44);
-  min-height: 70px;
+  min-height: 62px;
 }
 
-.admin-list-item div {
+.admin-list-item > div:first-child {
   display: grid;
   gap: 3px;
   min-width: 0;
@@ -2234,19 +2350,50 @@ body.is-embedded .chat-panel {
   overflow-wrap: anywhere;
 }
 
-.admin-row-actions {
-  display: grid;
-  grid-template-columns: repeat(2, 28px);
+.admin-list-item .admin-badges {
+  display: flex;
+  flex-wrap: wrap;
   gap: 5px;
+  margin-top: 4px;
+}
+
+.admin-badge {
+  width: fit-content;
+  border: 1px solid rgba(242, 238, 232, 0.18);
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: rgba(242, 238, 232, 0.055);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.admin-badge.is-muted {
+  color: var(--muted);
+  background: rgba(242, 238, 232, 0.025);
+}
+
+.admin-row-actions {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: flex-end;
+  gap: 3px;
+  width: max-content;
+  padding: 3px;
+  border: 1px solid rgba(242, 238, 232, 0.08);
+  border-radius: 999px;
+  background: rgba(242, 238, 232, 0.025);
 }
 
 .icon-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: rgba(242, 238, 232, 0.025);
