@@ -3,7 +3,7 @@ import { Card } from "../components/ui/Card";
 import { media } from "../data/media";
 import { useEffect, useMemo, useState } from "react";
 import { publicApi, type PublicSitePage } from "../lib/publicApi";
-import { bodyParagraphs, resolveSections, sectionCopy } from "../lib/siteContent";
+import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy } from "../lib/siteContent";
 
 const evidenceCards = [
   {
@@ -27,6 +27,7 @@ const evidenceCards = [
 export function LeadSelf() {
   const [leadSelfPage, setLeadSelfPage] = useState<PublicSitePage | null>(null);
   const leadSelfSections = useMemo(() => resolveSections("lead-self", leadSelfPage), [leadSelfPage]);
+  const leadSelfEvidenceCards = useMemo(() => cardBlocks(leadSelfSections, "evidence", evidenceCards), [leadSelfSections]);
 
   useEffect(() => {
     let active = true;
@@ -112,7 +113,7 @@ export function LeadSelf() {
           description={sectionCopy(leadSelfSections, "evidence").body ?? ""}
         />
         <div className="grid grid-4">
-          {evidenceCards.map((card) => (
+          {leadSelfEvidenceCards.map((card) => (
             <Card key={card.title}>
               <h3>{card.title}</h3>
               <p>{card.text}</p>

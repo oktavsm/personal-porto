@@ -11,6 +11,7 @@ import {
   type AdminMusicTrack,
   type AdminProject,
   type AdminResumeVersion,
+  type AdminSiteBlock,
   type AdminSitePage,
   type AdminSiteSection,
   type AdminUser,
@@ -31,7 +32,8 @@ type DeleteTarget =
   | { type: "media"; id: string; label: string }
   | { type: "project"; id: string; label: string }
   | { type: "experience"; id: string; label: string }
-  | { type: "music"; id: string; label: string };
+  | { type: "music"; id: string; label: string }
+  | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
 type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "pages";
 type MediaPickerTarget = "projectGallery" | "experienceGallery";
@@ -139,6 +141,14 @@ const emptyPageSection = {
   title: "",
   subtitle: "",
   body: "",
+  sortOrder: 0,
+  isPublished: true,
+};
+
+const emptyPageBlock = {
+  title: "",
+  text: "",
+  imageKey: "",
   sortOrder: 0,
   isPublished: true,
 };
@@ -460,6 +470,11 @@ function AdminListTools({
   );
 }
 
+function blockField(block: { contentJson: unknown }, field: "title" | "text" | "imageKey") {
+  const content = block.contentJson && typeof block.contentJson === "object" && !Array.isArray(block.contentJson) ? (block.contentJson as Record<string, unknown>) : {};
+  return typeof content[field] === "string" ? content[field] : "";
+}
+
 export function Admin() {
   const [state, setState] = useState<AdminState>({ user: null, loading: true, error: null });
   const [email, setEmail] = useState("");
@@ -481,6 +496,7 @@ export function Admin() {
   const [experienceForm, setExperienceForm] = useState(emptyExperience);
   const [musicForm, setMusicForm] = useState(emptyMusic);
   const [pageSectionForm, setPageSectionForm] = useState(emptyPageSection);
+  const [pageBlockForm, setPageBlockForm] = useState(emptyPageBlock);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [editingCertificationId, setEditingCertificationId] = useState<string | null>(null);
@@ -490,6 +506,7 @@ export function Admin() {
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   const [editingMusicId, setEditingMusicId] = useState<string | null>(null);
   const [editingPageSectionKey, setEditingPageSectionKey] = useState<string | null>(null);
+  const [editingPageBlockId, setEditingPageBlockId] = useState<string | null>(null);
   const [selectedPageSlug, setSelectedPageSlug] = useState("home");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [mediaPickerTarget, setMediaPickerTarget] = useState<MediaPickerTarget | null>(null);
@@ -561,6 +578,10 @@ export function Admin() {
   );
   const selectedSitePage = useMemo(() => sitePages.find((page) => page.slug === selectedPageSlug) ?? sitePages[0] ?? null, [sitePages, selectedPageSlug]);
   const pageOptions = useMemo(() => sitePages.map((page) => ({ value: page.slug, label: page.title })), [sitePages]);
+  const selectedPageSection = useMemo(
+    () => selectedSitePage?.sections.find((section) => section.key === editingPageSectionKey) ?? null,
+    [editingPageSectionKey, selectedSitePage],
+  );
 
   function handleSaveGallerySelection(selectedIds: string[]) {
     if (mediaPickerTarget === "projectGallery") {
@@ -815,6 +836,62 @@ export function Admin() {
     }
   }
 
+  async function handleSavePageBlock(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedSitePage || !editingPageSectionKey) {
+      setNotice("Choose a page section first.");
+      return;
+    }
+
+    setSaving(true);
+    setNotice(null);
+    try {
+      const wasEditing = Boolean(editingPageBlockId);
+      const payload = {
+        type: "card",
+        contentJson: {
+          title: pageBlockForm.title,
+          text: pageBlockForm.text,
+          imageKey: pageBlockForm.imageKey || undefined,
+        },
+        sortOrder: pageBlockForm.sortOrder,
+        isPublished: pageBlockForm.isPublished,
+      };
+
+      if (editingPageBlockId) {
+        await adminApi.updatePageBlock(selectedSitePage.slug, editingPageSectionKey, editingPageBlockId, payload);
+      } else {
+        await adminApi.createPageBlock(selectedSitePage.slug, editingPageSectionKey, payload);
+      }
+
+      resetPageBlockForm();
+      await loadAdminData();
+      setNotice(wasEditing ? "Content block updated." : "Content block added.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to save content block.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleReorderPageBlock(blockId: string, direction: "up" | "down") {
+    if (!selectedSitePage || !selectedPageSection) return;
+    const nextItems = moveId(selectedPageSection.blocks, blockId, direction);
+    if (!nextItems) return;
+
+    setSaving(true);
+    setNotice(null);
+    try {
+      await adminApi.reorderPageBlocks(selectedSitePage.slug, selectedPageSection.key, { ids: nextItems.map((item) => item.id) });
+      await loadAdminData();
+      setNotice("Content blocks reordered.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to reorder content blocks.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
 
   async function handleUploadMedia(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1017,6 +1094,12 @@ export function Admin() {
   function resetPageSectionForm() {
     setPageSectionForm(emptyPageSection);
     setEditingPageSectionKey(null);
+    resetPageBlockForm();
+  }
+
+  function resetPageBlockForm() {
+    setPageBlockForm(emptyPageBlock);
+    setEditingPageBlockId(null);
   }
 
   function editCertification(certification: AdminCertification) {
@@ -1135,6 +1218,18 @@ export function Admin() {
       sortOrder: section.sortOrder,
       isPublished: section.isPublished,
     });
+    resetPageBlockForm();
+  }
+
+  function editPageBlock(block: AdminSiteBlock) {
+    setEditingPageBlockId(block.id);
+    setPageBlockForm({
+      title: blockField(block, "title"),
+      text: blockField(block, "text"),
+      imageKey: blockField(block, "imageKey"),
+      sortOrder: block.sortOrder,
+      isPublished: block.isPublished,
+    });
   }
 
   async function confirmDelete() {
@@ -1150,6 +1245,7 @@ export function Admin() {
       if (deleteTarget.type === "project") await adminApi.deleteProject(deleteTarget.id);
       if (deleteTarget.type === "experience") await adminApi.deleteExperience(deleteTarget.id);
       if (deleteTarget.type === "music") await adminApi.deleteMusic(deleteTarget.id);
+      if (deleteTarget.type === "pageBlock") await adminApi.deletePageBlock(deleteTarget.pageSlug, deleteTarget.sectionKey, deleteTarget.id);
       setDeleteTarget(null);
       await loadAdminData();
       setNotice(`${deleteTarget.label} removed.`);
@@ -2105,6 +2201,78 @@ export function Admin() {
                 <Plus size={16} /> Update Section Copy
               </button>
             </form>
+            {selectedPageSection ? (
+              <div className="admin-block-editor">
+                <div className="admin-card-head">
+                  <h3>{editingPageBlockId ? "Edit section card" : "Add section card"}</h3>
+                  {editingPageBlockId ? (
+                    <button className="icon-btn" type="button" aria-label="Cancel block edit" onClick={resetPageBlockForm}>
+                      <X size={15} />
+                    </button>
+                  ) : null}
+                </div>
+                <form className="admin-form" onSubmit={handleSavePageBlock}>
+                  <label>
+                    Card Title
+                    <input value={pageBlockForm.title} onChange={(event) => setPageBlockForm({ ...pageBlockForm, title: event.target.value })} placeholder="Card heading" required />
+                  </label>
+                  <label>
+                    Card Text
+                    <textarea value={pageBlockForm.text} onChange={(event) => setPageBlockForm({ ...pageBlockForm, text: event.target.value })} placeholder="Short supporting text" required />
+                  </label>
+                  <label>
+                    Image Key
+                    <input value={pageBlockForm.imageKey} onChange={(event) => setPageBlockForm({ ...pageBlockForm, imageKey: event.target.value })} placeholder="Optional, e.g. earlySilat" />
+                    <span className="admin-help">Currently used by Home early-story cards. Leave empty for text-only cards.</span>
+                  </label>
+                  <label>
+                    Display Order
+                    <input value={pageBlockForm.sortOrder} onChange={(event) => setPageBlockForm({ ...pageBlockForm, sortOrder: Number(event.target.value) })} type="number" />
+                  </label>
+                  <label className="admin-check">
+                    <input checked={pageBlockForm.isPublished} onChange={(event) => setPageBlockForm({ ...pageBlockForm, isPublished: event.target.checked })} type="checkbox" />
+                    Published
+                  </label>
+                  <button className="btn btn-primary" type="submit" disabled={saving}>
+                    <Plus size={16} /> {editingPageBlockId ? "Update Card" : "Add Card"}
+                  </button>
+                </form>
+                <div className="admin-list">
+                  {selectedPageSection.blocks.map((block, index) => (
+                    <div className="admin-list-item" key={block.id}>
+                      <div>
+                        <strong>{blockField(block, "title") || "Untitled card"}</strong>
+                        <span>{blockField(block, "text")}</span>
+                        <div className="admin-badges">
+                          <span className="admin-badge">{block.type}</span>
+                          <span className={`admin-badge${block.isPublished ? "" : " is-muted"}`}>{block.isPublished ? "Published" : "Draft"}</span>
+                        </div>
+                      </div>
+                      <div className="admin-row-actions">
+                        <button className="icon-btn" type="button" aria-label="Move block up" onClick={() => void handleReorderPageBlock(block.id, "up")} disabled={index === 0 || saving}>
+                          <ArrowUp size={15} />
+                        </button>
+                        <button className="icon-btn" type="button" aria-label="Move block down" onClick={() => void handleReorderPageBlock(block.id, "down")} disabled={index === selectedPageSection.blocks.length - 1 || saving}>
+                          <ArrowDown size={15} />
+                        </button>
+                        <button className="icon-btn" type="button" aria-label="Edit block" onClick={() => editPageBlock(block)}>
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          className="icon-btn danger"
+                          type="button"
+                          aria-label="Delete block"
+                          onClick={() => setDeleteTarget({ type: "pageBlock", id: block.id, label: blockField(block, "title") || "Untitled card", pageSlug: selectedSitePage?.slug ?? selectedPageSlug, sectionKey: selectedPageSection.key })}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {selectedPageSection.blocks.length === 0 ? <p className="admin-empty">No cards in this section yet.</p> : null}
+                </div>
+              </div>
+            ) : null}
           </Card>
 
           <Card className="admin-card-pages">

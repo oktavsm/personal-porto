@@ -321,6 +321,13 @@ type PageSectionPayload = {
   isPublished?: boolean;
 };
 
+type PageBlockPayload = {
+  type: string;
+  contentJson: unknown;
+  sortOrder?: number;
+  isPublished?: boolean;
+};
+
 type ReorderPayload = {
   ids: string[];
 };
@@ -472,6 +479,22 @@ export const adminApi = {
   updatePageSection: (slug: string, key: string, payload: PageSectionPayload) =>
     request<{ data: AdminSiteSection }>(`/api/admin/pages/${slug}/sections/${key}`, {
       method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  createPageBlock: (slug: string, key: string, payload: PageBlockPayload) =>
+    request<{ data: AdminSiteBlock }>(`/api/admin/pages/${slug}/sections/${key}/blocks`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updatePageBlock: (slug: string, key: string, blockId: string, payload: PageBlockPayload) =>
+    request<{ data: AdminSiteBlock }>(`/api/admin/pages/${slug}/sections/${key}/blocks/${blockId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deletePageBlock: (slug: string, key: string, blockId: string) => request<{ ok: boolean }>(`/api/admin/pages/${slug}/sections/${key}/blocks/${blockId}`, { method: "DELETE" }),
+  reorderPageBlocks: (slug: string, key: string, payload: ReorderPayload) =>
+    request<{ ok: boolean }>(`/api/admin/pages/${slug}/sections/${key}/blocks/reorder`, {
+      method: "POST",
       body: JSON.stringify(payload),
     }),
 };

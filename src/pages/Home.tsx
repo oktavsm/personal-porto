@@ -13,14 +13,21 @@ import { media } from "../data/media";
 import { experiences, featuredExperiences, type Experience } from "../data/experiences";
 import { featuredProjects, projects, type Project } from "../data/projects";
 import { publicApi, type PublicExperience, type PublicProject, type PublicSitePage } from "../lib/publicApi";
-import { bodyParagraphs, resolveSections, sectionCopy } from "../lib/siteContent";
+import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy } from "../lib/siteContent";
 
 const earlyCards = [
-  { title: "Silat", image: media.earlySilat, text: "Discipline, physical control, consistency, and courage to train through repetition." },
-  { title: "PMR & Jumbara", image: media.earlyPmr, text: "Care, independence, service, and perspective beyond my daily environment." },
-  { title: "Pramuka / OSIS", image: media.earlyPramuka, text: "Responsibility, teamwork, and early experience in leading and organizing people." },
-  { title: "Competitions", image: media.highSchoolWinner, text: "Focus, growth, and courage to test myself through challenges." },
+  { title: "Silat", imageKey: "earlySilat", image: media.earlySilat, text: "Discipline, physical control, consistency, and courage to train through repetition." },
+  { title: "PMR & Jumbara", imageKey: "earlyPmr", image: media.earlyPmr, text: "Care, independence, service, and perspective beyond my daily environment." },
+  { title: "Pramuka / OSIS", imageKey: "earlyPramuka", image: media.earlyPramuka, text: "Responsibility, teamwork, and early experience in leading and organizing people." },
+  { title: "Competitions", imageKey: "highSchoolWinner", image: media.highSchoolWinner, text: "Focus, growth, and courage to test myself through challenges." },
 ];
+
+const cardImageByKey: Record<string, string> = {
+  earlySilat: media.earlySilat,
+  earlyPmr: media.earlyPmr,
+  earlyPramuka: media.earlyPramuka,
+  highSchoolWinner: media.highSchoolWinner,
+};
 
 const selectionCards = [
   { title: "SKD Preparation", image: media.ssnStudy, text: "Learning discipline, consistency, and test strategy." },
@@ -97,6 +104,15 @@ export function Home() {
   const hero = sectionCopy(homeSections, "hero");
   const heroBody = bodyParagraphs(hero.body);
   const heroTagline = heroBody.at(-1) ?? "I let things flow, but I stand my ground.";
+  const homeEarlyCards = useMemo(
+    () =>
+      cardBlocks(homeSections, "early-story", earlyCards).map((card, index) => ({
+        ...card,
+        image: card.imageKey ? cardImageByKey[card.imageKey] ?? earlyCards[index]?.image ?? media.profile : earlyCards[index]?.image ?? media.profile,
+      })),
+    [homeSections],
+  );
+  const homeValues = useMemo(() => cardBlocks(homeSections, "values", values), [homeSections]);
   const homeProjects = useMemo(
     () =>
       apiProjects
@@ -196,7 +212,7 @@ export function Home() {
             description={sectionCopy(homeSections, "early-story").body ?? ""}
           />
           <div className="memory-grid">
-            {earlyCards.map((card) => (
+            {homeEarlyCards.map((card) => (
               <Card className="memory-card" key={card.title}>
                 <img src={card.image} alt={card.title} loading="lazy" />
                 <div>
@@ -393,7 +409,7 @@ export function Home() {
             description={sectionCopy(homeSections, "values").body ?? ""}
           />
           <div className="grid grid-4">
-            {values.map((value) => (
+            {homeValues.map((value) => (
               <Card key={value.title}>
                 <h3>{value.title}</h3>
                 <p>{value.text}</p>

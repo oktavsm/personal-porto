@@ -1,3 +1,10 @@
+export type SiteContentBlock = {
+  type: string;
+  contentJson: Record<string, unknown>;
+  sortOrder: number;
+  isPublished?: boolean;
+};
+
 export type SiteContentSection = {
   key: string;
   title?: string;
@@ -5,6 +12,7 @@ export type SiteContentSection = {
   body?: string;
   sortOrder: number;
   isPublished?: boolean;
+  blocks?: SiteContentBlock[];
 };
 
 export type SiteContentPage = {
@@ -35,6 +43,44 @@ export const siteContentPages: SiteContentPage[] = [
         body:
           "Since I was young, I joined many activities. Silat, PMR, Jumbara, Pramuka, OSIS, and competitions taught me discipline, independence, care, responsibility, focus, and growth. But at that time, I was still too young to define who I was. I was only collecting pieces of myself.",
         sortOrder: 2,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Silat",
+              text: "Discipline, physical control, consistency, and courage to train through repetition.",
+              imageKey: "earlySilat",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "PMR & Jumbara",
+              text: "Care, independence, service, and perspective beyond my daily environment.",
+              imageKey: "earlyPmr",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Pramuka / OSIS",
+              text: "Responsibility, teamwork, and early experience in leading and organizing people.",
+              imageKey: "earlyPramuka",
+            },
+            sortOrder: 3,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Competitions",
+              text: "Focus, growth, and courage to test myself through challenges.",
+              imageKey: "highSchoolWinner",
+            },
+            sortOrder: 4,
+          },
+        ],
       },
       {
         key: "chosen-path",
@@ -74,6 +120,40 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Core values",
         body: "Stability, structure, usefulness, and empathy are the values I keep seeing across the way I learn, serve, and build.",
         sortOrder: 7,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Stability",
+              text: "I try to stay steady before making decisions. Calmness is the space I create before choosing a response.",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Structure",
+              text: "I naturally look for patterns, flows, and missing connections in scattered things.",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Usefulness",
+              text: "I want what I build to reduce friction, solve a real need, or help someone move easier.",
+            },
+            sortOrder: 3,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Empathy",
+              text: "Good systems should consider the people who use them, including needs that are not visible at first.",
+            },
+            sortOrder: 4,
+          },
+        ],
       },
       {
         key: "mission",
@@ -172,6 +252,40 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Evidence in practice",
         body: "The reflection is not meant to stay abstract. It shows up in the way I serve, lead, teach, and build.",
         sortOrder: 8,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Volunteer Typist — PLD UB",
+              text: "Social Intelligence and empathy appeared when I helped make lecture information accessible for students with disabilities.",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Camp Daniel",
+              text: "Structure and perseverance appeared when I led a committee by managing timelines, communication, and coordination across divisions.",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Titipin",
+              text: "Usefulness and system thinking appeared when I tried to centralize scattered jastip and preloved activities into a clearer platform.",
+            },
+            sortOrder: 3,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "n8n Automation",
+              text: "Automation and problem-solving appeared when I built workflows to reduce repetitive checking of academic and personal information.",
+            },
+            sortOrder: 4,
+          },
+        ],
       },
       {
         key: "closing",

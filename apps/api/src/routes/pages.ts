@@ -31,6 +31,17 @@ type SectionBody = {
   isPublished?: boolean;
 };
 
+type BlockBody = {
+  type?: string;
+  contentJson?: Prisma.InputJsonValue;
+  sortOrder?: number;
+  isPublished?: boolean;
+};
+
+type ReorderBody = {
+  ids?: string[];
+};
+
 function serializePage(page: SitePageWithRelations, publicOnly = false) {
   return {
     id: page.id,
@@ -79,6 +90,23 @@ function sectionData(body: SectionBody) {
     sortOrder: pickNumber(body.sortOrder),
     isPublished: pickBoolean(body.isPublished, true),
   };
+}
+
+function blockData(body: BlockBody) {
+  return {
+    type: pickString(body.type, "card"),
+    contentJson: body.contentJson ?? {},
+    sortOrder: pickNumber(body.sortOrder),
+    isPublished: pickBoolean(body.isPublished, true),
+  };
+}
+
+async function findSection(pageSlug: string, sectionKey: string) {
+  const page = await prisma.sitePage.findUnique({ where: { slug: pageSlug } });
+  if (!page) return null;
+  return prisma.siteSection.findUnique({
+    where: { pageId_key: { pageId: page.id, key: sectionKey } },
+  });
 }
 
 export async function pageRoutes(app: FastifyInstance) {
@@ -135,5 +163,77 @@ export async function pageRoutes(app: FastifyInstance) {
     });
 
     return { data: section };
+  });
+
+  app.post<{ Params: { slug: string; key: string }; Body: BlockBody }>("/api/admin/pages/:slug/sections/:key/blocks", { preHandler: app.requireAdmin }, async (request, reply) => {
+    const section = await findSection(request.params.slug, request.params.key);
+    if (!section) return reply.code(404).send({ message: "Section not found" });
+
+    const block = await prisma.contentBlock.create({
+      data: {
+        sectionId: section.id,
+        ...blockData(request.body),
+      },
+    });
+    return reply.code(201).send({ data: block });
+  });
+
+  app.patch<{ Params: { slug: string; key: string; blockId: string }; Body: BlockBody }>(
+    "/api/admin/pages/:slug/sections/:key/blocks/:blockId",
+    { preHandler: app.requireAdmin },
+    async (request, reply) => {
+      const section = await findSection(request.params.slug, request.params.key);
+      if (!section) return reply.code(404).send({ message: "Section not found" });
+
+      const exists = await prisma.contentBlock.findFirst({
+        where: { id: request.params.blockId, sectionId: section.id },
+      });
+      if (!exists) return reply.code(404).send({ message: "Block not found" });
+
+      const block = await prisma.contentBlock.update({
+        where: { id: request.params.blockId },
+        data: blockData(request.body),
+      });
+      return { data: block };
+    },
+  );
+
+  app.delete<{ Params: { slug: string; key: string; blockId: string } }>("/api/admin/pages/:slug/sections/:key/blocks/:blockId", { preHandler: app.requireAdmin }, async (request, reply) => {
+    const section = await findSection(request.params.slug, request.params.key);
+    if (!section) return reply.code(404).send({ message: "Section not found" });
+
+    const exists = await prisma.contentBlock.findFirst({
+      where: { id: request.params.blockId, sectionId: section.id },
+    });
+    if (!exists) return reply.code(404).send({ message: "Block not found" });
+
+    await prisma.contentBlock.delete({ where: { id: request.params.blockId } });
+    return { ok: true };
+  });
+
+  app.post<{ Params: { slug: string; key: string }; Body: ReorderBody }>("/api/admin/pages/:slug/sections/:key/blocks/reorder", { preHandler: app.requireAdmin }, async (request, reply) => {
+    const section = await findSection(request.params.slug, request.params.key);
+    if (!section) return reply.code(404).send({ message: "Section not found" });
+
+    const ids = Array.isArray(request.body.ids) ? request.body.ids.map(String).filter(Boolean) : [];
+    if (ids.length === 0) return reply.code(400).send({ message: "ids are required" });
+
+    const blockCount = await prisma.contentBlock.count({
+      where: {
+        sectionId: section.id,
+        id: { in: ids },
+      },
+    });
+    if (blockCount !== ids.length) return reply.code(400).send({ message: "All block ids must belong to the selected section" });
+
+    await prisma.$transaction(
+      ids.map((id, index) =>
+        prisma.contentBlock.update({
+          where: { id },
+          data: { sortOrder: index + 1 },
+        }),
+      ),
+    );
+    return { ok: true };
   });
 }

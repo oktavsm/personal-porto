@@ -2361,6 +2361,18 @@ body.is-embedded .chat-panel {
   line-height: 1.65;
 }
 
+.admin-block-editor {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.admin-block-editor .admin-card-head h3 {
+  font-size: 20px;
+}
+
 .admin-form input:focus,
 .admin-form select:focus,
 .admin-form textarea:focus {

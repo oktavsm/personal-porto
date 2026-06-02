@@ -19,7 +19,7 @@ async function seedCms() {
     });
 
     for (const section of page.sections) {
-      await prisma.siteSection.upsert({
+      const savedSection = await prisma.siteSection.upsert({
         where: { pageId_key: { pageId: savedPage.id, key: section.key } },
         update: {
           title: section.title ?? null,
@@ -38,6 +38,19 @@ async function seedCms() {
           isPublished: section.isPublished ?? true,
         },
       });
+
+      const existingBlockCount = await prisma.contentBlock.count({ where: { sectionId: savedSection.id } });
+      if (existingBlockCount === 0 && section.blocks && section.blocks.length > 0) {
+        await prisma.contentBlock.createMany({
+          data: section.blocks.map((block) => ({
+            sectionId: savedSection.id,
+            type: block.type,
+            contentJson: block.contentJson,
+            sortOrder: block.sortOrder,
+            isPublished: block.isPublished ?? true,
+          })),
+        });
+      }
     }
   }
 }
