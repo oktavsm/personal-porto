@@ -333,7 +333,7 @@ jobs:
           PORTFOLIO_PORT=$INACTIVE_PORT
           ENV
 
-          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -p "$APP_NAME-$INACTIVE_SLOT" up -d --remove-orphans
+          docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -p "$APP_NAME-$INACTIVE_SLOT" up -d --remove-orphans --force-recreate
 
           for attempt in $(seq 1 30); do
             if curl -fsS "http://127.0.0.1:$INACTIVE_PORT/" >/dev/null; then
@@ -354,6 +354,17 @@ jobs:
           if [ "$SERVER_NAME" = "$PRIMARY_SERVER_NAME" ] && [ "$PRIMARY_SERVER_NAME" != "_" ]; then
             SERVER_NAMES="$PRIMARY_SERVER_NAME www.$PRIMARY_SERVER_NAME"
           fi
+
+          ACTIVE_NGINX_CONF="$NGINX_CONF"
+          ENABLED_NGINX_CONF="/etc/nginx/sites-enabled/$PRIMARY_SERVER_NAME"
+          if [ -e "$ENABLED_NGINX_CONF" ]; then
+            if [ -L "$ENABLED_NGINX_CONF" ]; then
+              ACTIVE_NGINX_CONF="$(readlink -f "$ENABLED_NGINX_CONF")"
+            else
+              ACTIVE_NGINX_CONF="$ENABLED_NGINX_CONF"
+            fi
+          fi
+          echo "Writing active Nginx config: $ACTIVE_NGINX_CONF"
 
           CERT_DIR="/etc/letsencrypt/live/$PRIMARY_SERVER_NAME"
           SSL_OPTIONS="/etc/letsencrypt/options-ssl-nginx.conf"
@@ -452,11 +463,11 @@ jobs:
           NGINX
           fi
 
-          if [ -f "$NGINX_CONF" ]; then
-            sudo -n cp "$NGINX_CONF" "$APP_DIR/nginx.previous.conf"
+          if [ -f "$ACTIVE_NGINX_CONF" ]; then
+            sudo -n cp "$ACTIVE_NGINX_CONF" "$APP_DIR/nginx.previous.conf"
           fi
 
-          sudo -n mv "$TMP_CONF" "$NGINX_CONF"
+          sudo -n mv "$TMP_CONF" "$ACTIVE_NGINX_CONF"
 
           if sudo -n nginx -t; then
             sudo -n systemctl reload nginx || sudo -n nginx -s reload
@@ -464,7 +475,7 @@ jobs:
           else
             echo "Nginx config test failed. Rolling back config."
             if [ -f "$APP_DIR/nginx.previous.conf" ]; then
-              sudo -n cp "$APP_DIR/nginx.previous.conf" "$NGINX_CONF"
+              sudo -n cp "$APP_DIR/nginx.previous.conf" "$ACTIVE_NGINX_CONF"
               sudo -n nginx -t && (sudo -n systemctl reload nginx || sudo -n nginx -s reload)
             fi
             exit 1
