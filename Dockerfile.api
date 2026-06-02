@@ -14,7 +14,7 @@ COPY apps/api apps/api
 COPY src/data src/data
 COPY assets assets
 
-RUN npm run prisma:generate -w apps/api
+RUN DATABASE_URL="postgresql://postgres:postgres@localhost:5432/teladan_portfolio?schema=public" npm run prisma:generate -w apps/api
 RUN npm run build -w apps/api
 
 WORKDIR /app/apps/api

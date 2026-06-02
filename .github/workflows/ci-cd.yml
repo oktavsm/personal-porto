@@ -33,6 +33,8 @@ jobs:
         run: npm run build
 
       - name: Build API
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/teladan_portfolio?schema=public
         run: npm run build:api
 
   deploy:
