@@ -10,6 +10,7 @@ export type SiteContentSection = {
   title?: string;
   subtitle?: string;
   body?: string;
+  settingsJson?: Record<string, unknown>;
   sortOrder: number;
   isPublished?: boolean;
   blocks?: SiteContentBlock[];
@@ -34,6 +35,14 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Personal Portfolio · Systems, Stories, and Useful Work",
         body:
           "I've been there. But those are not who I am.\n\nI'm Oktavianus Samuel Minarto — an Informatics student who learns by building, thinks in systems, and tries to make scattered things work better.\n\nI let things flow, but I stand my ground.",
+        settingsJson: {
+          primaryCtaLabel: "Explore My Story",
+          primaryCtaHref: "/#story",
+          secondaryCtaLabel: "View Projects",
+          secondaryCtaHref: "/projects",
+          tertiaryCtaLabel: "Choose Route",
+          profileImageKey: "profile",
+        },
         sortOrder: 1,
       },
       {
@@ -112,6 +121,9 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Empathy in practice",
         body:
           "Before many of my technical projects, I volunteered at Pusat Layanan Disabilitas Universitas Brawijaya. That experience taught me that useful systems are not only efficient. They also need to be accessible, considerate, and aware of people whose needs are not always visible.",
+        settingsJson: {
+          imageKey: "pldVolunteer",
+        },
         sortOrder: 6,
       },
       {
@@ -168,6 +180,10 @@ export const siteContentPages: SiteContentPage[] = [
         title: "Things I built when I noticed friction",
         subtitle: "Selected work",
         body: "Each project started from a small friction: scattered information, repetitive work, unclear flow, or a need that could be made easier through software.",
+        settingsJson: {
+          ctaLabel: "Explore My Projects",
+          ctaHref: "/projects",
+        },
         sortOrder: 9,
       },
       {
@@ -175,6 +191,10 @@ export const siteContentPages: SiteContentPage[] = [
         title: "Experiences that shaped how I build and serve",
         subtitle: "Experiences",
         body: "I treat experiences as evidence of how values show up in real situations: service, leadership, teaching, technical growth, and community contribution.",
+        settingsJson: {
+          ctaLabel: "See My Experiences",
+          ctaHref: "/experiences",
+        },
         sortOrder: 10,
       },
       {
@@ -183,6 +203,14 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Still running",
         body:
           "It is not a finished archive. It is a living system for my projects, reflections, and the things I am still learning to build.\n\nI build systems that help.",
+        settingsJson: {
+          primaryCtaLabel: "View Projects",
+          primaryCtaHref: "/projects",
+          secondaryCtaLabel: "Download Resume",
+          secondaryCtaHref: "resume",
+          tertiaryCtaLabel: "Contact Me",
+          tertiaryCtaHref: "/contact",
+        },
         sortOrder: 11,
       },
     ],
@@ -198,6 +226,9 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Lead Self Journey",
         body:
           "This page summarizes the reflections behind my identity, values, mission, and self-symbol during the Lead Self journey. It is not a collection of labels. It is a map of how I understand the way I think, respond, build, and grow.",
+        settingsJson: {
+          imageKey: "profile",
+        },
         sortOrder: 1,
       },
       {
@@ -228,6 +259,9 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Self-symbol",
         body:
           "A core server is not always seen, but it keeps the system connected. It receives, processes, organizes, and distributes information. It supports many connections at once.\n\nThis symbol is close to the way I understand myself. I am not always the most vocal person in a group, but I often care about whether the system works: whether the timeline is clear, whether communication flows, whether people understand their roles, and whether the final result is useful.\n\nI do not need to be the loudest part of the system. I want to be a part that helps the system work better.",
+        settingsJson: {
+          imageKey: "coreServer",
+        },
         sortOrder: 5,
       },
       {
@@ -236,6 +270,9 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Empathy evidence",
         body:
           "My early experience as a volunteer typist at Pusat Layanan Disabilitas Universitas Brawijaya helped me see that support can be quiet but meaningful. It deepened my empathy and became one of the values I carried into my TELADAN journey.",
+        settingsJson: {
+          imageKey: "pldVolunteer",
+        },
         sortOrder: 6,
       },
       {

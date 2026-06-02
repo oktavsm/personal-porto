@@ -2356,6 +2356,36 @@ body.is-embedded .chat-panel {
   resize: vertical;
 }
 
+.admin-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-field-group {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid rgba(242, 238, 232, 0.1);
+  border-radius: 16px;
+  background: rgba(242, 238, 232, 0.025);
+}
+
+.admin-field-group-head {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-field-group-head strong {
+  font-size: 13px;
+}
+
+.admin-field-group-head span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .admin-form .admin-copy-textarea {
   min-height: 190px;
   line-height: 1.65;
@@ -2860,6 +2890,10 @@ body.is-embedded .chat-panel {
   .stacked-photos,
   .photo-collage,
   .track-switcher {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-form-row {
     grid-template-columns: 1fr;
   }
 

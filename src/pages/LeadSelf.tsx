@@ -3,7 +3,13 @@ import { Card } from "../components/ui/Card";
 import { media } from "../data/media";
 import { useEffect, useMemo, useState } from "react";
 import { publicApi, type PublicSitePage } from "../lib/publicApi";
-import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy } from "../lib/siteContent";
+import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy, sectionSettings, settingImage } from "../lib/siteContent";
+
+const leadSelfImageByKey: Record<string, string> = {
+  profile: media.profile,
+  coreServer: media.coreServer,
+  pldVolunteer: media.pldVolunteer,
+};
 
 const evidenceCards = [
   {
@@ -28,6 +34,9 @@ export function LeadSelf() {
   const [leadSelfPage, setLeadSelfPage] = useState<PublicSitePage | null>(null);
   const leadSelfSections = useMemo(() => resolveSections("lead-self", leadSelfPage), [leadSelfPage]);
   const leadSelfEvidenceCards = useMemo(() => cardBlocks(leadSelfSections, "evidence", evidenceCards), [leadSelfSections]);
+  const introImage = settingImage(sectionSettings(leadSelfSections, "intro"), leadSelfImageByKey, media.profile);
+  const selfSymbolImage = settingImage(sectionSettings(leadSelfSections, "self-symbol"), leadSelfImageByKey, media.coreServer);
+  const empathyImage = settingImage(sectionSettings(leadSelfSections, "empathy"), leadSelfImageByKey, media.pldVolunteer);
 
   useEffect(() => {
     let active = true;
@@ -58,7 +67,7 @@ export function LeadSelf() {
             ))}
           </Card>
           <Card className="image-card">
-            <img src={media.profile} alt="Oktavianus Samuel Minarto" />
+            <img src={introImage} alt="Oktavianus Samuel Minarto" />
           </Card>
         </div>
 
@@ -86,7 +95,7 @@ export function LeadSelf() {
             ))}
           </div>
           <div className="self-symbol-visual" aria-label="Core Server self-symbol illustration">
-            <img src={media.coreServer} alt="Core Server self-symbol" />
+            <img src={selfSymbolImage} alt="Core Server self-symbol" />
           </div>
         </div>
 
@@ -96,7 +105,7 @@ export function LeadSelf() {
           {bodyParagraphs(sectionCopy(leadSelfSections, "empathy").body).map((paragraph) => (
             <p key={paragraph}>{paragraph}</p>
           ))}
-          <img src={media.pldVolunteer} alt="PLD UB volunteer documentation" />
+          <img src={empathyImage} alt="PLD UB volunteer documentation" />
         </Card>
 
         <Card className="mission-card">

@@ -36,7 +36,7 @@ type DeleteTarget =
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
 type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "pages";
-type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage";
+type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -141,6 +141,17 @@ const emptyPageSection = {
   title: "",
   subtitle: "",
   body: "",
+  imageKey: "",
+  mediaAssetId: "",
+  imageUrl: "",
+  ctaLabel: "",
+  ctaHref: "",
+  primaryCtaLabel: "",
+  primaryCtaHref: "",
+  secondaryCtaLabel: "",
+  secondaryCtaHref: "",
+  tertiaryCtaLabel: "",
+  tertiaryCtaHref: "",
   sortOrder: 0,
   isPublished: true,
 };
@@ -482,6 +493,27 @@ function blockField(block: { contentJson: unknown }, field: "title" | "text" | "
   return typeof content[field] === "string" ? content[field] : "";
 }
 
+function settingsField(settingsJson: unknown, field: keyof typeof emptyPageSection) {
+  const settings = settingsJson && typeof settingsJson === "object" && !Array.isArray(settingsJson) ? (settingsJson as Record<string, unknown>) : {};
+  return typeof settings[field] === "string" ? settings[field] : "";
+}
+
+function pageSectionSettings(form: typeof emptyPageSection) {
+  return {
+    imageKey: form.imageKey || undefined,
+    mediaAssetId: form.mediaAssetId || undefined,
+    imageUrl: form.imageUrl || undefined,
+    ctaLabel: form.ctaLabel || undefined,
+    ctaHref: form.ctaHref || undefined,
+    primaryCtaLabel: form.primaryCtaLabel || undefined,
+    primaryCtaHref: form.primaryCtaHref || undefined,
+    secondaryCtaLabel: form.secondaryCtaLabel || undefined,
+    secondaryCtaHref: form.secondaryCtaHref || undefined,
+    tertiaryCtaLabel: form.tertiaryCtaLabel || undefined,
+    tertiaryCtaHref: form.tertiaryCtaHref || undefined,
+  };
+}
+
 function publicPagePath(slug: string) {
   if (slug === "home") return "/";
   if (slug === "lead-self") return "/lead-self";
@@ -609,6 +641,17 @@ export function Admin() {
       const mediaAssetId = selectedIds[0] ?? "";
       const asset = mediaById.get(mediaAssetId);
       setPageBlockForm((current) => ({
+        ...current,
+        mediaAssetId,
+        imageUrl: asset?.publicUrl ?? "",
+        imageKey: mediaAssetId ? "" : current.imageKey,
+      }));
+    }
+
+    if (mediaPickerTarget === "pageSectionImage") {
+      const mediaAssetId = selectedIds[0] ?? "";
+      const asset = mediaById.get(mediaAssetId);
+      setPageSectionForm((current) => ({
         ...current,
         mediaAssetId,
         imageUrl: asset?.publicUrl ?? "",
@@ -848,6 +891,7 @@ export function Admin() {
         title: pageSectionForm.title,
         subtitle: pageSectionForm.subtitle,
         body: pageSectionForm.body,
+        settingsJson: pageSectionSettings(pageSectionForm),
         sortOrder: pageSectionForm.sortOrder,
         isPublished: pageSectionForm.isPublished,
       });
@@ -1241,6 +1285,17 @@ export function Admin() {
       title: section.title ?? "",
       subtitle: section.subtitle ?? "",
       body: section.body ?? "",
+      imageKey: settingsField(section.settingsJson, "imageKey"),
+      mediaAssetId: settingsField(section.settingsJson, "mediaAssetId"),
+      imageUrl: settingsField(section.settingsJson, "imageUrl"),
+      ctaLabel: settingsField(section.settingsJson, "ctaLabel"),
+      ctaHref: settingsField(section.settingsJson, "ctaHref"),
+      primaryCtaLabel: settingsField(section.settingsJson, "primaryCtaLabel"),
+      primaryCtaHref: settingsField(section.settingsJson, "primaryCtaHref"),
+      secondaryCtaLabel: settingsField(section.settingsJson, "secondaryCtaLabel"),
+      secondaryCtaHref: settingsField(section.settingsJson, "secondaryCtaHref"),
+      tertiaryCtaLabel: settingsField(section.settingsJson, "tertiaryCtaLabel"),
+      tertiaryCtaHref: settingsField(section.settingsJson, "tertiaryCtaHref"),
       sortOrder: section.sortOrder,
       isPublished: section.isPublished,
     });
@@ -2217,6 +2272,76 @@ export function Admin() {
                 <textarea className="admin-copy-textarea" value={pageSectionForm.body} onChange={(event) => setPageSectionForm({ ...pageSectionForm, body: event.target.value })} />
                 <span className="admin-help">Use blank lines to separate paragraphs. Frontend keeps static fallback if this section is unavailable.</span>
               </label>
+              <div className="admin-field-group">
+                <div className="admin-field-group-head">
+                  <strong>Section Media</strong>
+                  <span>Used by sections like Home empathy, Lead Self intro, and Core Server.</span>
+                </div>
+                <label>
+                  Image Key
+                  <input value={pageSectionForm.imageKey} onChange={(event) => setPageSectionForm({ ...pageSectionForm, imageKey: event.target.value })} placeholder="profile, pldVolunteer, coreServer" />
+                  <span className="admin-help">Static fallback key. Choosing uploaded media overrides this value.</span>
+                </label>
+                <div className="admin-media-picker-field">
+                  <div>
+                    <span>Bound Media</span>
+                    <small>{pageSectionForm.mediaAssetId ? mediaById.get(pageSectionForm.mediaAssetId)?.originalName ?? "Selected media" : "No image selected"}</small>
+                  </div>
+                  <button className="icon-btn" type="button" aria-label="Choose section image" onClick={() => setMediaPickerTarget("pageSectionImage")}>
+                    <FileText size={15} />
+                  </button>
+                </div>
+                <MediaSelectionPreview
+                  asset={pageSectionForm.mediaAssetId ? mediaById.get(pageSectionForm.mediaAssetId) : undefined}
+                  onClear={() => setPageSectionForm({ ...pageSectionForm, mediaAssetId: "", imageUrl: "" })}
+                />
+              </div>
+              <div className="admin-field-group">
+                <div className="admin-field-group-head">
+                  <strong>CTA / Link Labels</strong>
+                  <span>Leave empty when the selected section has no button.</span>
+                </div>
+                <div className="admin-form-row">
+                  <label>
+                    CTA Label
+                    <input value={pageSectionForm.ctaLabel} onChange={(event) => setPageSectionForm({ ...pageSectionForm, ctaLabel: event.target.value })} placeholder="Explore My Projects" />
+                  </label>
+                  <label>
+                    CTA Href
+                    <input value={pageSectionForm.ctaHref} onChange={(event) => setPageSectionForm({ ...pageSectionForm, ctaHref: event.target.value })} placeholder="/projects" />
+                  </label>
+                </div>
+                <div className="admin-form-row">
+                  <label>
+                    Primary Label
+                    <input value={pageSectionForm.primaryCtaLabel} onChange={(event) => setPageSectionForm({ ...pageSectionForm, primaryCtaLabel: event.target.value })} placeholder="Explore My Story" />
+                  </label>
+                  <label>
+                    Primary Href
+                    <input value={pageSectionForm.primaryCtaHref} onChange={(event) => setPageSectionForm({ ...pageSectionForm, primaryCtaHref: event.target.value })} placeholder="/#story" />
+                  </label>
+                </div>
+                <div className="admin-form-row">
+                  <label>
+                    Secondary Label
+                    <input value={pageSectionForm.secondaryCtaLabel} onChange={(event) => setPageSectionForm({ ...pageSectionForm, secondaryCtaLabel: event.target.value })} placeholder="View Projects" />
+                  </label>
+                  <label>
+                    Secondary Href
+                    <input value={pageSectionForm.secondaryCtaHref} onChange={(event) => setPageSectionForm({ ...pageSectionForm, secondaryCtaHref: event.target.value })} placeholder="/projects or resume" />
+                  </label>
+                </div>
+                <div className="admin-form-row">
+                  <label>
+                    Tertiary Label
+                    <input value={pageSectionForm.tertiaryCtaLabel} onChange={(event) => setPageSectionForm({ ...pageSectionForm, tertiaryCtaLabel: event.target.value })} placeholder="Contact Me" />
+                  </label>
+                  <label>
+                    Tertiary Href
+                    <input value={pageSectionForm.tertiaryCtaHref} onChange={(event) => setPageSectionForm({ ...pageSectionForm, tertiaryCtaHref: event.target.value })} placeholder="/contact" />
+                  </label>
+                </div>
+              </div>
               <label>
                 Display Order
                 <input value={pageSectionForm.sortOrder} onChange={(event) => setPageSectionForm({ ...pageSectionForm, sortOrder: Number(event.target.value) })} type="number" />
@@ -2364,10 +2489,30 @@ export function Admin() {
       </div>
       {mediaPickerTarget ? (
         <GalleryMediaPickerModal
-          title={mediaPickerTarget === "projectGallery" ? "Choose project gallery images" : mediaPickerTarget === "experienceGallery" ? "Choose experience gallery images" : "Choose section card image"}
+          title={
+            mediaPickerTarget === "projectGallery"
+              ? "Choose project gallery images"
+              : mediaPickerTarget === "experienceGallery"
+                ? "Choose experience gallery images"
+                : mediaPickerTarget === "pageSectionImage"
+                  ? "Choose section image"
+                  : "Choose section card image"
+          }
           assets={imageMediaAssets}
-          selectedIds={mediaPickerTarget === "projectGallery" ? projectForm.galleryMediaAssetIds : mediaPickerTarget === "experienceGallery" ? experienceForm.galleryMediaAssetIds : pageBlockForm.mediaAssetId ? [pageBlockForm.mediaAssetId] : []}
-          multiple={mediaPickerTarget !== "pageBlockImage"}
+          selectedIds={
+            mediaPickerTarget === "projectGallery"
+              ? projectForm.galleryMediaAssetIds
+              : mediaPickerTarget === "experienceGallery"
+                ? experienceForm.galleryMediaAssetIds
+                : mediaPickerTarget === "pageSectionImage"
+                  ? pageSectionForm.mediaAssetId
+                    ? [pageSectionForm.mediaAssetId]
+                    : []
+                  : pageBlockForm.mediaAssetId
+                    ? [pageBlockForm.mediaAssetId]
+                    : []
+          }
+          multiple={mediaPickerTarget === "projectGallery" || mediaPickerTarget === "experienceGallery"}
           saving={saving}
           onCancel={() => setMediaPickerTarget(null)}
           onSave={handleSaveGallerySelection}

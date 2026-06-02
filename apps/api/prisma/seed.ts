@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { copyFile, mkdir, stat } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
@@ -148,6 +148,7 @@ async function main() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
+          settingsJson: section.settingsJson ?? Prisma.JsonNull,
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },
@@ -157,6 +158,7 @@ async function main() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
+          settingsJson: section.settingsJson ?? Prisma.JsonNull,
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },

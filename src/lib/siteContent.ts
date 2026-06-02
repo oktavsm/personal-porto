@@ -10,6 +10,7 @@ export type EditableBlock = Pick<SiteContentBlock, "type" | "sortOrder"> & {
 export type EditableSection = Pick<SiteContentSection, "key" | "title" | "subtitle" | "body" | "sortOrder"> & {
   isPublished?: boolean;
   blocks?: EditableBlock[];
+  settingsJson?: Record<string, unknown>;
 };
 
 export type CardBlock = {
@@ -39,6 +40,22 @@ export function sectionCopy(sections: Map<string, EditableSection>, key: string)
   return sections.get(key) ?? { key, sortOrder: 0 };
 }
 
+export function sectionSettings(sections: Map<string, EditableSection>, key: string) {
+  return sectionCopy(sections, key).settingsJson ?? {};
+}
+
+export function settingString(settings: Record<string, unknown>, key: string, fallback = "") {
+  const value = settings[key];
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+export function settingImage(settings: Record<string, unknown>, imageMap: Record<string, string>, fallback: string) {
+  const imageUrl = settingString(settings, "imageUrl");
+  if (imageUrl) return imageUrl;
+  const imageKey = settingString(settings, "imageKey");
+  return imageKey ? imageMap[imageKey] ?? fallback : fallback;
+}
+
 export function bodyParagraphs(body?: string | null) {
   return (body ?? "").split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
 }
@@ -61,6 +78,7 @@ function normalizePublicSection(section: PublicSiteSection): EditableSection {
     body: section.body ?? undefined,
     sortOrder: section.sortOrder,
     isPublished: section.isPublished,
+    settingsJson: normalizeObject(section.settingsJson),
     blocks: section.blocks.map(normalizePublicBlock),
   };
 }

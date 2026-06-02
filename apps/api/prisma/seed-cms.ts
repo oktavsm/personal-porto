@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { siteContentPages } from "../../../src/data/siteContent.js";
 
 const prisma = new PrismaClient();
@@ -25,6 +25,7 @@ async function seedCms() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
+          settingsJson: section.settingsJson ?? Prisma.JsonNull,
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },
@@ -34,6 +35,7 @@ async function seedCms() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
+          settingsJson: section.settingsJson ?? Prisma.JsonNull,
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },

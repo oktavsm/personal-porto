@@ -13,7 +13,7 @@ import { media } from "../data/media";
 import { experiences, featuredExperiences, type Experience } from "../data/experiences";
 import { featuredProjects, projects, type Project } from "../data/projects";
 import { publicApi, type PublicExperience, type PublicProject, type PublicSitePage } from "../lib/publicApi";
-import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy } from "../lib/siteContent";
+import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy, sectionSettings, settingImage, settingString } from "../lib/siteContent";
 
 const earlyCards = [
   { title: "Silat", imageKey: "earlySilat", image: media.earlySilat, text: "Discipline, physical control, consistency, and courage to train through repetition." },
@@ -27,6 +27,15 @@ const cardImageByKey: Record<string, string> = {
   earlyPmr: media.earlyPmr,
   earlyPramuka: media.earlyPramuka,
   highSchoolWinner: media.highSchoolWinner,
+};
+
+const cmsImageByKey: Record<string, string> = {
+  ...cardImageByKey,
+  profile: media.profile,
+  pldVolunteer: media.pldVolunteer,
+  tanoto: media.tanoto,
+  speakerTeladan: media.speakerTeladan,
+  campDanielWide: media.campDanielWide,
 };
 
 const selectionCards = [
@@ -93,6 +102,15 @@ function mapPublicExperience(experience: PublicExperience, staticExperience?: Ex
   };
 }
 
+function resolveCtaHref(value: string, fallback: string) {
+  const href = value || fallback;
+  return href === "resume" ? media.cv : href;
+}
+
+function ctaTarget(href: string) {
+  return href.startsWith("/") ? { to: href } : { href };
+}
+
 export function Home() {
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const [apiProjects, setApiProjects] = useState<PublicProject[] | null>(null);
@@ -102,8 +120,22 @@ export function Home() {
   const staticExperienceBySlug = useMemo(() => new Map(experiences.map((experience) => [experience.slug, experience])), []);
   const homeSections = useMemo(() => resolveSections("home", homePage), [homePage]);
   const hero = sectionCopy(homeSections, "hero");
+  const heroSettings = sectionSettings(homeSections, "hero");
+  const empathySettings = sectionSettings(homeSections, "empathy");
+  const featuredProjectsSettings = sectionSettings(homeSections, "featured-projects");
+  const featuredExperiencesSettings = sectionSettings(homeSections, "featured-experiences");
+  const closingSettings = sectionSettings(homeSections, "closing");
   const heroBody = bodyParagraphs(hero.body);
   const heroTagline = heroBody.at(-1) ?? "I let things flow, but I stand my ground.";
+  const heroProfileImage = settingImage(heroSettings, cmsImageByKey, media.profile);
+  const empathyImage = settingImage(empathySettings, cmsImageByKey, media.pldVolunteer);
+  const heroPrimaryHref = resolveCtaHref(settingString(heroSettings, "primaryCtaHref"), "/#story");
+  const heroSecondaryHref = resolveCtaHref(settingString(heroSettings, "secondaryCtaHref"), "/projects");
+  const projectsCtaHref = resolveCtaHref(settingString(featuredProjectsSettings, "ctaHref"), "/projects");
+  const experiencesCtaHref = resolveCtaHref(settingString(featuredExperiencesSettings, "ctaHref"), "/experiences");
+  const closingPrimaryHref = resolveCtaHref(settingString(closingSettings, "primaryCtaHref"), "/projects");
+  const closingSecondaryHref = resolveCtaHref(settingString(closingSettings, "secondaryCtaHref"), "resume");
+  const closingTertiaryHref = resolveCtaHref(settingString(closingSettings, "tertiaryCtaHref"), "/contact");
   const homeEarlyCards = useMemo(
     () =>
       cardBlocks(homeSections, "early-story", earlyCards).map((card, index) => ({
@@ -182,19 +214,19 @@ export function Home() {
             </p>
             <div className="tagline">{heroTagline}</div>
             <div className="actions">
-              <Button to="/#story" variant="primary">
-                Explore My Story <ArrowRight size={16} />
+              <Button {...ctaTarget(heroPrimaryHref)} variant="primary">
+                {settingString(heroSettings, "primaryCtaLabel", "Explore My Story")} <ArrowRight size={16} />
               </Button>
-              <Button to="/projects">View Projects</Button>
+              <Button {...ctaTarget(heroSecondaryHref)}>{settingString(heroSettings, "secondaryCtaLabel", "View Projects")}</Button>
               <button className="quick-route-button" type="button" onClick={() => setIsExplorerOpen(true)}>
-                <Compass size={16} /> Choose Route
+                <Compass size={16} /> {settingString(heroSettings, "tertiaryCtaLabel", "Choose Route")}
               </button>
             </div>
           </div>
           <div className="hero-visual-stack">
             <ServerVisual />
             <div className="profile-strip">
-              <img src={media.profile} alt="Oktavianus Samuel Minarto" />
+              <img src={heroProfileImage} alt="Oktavianus Samuel Minarto" />
               <div>
                 <strong>A steady mind who builds systems that help</strong>
                 <span>Informatics Engineering · Universitas Brawijaya</span>
@@ -396,7 +428,7 @@ export function Home() {
             ))}
           </div>
           <Card className="image-card tall pld-photo-card">
-            <img src={media.pldVolunteer} alt="Volunteer experience at Pusat Layanan Disabilitas UB" loading="lazy" />
+            <img src={empathyImage} alt="Volunteer experience at Pusat Layanan Disabilitas UB" loading="lazy" />
           </Card>
         </div>
       </section>
@@ -442,8 +474,8 @@ export function Home() {
             ))}
           </div>
           <div className="actions">
-            <Button to="/projects" variant="primary">
-              Explore My Projects <ArrowRight size={16} />
+            <Button {...ctaTarget(projectsCtaHref)} variant="primary">
+              {settingString(featuredProjectsSettings, "ctaLabel", "Explore My Projects")} <ArrowRight size={16} />
             </Button>
           </div>
         </div>
@@ -462,8 +494,8 @@ export function Home() {
             ))}
           </div>
           <div className="actions">
-            <Button to="/experiences" variant="primary">
-              See My Experiences <ArrowRight size={16} />
+            <Button {...ctaTarget(experiencesCtaHref)} variant="primary">
+              {settingString(featuredExperiencesSettings, "ctaLabel", "See My Experiences")} <ArrowRight size={16} />
             </Button>
           </div>
         </div>
@@ -484,14 +516,14 @@ export function Home() {
           ))}
           <h2 className="closing-line">{bodyParagraphs(sectionCopy(homeSections, "closing").body).at(-1)}</h2>
           <div className="actions centered">
-            <Button to="/projects" variant="primary">
-              View Projects
+            <Button {...ctaTarget(closingPrimaryHref)} variant="primary">
+              {settingString(closingSettings, "primaryCtaLabel", "View Projects")}
             </Button>
-            <Button href={media.cv}>
-              <Download size={16} /> Download Resume
+            <Button {...ctaTarget(closingSecondaryHref)}>
+              <Download size={16} /> {settingString(closingSettings, "secondaryCtaLabel", "Download Resume")}
             </Button>
-            <Button to="/contact">
-              <Mail size={16} /> Contact Me
+            <Button {...ctaTarget(closingTertiaryHref)}>
+              <Mail size={16} /> {settingString(closingSettings, "tertiaryCtaLabel", "Contact Me")}
             </Button>
           </div>
         </div>
