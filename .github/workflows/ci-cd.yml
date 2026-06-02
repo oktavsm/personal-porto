@@ -310,7 +310,7 @@ jobs:
             sleep 2
           done
 
-          docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run prisma:deploy
+          docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T --interactive=false api npm run prisma:deploy
           echo "API migrations applied."
 
           ACTIVE_SLOT="green"
@@ -482,7 +482,7 @@ jobs:
             exit 1
           fi
 
-          if docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run admin:bootstrap; then
+          if docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T --interactive=false api npm run admin:bootstrap; then
             echo "Admin user bootstrapped."
           else
             echo "Warning: admin bootstrap failed after frontend switch. Check API logs and ADMIN_EMAIL/ADMIN_PASSWORD secrets."
@@ -490,7 +490,7 @@ jobs:
 
           NORMALIZED_RUN_SEED="$(printf '%s' "$RUN_SEED" | tr '[:upper:]' '[:lower:]')"
           if [ "$NORMALIZED_RUN_SEED" = "true" ] || [ "$NORMALIZED_RUN_SEED" = "1" ] || [ "$NORMALIZED_RUN_SEED" = "yes" ]; then
-            docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T api npm run seed
+            docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" exec -T --interactive=false api npm run seed
           fi
 
           echo "Active frontend slot: $INACTIVE_SLOT"
