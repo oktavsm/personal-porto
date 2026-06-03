@@ -149,7 +149,7 @@ export function Articles() {
             {filtered.length > 0 ? (
               <div className="articles-grid" data-reveal>
                 {filtered
-                  .filter((a) => !(activeCategory === "All" && !searchQuery && a.isFeatured))
+                  .filter((a) => !(activeCategory === "All" && !searchQuery && featured && a.id === featured.id))
                   .map((article) => (
                     <ArticleCard key={article.id} article={article} />
                   ))}

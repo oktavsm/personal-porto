@@ -613,14 +613,16 @@ function BlockDraftForm({
             Heading Text
             <input value={(value.text as string) || ""} onChange={(e) => update("text", e.target.value)} />
           </label>
-          <label>
-            Level
-            <select value={(value.level as number) || 2} onChange={(e) => update("level", Number(e.target.value))}>
-              <option value={2}>H2</option>
-              <option value={3}>H3</option>
-              <option value={4}>H4</option>
-            </select>
-          </label>
+          <AdminSelect
+            label="Level"
+            value={String((value.level as number) || 2)}
+            onChange={(v) => update("level", Number(v))}
+            options={[
+              { value: "2", label: "H2" },
+              { value: "3", label: "H3" },
+              { value: "4", label: "H4" },
+            ]}
+          />
         </>
       );
     case "paragraph":
@@ -633,25 +635,19 @@ function BlockDraftForm({
     case "image":
       return (
         <>
-          <label>
-            Image Asset
-            <select
-              value={
-                imageAssets.find((a) => a.publicUrl === value.src)?.id ?? ""
-              }
-              onChange={(e) => {
-                const asset = imageAssets.find((a) => a.id === e.target.value);
-                if (asset) update("src", asset.publicUrl);
-              }}
-            >
-              <option value="">Select an image…</option>
-              {imageAssets.map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.originalName}
-                </option>
-              ))}
-            </select>
-          </label>
+          <AdminSelect
+            label="Image Asset"
+            value={imageAssets.find((a) => a.publicUrl === value.src)?.id ?? ""}
+            onChange={(v) => {
+              const asset = imageAssets.find((a) => a.id === v);
+              if (asset) update("src", asset.publicUrl);
+            }}
+            options={imageAssets.map((asset) => ({
+              value: asset.id,
+              label: asset.originalName,
+            }))}
+            placeholder="Select an image…"
+          />
           <label>
             Alt Text
             <input value={(value.alt as string) || ""} onChange={(e) => update("alt", e.target.value)} />
@@ -660,13 +656,15 @@ function BlockDraftForm({
             Caption
             <input value={(value.caption as string) || ""} onChange={(e) => update("caption", e.target.value)} />
           </label>
-          <label>
-            Layout
-            <select value={(value.layout as string) || "inline"} onChange={(e) => update("layout", e.target.value)}>
-              <option value="inline">Inline</option>
-              <option value="full">Full width</option>
-            </select>
-          </label>
+          <AdminSelect
+            label="Layout"
+            value={(value.layout as string) || "inline"}
+            onChange={(v) => update("layout", v)}
+            options={[
+              { value: "inline", label: "Inline" },
+              { value: "full", label: "Full width" },
+            ]}
+          />
         </>
       );
     case "quote":
@@ -685,14 +683,16 @@ function BlockDraftForm({
     case "callout":
       return (
         <>
-          <label>
-            Variant
-            <select value={(value.variant as string) || "note"} onChange={(e) => update("variant", e.target.value)}>
-              <option value="note">Note (Blue)</option>
-              <option value="warning">Warning (Orange)</option>
-              <option value="success">Success (Green)</option>
-            </select>
-          </label>
+          <AdminSelect
+            label="Variant"
+            value={(value.variant as string) || "note"}
+            onChange={(v) => update("variant", v)}
+            options={[
+              { value: "note", label: "Note (Blue)" },
+              { value: "warning", label: "Warning (Orange)" },
+              { value: "success", label: "Success (Green)" },
+            ]}
+          />
           <label>
             Title (Optional)
             <input value={(value.title as string) || ""} onChange={(e) => update("title", e.target.value)} />
@@ -706,13 +706,15 @@ function BlockDraftForm({
     case "list":
       return (
         <>
-          <label>
-            Style
-            <select value={(value.style as string) || "bullet"} onChange={(e) => update("style", e.target.value)}>
-              <option value="bullet">Bullet</option>
-              <option value="number">Number</option>
-            </select>
-          </label>
+          <AdminSelect
+            label="Style"
+            value={(value.style as string) || "bullet"}
+            onChange={(v) => update("style", v)}
+            options={[
+              { value: "bullet", label: "Bullet" },
+              { value: "number", label: "Number" },
+            ]}
+          />
           <label>
             Items (One per line)
             <textarea
