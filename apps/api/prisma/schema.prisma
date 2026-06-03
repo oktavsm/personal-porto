@@ -44,6 +44,7 @@ model MediaAsset {
   resumeVersions ResumeVersion[]
   musicAudioTracks MusicTrack[] @relation("MusicAudioAsset")
   musicCoverTracks MusicTrack[] @relation("MusicCoverAsset")
+  articles      Article[]
 }
 
 model Project {
@@ -282,3 +283,54 @@ model PortfolioContextVersion {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
+// ─── Article Studio ──────────────────────────────────────────────────────────
+
+model Article {
+  id             String        @id @default(cuid())
+  slug           String        @unique
+  title          String
+  subtitle       String?
+  excerpt        String
+  category       String
+  status         String        @default("draft")
+  isFeatured     Boolean       @default(false)
+  coverAssetId   String?
+  seoTitle       String?
+  seoDescription String?
+  language       String        @default("en")
+  authorName     String        @default("Oktavianus Samuel")
+  authorRole     String?
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  blocks         ArticleBlock[]
+  tags           ArticleTag[]
+  coverAsset     MediaAsset?   @relation(fields: [coverAssetId], references: [id], onDelete: SetNull)
+}
+
+model ArticleBlock {
+  id          String  @id @default(cuid())
+  articleId   String
+  type        String
+  contentJson Json
+  sortOrder   Int     @default(0)
+  article     Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
+
+model ArticleTag {
+  id        String  @id @default(cuid())
+  articleId String
+  label     String
+  sortOrder Int     @default(0)
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+}
+
+// ─── Theme Studio ─────────────────────────────────────────────────────────────
+
+model ThemeSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
+

@@ -497,4 +497,97 @@ export const adminApi = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  // ─── Article Studio ─────────────────────────────────────────────────────────
+
+  articles: (params?: { status?: string; category?: string }) => {
+    const qs = params
+      ? "?" + new URLSearchParams(Object.entries(params).filter(([, v]) => Boolean(v)) as [string, string][]).toString()
+      : "";
+    return request<{ data: AdminArticle[] }>(`/api/admin/articles${qs}`);
+  },
+  article: (id: string) => request<{ data: AdminArticle }>(`/api/admin/articles/${id}`),
+  createArticle: (payload: ArticlePayload) =>
+    request<{ data: AdminArticle }>("/api/admin/articles", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateArticle: (id: string, payload: ArticlePayload) =>
+    request<{ data: AdminArticle }>(`/api/admin/articles/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deleteArticle: (id: string) => request<{ ok: boolean }>(`/api/admin/articles/${id}`, { method: "DELETE" }),
+  publishArticle: (id: string) =>
+    request<{ data: AdminArticle }>(`/api/admin/articles/${id}/publish`, { method: "POST" }),
+  unpublishArticle: (id: string) =>
+    request<{ data: AdminArticle }>(`/api/admin/articles/${id}/unpublish`, { method: "POST" }),
+  duplicateArticle: (id: string) =>
+    request<{ data: AdminArticle }>(`/api/admin/articles/${id}/duplicate`, { method: "POST" }),
+
+  // ─── Theme Studio ────────────────────────────────────────────────────────────
+
+  getTheme: () => request<{ data: AdminTheme; defaults: AdminTheme }>("/api/public/theme"),
+  saveTheme: (payload: AdminTheme) =>
+    request<{ data: AdminTheme }>("/api/admin/theme", {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
+  resetTheme: () => request<{ data: AdminTheme }>("/api/admin/theme/reset", { method: "POST" }),
 };
+
+// ─── Article Studio Types ─────────────────────────────────────────────────────
+
+export type AdminArticleBlock = {
+  id: string;
+  type: string;
+  contentJson: unknown;
+  sortOrder: number;
+};
+
+export type AdminArticle = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle?: string | null;
+  excerpt: string;
+  category: string;
+  status: string;
+  isFeatured: boolean;
+  coverImage?: string | null;
+  coverAlt?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  language: string;
+  author: { name: string; role?: string | null };
+  tags: string[];
+  blocks: AdminArticleBlock[];
+  readingTime: number;
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AdminTheme = Record<string, string>;
+
+type ArticlePayload = {
+  slug?: string;
+  title: string;
+  subtitle?: string;
+  excerpt: string;
+  category: string;
+  status?: string;
+  isFeatured?: boolean;
+  coverAssetId?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  authorName?: string;
+  authorRole?: string;
+  tags?: string[];
+  blocks?: {
+    type: string;
+    contentJson: unknown;
+    sortOrder?: number;
+  }[];
+};
+

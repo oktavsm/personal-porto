@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { Admin } from "./pages/admin/Admin";
+import { ArticleDetail } from "./pages/ArticleDetail";
+import { Articles } from "./pages/Articles";
 import { Contact } from "./pages/Contact";
 import { ExperienceDetail } from "./pages/ExperienceDetail";
 import { Experiences } from "./pages/Experiences";
@@ -25,6 +27,8 @@ export default function App() {
         <Route path="systems" element={<Live />} />
         <Route path="live" element={<Navigate to="/systems" replace />} />
         <Route path="contact" element={<Contact />} />
+        <Route path="articles" element={<Articles />} />
+        <Route path="articles/:slug" element={<ArticleDetail />} />
         <Route path="admin" element={<Admin />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

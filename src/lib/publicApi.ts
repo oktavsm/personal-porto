@@ -146,4 +146,48 @@ export const publicApi = {
   experience: (slug: string) => request<{ data: PublicExperience }>(`/api/public/experiences/${slug}`),
   music: () => request<{ data: PublicMusicTrack[] }>("/api/public/music"),
   page: (slug: string) => request<{ data: PublicSitePage }>(`/api/public/pages/${slug}`),
+  // Article Studio
+  articles: (params?: { category?: string; tag?: string; featured?: string; limit?: string }) => {
+    const qs = params
+      ? "?" + new URLSearchParams(Object.entries(params).filter(([, v]) => Boolean(v)) as [string, string][]).toString()
+      : "";
+    return request<{ data: PublicArticle[] }>(`/api/public/articles${qs}`);
+  },
+  article: (slug: string) => request<{ data: PublicArticle }>(`/api/public/articles/${slug}`),
+  // Theme Studio
+  theme: () => request<{ data: PublicTheme; defaults: PublicTheme }>("/api/public/theme"),
 };
+
+// ─── Article & Theme Types ────────────────────────────────────────────────────
+
+export type PublicArticleBlock = {
+  id: string;
+  type: string;
+  contentJson: unknown;
+  sortOrder: number;
+};
+
+export type PublicArticle = {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle?: string | null;
+  excerpt: string;
+  category: string;
+  status: string;
+  isFeatured: boolean;
+  coverImage?: string | null;
+  coverAlt?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  language: string;
+  author: { name: string; role?: string | null };
+  tags: string[];
+  blocks: PublicArticleBlock[];
+  readingTime: number;
+  publishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PublicTheme = Record<string, string>;

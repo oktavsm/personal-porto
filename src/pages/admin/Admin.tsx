@@ -1,8 +1,10 @@
-import { ArrowDown, ArrowUp, Check, CheckCircle, ChevronDown, ExternalLink, FileText, LogOut, Pencil, Plus, RefreshCw, ShieldCheck, Trash2, Upload, X } from "lucide-react";
-import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Star, Trash2, Upload, X } from "lucide-react";
+import { DragEvent, FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   adminApi,
+  type AdminArticle,
+  type AdminArticleBlock,
   type AdminCertification,
   type AdminContactLink,
   type AdminExperience,
@@ -14,6 +16,7 @@ import {
   type AdminSiteBlock,
   type AdminSitePage,
   type AdminSiteSection,
+  type AdminTheme,
   type AdminUser,
 } from "../../lib/adminApi";
 import { Button } from "../../components/ui/Button";
@@ -33,10 +36,11 @@ type DeleteTarget =
   | { type: "project"; id: string; label: string }
   | { type: "experience"; id: string; label: string }
   | { type: "music"; id: string; label: string }
+  | { type: "article"; id: string; label: string }
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
-type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "pages";
-type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage";
+type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "pages" | "articles" | "theme";
+type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage" | "articleCover";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -48,6 +52,8 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "systems", label: "Systems" },
   { id: "contacts", label: "Contacts" },
   { id: "pages", label: "Pages" },
+  { id: "articles", label: "Articles" },
+  { id: "theme", label: "Theme" },
 ];
 
 const emptyCertification = {
@@ -179,6 +185,58 @@ const contactTypeOptions = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "custom", label: "Custom" },
 ];
+
+const articleCategoryOptions = [
+  "Reflection", "Workshop", "Project Log", "Learning Note",
+  "TELADAN Journey", "Event Story", "Technical Note", "Personal Essay",
+].map((value) => ({ value, label: value }));
+
+const articleStatusOptions = [
+  { value: "draft", label: "Draft" },
+  { value: "generated", label: "Generated (AI)" },
+  { value: "review", label: "In Review" },
+  { value: "published", label: "Published" },
+  { value: "archived", label: "Archived" },
+];
+
+const themeColorKeys = [
+  { key: "background", label: "Background" },
+  { key: "surface", label: "Surface" },
+  { key: "surfaceSoft", label: "Surface Soft" },
+  { key: "card", label: "Card" },
+  { key: "cardHover", label: "Card Hover" },
+  { key: "border", label: "Border" },
+  { key: "textPrimary", label: "Text Primary" },
+  { key: "textSecondary", label: "Text Secondary" },
+  { key: "textMuted", label: "Text Muted" },
+  { key: "accent", label: "Accent" },
+  { key: "accentSoft", label: "Accent Soft" },
+  { key: "accentDim", label: "Accent Dim" },
+];
+
+const emptyArticleForm = {
+  title: "",
+  slug: "",
+  subtitle: "",
+  excerpt: "",
+  category: "Reflection",
+  status: "draft",
+  isFeatured: false,
+  coverAssetId: "",
+  seoTitle: "",
+  seoDescription: "",
+  authorName: "Oktavianus Samuel",
+  authorRole: "",
+  tags: "",
+};
+
+type ArticleBlockDraft = {
+  id: string; // local only for dnd key
+  type: string;
+  contentJson: Record<string, unknown>;
+};
+
+
 
 type AdminSelectOption = {
   value: string;
@@ -514,10 +572,196 @@ function pageSectionSettings(form: typeof emptyPageSection) {
   };
 }
 
+function defaultBlockContent(type: string): Record<string, unknown> {
+  switch (type) {
+    case "paragraph": return { text: "" };
+    case "heading": return { text: "", level: 2 };
+    case "image": return { src: "", alt: "", caption: "", layout: "inline" };
+    case "quote": return { text: "", source: "" };
+    case "callout": return { variant: "note", title: "", text: "" };
+    case "list": return { items: [""], style: "bullet" };
+    case "code": return { code: "", language: "" };
+    case "divider": return {};
+    default: return { text: "" };
+  }
+}
+
 function publicPagePath(slug: string) {
   if (slug === "home") return "/";
   if (slug === "lead-self") return "/lead-self";
   return `/${slug}`;
+}
+
+function BlockDraftForm({
+  type,
+  value,
+  onChange,
+  imageAssets,
+}: {
+  type: string;
+  value: Record<string, unknown>;
+  onChange: (val: Record<string, unknown>) => void;
+  imageAssets: AdminMediaAsset[];
+}) {
+  const update = (key: string, val: unknown) => onChange({ ...value, [key]: val });
+
+  switch (type) {
+    case "heading":
+      return (
+        <>
+          <label>
+            Heading Text
+            <input value={(value.text as string) || ""} onChange={(e) => update("text", e.target.value)} />
+          </label>
+          <label>
+            Level
+            <select value={(value.level as number) || 2} onChange={(e) => update("level", Number(e.target.value))}>
+              <option value={2}>H2</option>
+              <option value={3}>H3</option>
+              <option value={4}>H4</option>
+            </select>
+          </label>
+        </>
+      );
+    case "paragraph":
+      return (
+        <label>
+          Text (Markdown supported)
+          <textarea value={(value.text as string) || ""} onChange={(e) => update("text", e.target.value)} rows={4} />
+        </label>
+      );
+    case "image":
+      return (
+        <>
+          <label>
+            Image Asset
+            <select
+              value={
+                imageAssets.find((a) => a.publicUrl === value.src)?.id ?? ""
+              }
+              onChange={(e) => {
+                const asset = imageAssets.find((a) => a.id === e.target.value);
+                if (asset) update("src", asset.publicUrl);
+              }}
+            >
+              <option value="">Select an image…</option>
+              {imageAssets.map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.originalName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Alt Text
+            <input value={(value.alt as string) || ""} onChange={(e) => update("alt", e.target.value)} />
+          </label>
+          <label>
+            Caption
+            <input value={(value.caption as string) || ""} onChange={(e) => update("caption", e.target.value)} />
+          </label>
+          <label>
+            Layout
+            <select value={(value.layout as string) || "inline"} onChange={(e) => update("layout", e.target.value)}>
+              <option value="inline">Inline</option>
+              <option value="full">Full width</option>
+            </select>
+          </label>
+        </>
+      );
+    case "quote":
+      return (
+        <>
+          <label>
+            Quote
+            <textarea value={(value.text as string) || ""} onChange={(e) => update("text", e.target.value)} rows={3} />
+          </label>
+          <label>
+            Source / Author
+            <input value={(value.source as string) || ""} onChange={(e) => update("source", e.target.value)} />
+          </label>
+        </>
+      );
+    case "callout":
+      return (
+        <>
+          <label>
+            Variant
+            <select value={(value.variant as string) || "note"} onChange={(e) => update("variant", e.target.value)}>
+              <option value="note">Note (Blue)</option>
+              <option value="warning">Warning (Orange)</option>
+              <option value="success">Success (Green)</option>
+            </select>
+          </label>
+          <label>
+            Title (Optional)
+            <input value={(value.title as string) || ""} onChange={(e) => update("title", e.target.value)} />
+          </label>
+          <label>
+            Text (Markdown)
+            <textarea value={(value.text as string) || ""} onChange={(e) => update("text", e.target.value)} rows={3} />
+          </label>
+        </>
+      );
+    case "list":
+      return (
+        <>
+          <label>
+            Style
+            <select value={(value.style as string) || "bullet"} onChange={(e) => update("style", e.target.value)}>
+              <option value="bullet">Bullet</option>
+              <option value="number">Number</option>
+            </select>
+          </label>
+          <label>
+            Items (One per line)
+            <textarea
+              value={Array.isArray(value.items) ? (value.items as string[]).join("\n") : ""}
+              onChange={(e) => update("items", e.target.value.split("\n"))}
+              rows={5}
+            />
+          </label>
+        </>
+      );
+    case "code":
+      return (
+        <>
+          <label>
+            Language
+            <input value={(value.language as string) || ""} onChange={(e) => update("language", e.target.value)} placeholder="typescript, json, bash..." />
+          </label>
+          <label>
+            Code
+            <textarea
+              value={(value.code as string) || ""}
+              onChange={(e) => update("code", e.target.value)}
+              rows={8}
+              style={{ fontFamily: "monospace", whiteSpace: "pre" }}
+            />
+          </label>
+        </>
+      );
+    case "divider":
+      return <p className="admin-empty">A visual divider will be placed here.</p>;
+    default:
+      return (
+        <label>
+          Raw JSON (Fallback)
+          <textarea
+            value={JSON.stringify(value, null, 2)}
+            onChange={(e) => {
+              try {
+                onChange(JSON.parse(e.target.value));
+              } catch {
+                // Ignore parse errors while typing
+              }
+            }}
+            rows={5}
+            style={{ fontFamily: "monospace" }}
+          />
+        </label>
+      );
+  }
 }
 
 export function Admin() {
@@ -566,6 +810,20 @@ export function Admin() {
   const [certificationSearch, setCertificationSearch] = useState("");
   const [systemSearch, setSystemSearch] = useState("");
   const [contactSearch, setContactSearch] = useState("");
+  const [articleSearch, setArticleSearch] = useState("");
+  const [articleStatusFilter, setArticleStatusFilter] = useState("");
+  const [articles, setArticles] = useState<AdminArticle[]>([]);
+  const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
+  const [articleForm, setArticleForm] = useState(emptyArticleForm);
+  const [articleBlocks, setArticleBlocks] = useState<ArticleBlockDraft[]>([]);
+  const [editingBlockIdx, setEditingBlockIdx] = useState<number | null>(null);
+  const [addingBlockType, setAddingBlockType] = useState<string | null>(null);
+  const [blockDraftForm, setBlockDraftForm] = useState<Record<string, unknown>>({});
+  const [dragOverBlockIdx, setDragOverBlockIdx] = useState<number | null>(null);
+  const [themeData, setThemeData] = useState<AdminTheme>({});
+  const [themeDefaults, setThemeDefaults] = useState<AdminTheme>({});
+  const [themeForm, setThemeForm] = useState<AdminTheme>({});
+  const [themeSaving, setThemeSaving] = useState(false);
   const imageMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("image/")), [mediaAssets]);
   const audioMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("audio/")), [mediaAssets]);
   const filteredImageMediaAssets = useMemo(
@@ -659,11 +917,16 @@ export function Admin() {
       }));
     }
 
+    if (mediaPickerTarget === "articleCover") {
+      const mediaAssetId = selectedIds[0] ?? "";
+      setArticleForm((current) => ({ ...current, coverAssetId: mediaAssetId }));
+    }
+
     setMediaPickerTarget(null);
   }
 
   async function loadAdminData() {
-    const [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse] = await Promise.allSettled([
+    const [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse] = await Promise.allSettled([
       adminApi.certifications(),
       adminApi.systems(),
       adminApi.contact(),
@@ -673,6 +936,8 @@ export function Admin() {
       adminApi.experiences(),
       adminApi.music(),
       adminApi.pages(),
+      adminApi.articles(),
+      adminApi.getTheme(),
     ]);
 
     if (certificationResponse.status === "fulfilled") setCertifications(certificationResponse.value.data);
@@ -687,8 +952,14 @@ export function Admin() {
       setSitePages(pagesResponse.value.data);
       setSelectedPageSlug((current) => pagesResponse.value.data.some((page) => page.slug === current) ? current : pagesResponse.value.data[0]?.slug ?? "home");
     }
+    if (articlesResponse.status === "fulfilled") setArticles(articlesResponse.value.data);
+    if (themeResponse.status === "fulfilled") {
+      setThemeData(themeResponse.value.data);
+      setThemeDefaults(themeResponse.value.defaults);
+      setThemeForm(themeResponse.value.data);
+    }
 
-    const failures = [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse].filter(
+    const failures = [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse].filter(
       (response) => response.status === "rejected",
     );
     if (failures.length > 0) {
@@ -731,6 +1002,9 @@ export function Admin() {
     setExperiences([]);
     setMusicTracks([]);
     setSitePages([]);
+    setArticles([]);
+    setThemeData({});
+    setThemeForm({});
   }
 
   async function handleCreateCertification(event: FormEvent<HTMLFormElement>) {
@@ -1131,6 +1405,252 @@ export function Admin() {
     }
   }
 
+  // ─── Article Handlers ──────────────────────────────────────────────────────
+
+  function resetArticleForm() {
+    setArticleForm(emptyArticleForm);
+    setArticleBlocks([]);
+    setEditingArticleId(null);
+    setEditingBlockIdx(null);
+    setAddingBlockType(null);
+    setBlockDraftForm({});
+  }
+
+  function editArticle(article: AdminArticle) {
+    setActiveTab("articles");
+    setEditingArticleId(article.id);
+    setArticleForm({
+      title: article.title,
+      slug: article.slug,
+      subtitle: article.subtitle ?? "",
+      excerpt: article.excerpt,
+      category: article.category,
+      status: article.status,
+      isFeatured: article.isFeatured,
+      coverAssetId: "",
+      seoTitle: article.seoTitle ?? "",
+      seoDescription: article.seoDescription ?? "",
+      authorName: article.author.name,
+      authorRole: article.author.role ?? "",
+      tags: article.tags.join(", "),
+    });
+    setArticleBlocks(
+      article.blocks.map((b) => ({
+        id: b.id || `local-${Math.random()}`,
+        type: b.type,
+        contentJson: (b.contentJson && typeof b.contentJson === "object" && !Array.isArray(b.contentJson))
+          ? (b.contentJson as Record<string, unknown>)
+          : {},
+      })),
+    );
+    setEditingBlockIdx(null);
+    setAddingBlockType(null);
+  }
+
+  async function handleSaveArticle(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setNotice(null);
+    try {
+      const payload = {
+        title: articleForm.title,
+        slug: articleForm.slug,
+        subtitle: articleForm.subtitle,
+        excerpt: articleForm.excerpt,
+        category: articleForm.category,
+        status: articleForm.status,
+        isFeatured: articleForm.isFeatured,
+        coverAssetId: articleForm.coverAssetId,
+        seoTitle: articleForm.seoTitle,
+        seoDescription: articleForm.seoDescription,
+        authorName: articleForm.authorName,
+        authorRole: articleForm.authorRole,
+        tags: articleForm.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        blocks: articleBlocks.map((b, i) => ({
+          type: b.type,
+          contentJson: b.contentJson,
+          sortOrder: i,
+        })),
+      };
+      if (editingArticleId) {
+        await adminApi.updateArticle(editingArticleId, payload);
+        setNotice("Article updated.");
+      } else {
+        await adminApi.createArticle(payload);
+        setNotice("Article created.");
+      }
+      resetArticleForm();
+      await loadAdminData();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to save article.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublishArticle(id: string, publish: boolean) {
+    setSaving(true);
+    setNotice(null);
+    try {
+      if (publish) {
+        await adminApi.publishArticle(id);
+        setNotice("Article published.");
+      } else {
+        await adminApi.unpublishArticle(id);
+        setNotice("Article unpublished.");
+      }
+      await loadAdminData();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to change publish status.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDuplicateArticle(id: string) {
+    setSaving(true);
+    setNotice(null);
+    try {
+      await adminApi.duplicateArticle(id);
+      setNotice("Article duplicated as draft.");
+      await loadAdminData();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to duplicate.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ─── Block Editor ─────────────────────────────────────────────────────────
+
+  function addBlock(type: string) {
+    setAddingBlockType(type);
+    setEditingBlockIdx(null);
+    setBlockDraftForm(defaultBlockContent(type));
+  }
+
+  function saveBlockDraft() {
+    if (!addingBlockType) return;
+    const newBlock: ArticleBlockDraft = {
+      id: `local-${Date.now()}-${Math.random()}`,
+      type: addingBlockType,
+      contentJson: blockDraftForm,
+    };
+    setArticleBlocks((current) => [...current, newBlock]);
+    setAddingBlockType(null);
+    setBlockDraftForm({});
+  }
+
+  function updateBlockDraft() {
+    if (editingBlockIdx === null) return;
+    setArticleBlocks((current) =>
+      current.map((b, i) =>
+        i === editingBlockIdx ? { ...b, contentJson: blockDraftForm } : b,
+      ),
+    );
+    setEditingBlockIdx(null);
+    setBlockDraftForm({});
+  }
+
+  function deleteBlock(index: number) {
+    setArticleBlocks((current) => current.filter((_, i) => i !== index));
+    if (editingBlockIdx === index) {
+      setEditingBlockIdx(null);
+      setBlockDraftForm({});
+    }
+  }
+
+  function startEditBlock(index: number) {
+    setEditingBlockIdx(index);
+    setAddingBlockType(null);
+    setBlockDraftForm({ ...(articleBlocks[index]?.contentJson ?? {}) });
+  }
+
+  // Drag and drop handlers
+  function handleBlockDragStart(e: DragEvent<HTMLDivElement>, index: number) {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+
+  function handleBlockDragOver(e: DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverBlockIdx(index);
+  }
+
+  function handleBlockDrop(e: DragEvent<HTMLDivElement>, targetIndex: number) {
+    e.preventDefault();
+    const sourceIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
+    if (isNaN(sourceIndex) || sourceIndex === targetIndex) {
+      setDragOverBlockIdx(null);
+      return;
+    }
+    setArticleBlocks((current) => {
+      const next = [...current];
+      const [moved] = next.splice(sourceIndex, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+    setDragOverBlockIdx(null);
+    // Update editingBlockIdx to follow the moved block
+    if (editingBlockIdx === sourceIndex) setEditingBlockIdx(targetIndex);
+    else if (editingBlockIdx !== null) {
+      if (sourceIndex < editingBlockIdx && targetIndex >= editingBlockIdx) setEditingBlockIdx(editingBlockIdx - 1);
+      else if (sourceIndex > editingBlockIdx && targetIndex <= editingBlockIdx) setEditingBlockIdx(editingBlockIdx + 1);
+    }
+  }
+
+  function handleBlockDragEnd() {
+    setDragOverBlockIdx(null);
+  }
+
+  // ─── Theme Handlers ────────────────────────────────────────────────────────
+
+  async function handleSaveTheme(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setThemeSaving(true);
+    setNotice(null);
+    try {
+      const result = await adminApi.saveTheme(themeForm);
+      setThemeData(result.data);
+      setThemeForm(result.data);
+      // Apply immediately to :root
+      const root = document.documentElement;
+      const varMap: Record<string, string> = {
+        background: "--bg", surface: "--surface", surfaceSoft: "--bg-2",
+        card: "--card", cardHover: "--card-2", border: "--border",
+        textPrimary: "--text", textSecondary: "--muted", textMuted: "--muted-2",
+        accent: "--accent", accentSoft: "--accent-soft", accentDim: "--accent-dim",
+      };
+      for (const [key, cssVar] of Object.entries(varMap)) {
+        if (result.data[key]) root.style.setProperty(cssVar, result.data[key]);
+      }
+      setNotice("Theme saved and applied.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to save theme.");
+    } finally {
+      setThemeSaving(false);
+    }
+  }
+
+  async function handleResetTheme() {
+    setThemeSaving(true);
+    setNotice(null);
+    try {
+      const result = await adminApi.resetTheme();
+      setThemeData(result.data);
+      setThemeForm(result.data);
+      // Remove inline vars to let CSS defaults take effect
+      const root = document.documentElement;
+      ["--bg","--surface","--bg-2","--card","--card-2","--border","--text","--muted","--muted-2","--accent","--accent-soft","--accent-dim"].forEach(v => root.style.removeProperty(v));
+      setNotice("Theme reset to defaults.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to reset theme.");
+    } finally {
+      setThemeSaving(false);
+    }
+  }
+
   function resetCertificationForm() {
     setCertForm(emptyCertification);
     setEditingCertificationId(null);
@@ -1328,6 +1848,7 @@ export function Admin() {
       if (deleteTarget.type === "project") await adminApi.deleteProject(deleteTarget.id);
       if (deleteTarget.type === "experience") await adminApi.deleteExperience(deleteTarget.id);
       if (deleteTarget.type === "music") await adminApi.deleteMusic(deleteTarget.id);
+      if (deleteTarget.type === "article") await adminApi.deleteArticle(deleteTarget.id);
       if (deleteTarget.type === "pageBlock") await adminApi.deletePageBlock(deleteTarget.pageSlug, deleteTarget.sectionKey, deleteTarget.id);
       setDeleteTarget(null);
       await loadAdminData();
@@ -1444,6 +1965,10 @@ export function Admin() {
           <div className="admin-stat">
             <span>CMS Pages</span>
             <strong>{sitePages.length}</strong>
+          </div>
+          <div className="admin-stat">
+            <span>Articles</span>
+            <strong>{articles.length}</strong>
           </div>
         </div>
 
@@ -2483,8 +3008,381 @@ export function Admin() {
           </Card>
         </div>
 
+
+        {/* ─── Articles Tab ─────────────────────────────────────────────────── */}
+        <div className={`admin-grid${activeTab === "articles" ? "" : " admin-hidden"}`}>
+          <Card className="admin-card-articles">
+            <div className="admin-card-head">
+              <h3>{editingArticleId ? "Edit Article" : "New Article"}</h3>
+              <div className="admin-row-actions">
+                {editingArticleId ? (
+                  <>
+                    <a className="icon-btn" href={`/articles/${articleForm.slug}`} target="_blank" rel="noreferrer" aria-label="Preview article">
+                      <ExternalLink size={15} />
+                    </a>
+                    <button className="icon-btn" type="button" aria-label="Cancel article edit" onClick={resetArticleForm}>
+                      <X size={15} />
+                    </button>
+                  </>
+                ) : null}
+              </div>
+            </div>
+
+            <form className="admin-form" onSubmit={handleSaveArticle} id="article-form">
+              <label>
+                Title
+                <input
+                  value={articleForm.title}
+                  onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
+                  required
+                  placeholder="Article title"
+                />
+              </label>
+              <label>
+                Slug
+                <input
+                  value={articleForm.slug}
+                  onChange={(e) => setArticleForm({ ...articleForm, slug: e.target.value })}
+                  placeholder="auto-generated from title if empty"
+                />
+              </label>
+              <label>
+                Subtitle
+                <input
+                  value={articleForm.subtitle}
+                  onChange={(e) => setArticleForm({ ...articleForm, subtitle: e.target.value })}
+                  placeholder="Optional subtitle / tagline"
+                />
+              </label>
+              <label>
+                Excerpt <span style={{ color: "var(--muted-2)", fontSize: 12 }}>(shown in cards)</span>
+                <textarea
+                  value={articleForm.excerpt}
+                  onChange={(e) => setArticleForm({ ...articleForm, excerpt: e.target.value })}
+                  required
+                  rows={3}
+                />
+              </label>
+              <div className="admin-form-pair">
+                <AdminSelect label="Category" value={articleForm.category} options={articleCategoryOptions} onChange={(category) => setArticleForm({ ...articleForm, category })} />
+                <AdminSelect label="Status" value={articleForm.status} options={articleStatusOptions} onChange={(status) => setArticleForm({ ...articleForm, status })} />
+              </div>
+              <label>
+                Tags <span style={{ color: "var(--muted-2)", fontSize: 12 }}>(comma-separated)</span>
+                <input
+                  value={articleForm.tags}
+                  onChange={(e) => setArticleForm({ ...articleForm, tags: e.target.value })}
+                  placeholder="n8n, Automation, Android"
+                />
+              </label>
+              <label>
+                Author Name
+                <input
+                  value={articleForm.authorName}
+                  onChange={(e) => setArticleForm({ ...articleForm, authorName: e.target.value })}
+                />
+              </label>
+              <label>
+                Author Role
+                <input
+                  value={articleForm.authorRole}
+                  onChange={(e) => setArticleForm({ ...articleForm, authorRole: e.target.value })}
+                  placeholder="e.g. TELADAN Scholar · Universitas Brawijaya"
+                />
+              </label>
+
+              {/* Cover image */}
+              <div className="admin-form-field">
+                <span className="admin-form-label">Cover Image</span>
+                <div className="admin-form-media-row">
+                  {articleForm.coverAssetId ? (
+                    <div className="admin-media-thumb">
+                      <img src={mediaById.get(articleForm.coverAssetId)?.publicUrl ?? ""} alt="cover" />
+                      <button className="icon-btn danger" type="button" aria-label="Remove cover" onClick={() => setArticleForm({ ...articleForm, coverAssetId: "" })}>
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button className="btn" type="button" onClick={() => setMediaPickerTarget("articleCover")}>
+                      Choose from media library
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* SEO */}
+              <details>
+                <summary className="admin-seo-toggle">SEO (optional)</summary>
+                <div className="admin-form-nested">
+                  <label>
+                    SEO Title
+                    <input value={articleForm.seoTitle} onChange={(e) => setArticleForm({ ...articleForm, seoTitle: e.target.value })} />
+                  </label>
+                  <label>
+                    SEO Description
+                    <textarea value={articleForm.seoDescription} onChange={(e) => setArticleForm({ ...articleForm, seoDescription: e.target.value })} rows={2} />
+                  </label>
+                </div>
+              </details>
+
+              <label className="admin-checkbox-label">
+                <input type="checkbox" checked={articleForm.isFeatured} onChange={(e) => setArticleForm({ ...articleForm, isFeatured: e.target.checked })} />
+                Featured article
+              </label>
+
+              {/* Block Editor */}
+              <div className="article-block-editor">
+                <div className="article-block-editor-head">
+                  <strong>Content Blocks</strong>
+                  <span className="admin-badge">{articleBlocks.length} block{articleBlocks.length !== 1 ? "s" : ""}</span>
+                </div>
+
+                {/* Block list with DnD */}
+                <div className="article-block-list">
+                  {articleBlocks.map((block, index) => (
+                    <div
+                      key={block.id}
+                      className={`article-block-row${dragOverBlockIdx === index ? " is-drag-over" : ""}${editingBlockIdx === index ? " is-editing" : ""}`}
+                      draggable
+                      onDragStart={(e) => handleBlockDragStart(e, index)}
+                      onDragOver={(e) => handleBlockDragOver(e, index)}
+                      onDrop={(e) => handleBlockDrop(e, index)}
+                      onDragEnd={handleBlockDragEnd}
+                    >
+                      <button className="block-drag-handle" type="button" aria-label="Drag to reorder" tabIndex={-1}>
+                        <GripVertical size={15} />
+                      </button>
+                      <div className="block-row-info">
+                        <span className="admin-badge">{block.type}</span>
+                        <span className="block-row-preview">
+                          {(() => {
+                            const c = block.contentJson;
+                            if (c["text"]) return String(c["text"]).slice(0, 60);
+                            if (c["code"]) return `<${block.type}>`;
+                            if (Array.isArray(c["items"])) return (c["items"] as string[]).slice(0, 2).join(", ");
+                            return `<${block.type}>`;
+                          })()}
+                        </span>
+                      </div>
+                      <div className="admin-row-actions">
+                        <button className="icon-btn" type="button" aria-label="Edit block" onClick={() => startEditBlock(index)}>
+                          <Pencil size={14} />
+                        </button>
+                        <button className="icon-btn danger" type="button" aria-label="Delete block" onClick={() => deleteBlock(index)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {articleBlocks.length === 0 && (
+                    <p className="admin-empty">No blocks yet. Add content below.</p>
+                  )}
+                </div>
+
+                {/* Edit existing block */}
+                {editingBlockIdx !== null && (
+                  <div className="article-block-edit-form">
+                    <div className="admin-card-head">
+                      <span className="admin-badge">{articleBlocks[editingBlockIdx]?.type}</span>
+                      <button className="icon-btn" type="button" aria-label="Cancel block edit" onClick={() => { setEditingBlockIdx(null); setBlockDraftForm({}); }}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <BlockDraftForm
+                      type={articleBlocks[editingBlockIdx]?.type ?? "paragraph"}
+                      value={blockDraftForm}
+                      onChange={setBlockDraftForm}
+                      imageAssets={imageMediaAssets}
+                    />
+                    <button className="btn btn-primary" type="button" onClick={updateBlockDraft}>
+                      <Check size={15} /> Update Block
+                    </button>
+                  </div>
+                )}
+
+                {/* Add new block */}
+                {addingBlockType ? (
+                  <div className="article-block-edit-form">
+                    <div className="admin-card-head">
+                      <span className="admin-badge">{addingBlockType}</span>
+                      <button className="icon-btn" type="button" aria-label="Cancel add block" onClick={() => { setAddingBlockType(null); setBlockDraftForm({}); }}>
+                        <X size={14} />
+                      </button>
+                    </div>
+                    <BlockDraftForm
+                      type={addingBlockType}
+                      value={blockDraftForm}
+                      onChange={setBlockDraftForm}
+                      imageAssets={imageMediaAssets}
+                    />
+                    <button className="btn btn-primary" type="button" onClick={saveBlockDraft}>
+                      <Plus size={15} /> Add Block
+                    </button>
+                  </div>
+                ) : (
+                  <div className="article-block-type-picker">
+                    <span style={{ fontSize: 12, color: "var(--muted-2)" }}>Add block:</span>
+                    {["paragraph", "heading", "image", "quote", "callout", "list", "code", "divider"].map((type) => (
+                      <button key={type} className="article-block-type-btn" type="button" onClick={() => addBlock(type)}>
+                        <Plus size={12} /> {type}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button className="btn btn-primary" type="submit" disabled={saving} form="article-form">
+                {saving ? "Saving…" : editingArticleId ? "Update Article" : "Create Article"}
+              </button>
+            </form>
+          </Card>
+
+          <Card className="admin-card-articles-list">
+            <div className="admin-card-head">
+              <h3>Articles</h3>
+              <span className="admin-badge">{articles.length}</span>
+            </div>
+
+            {/* Filters */}
+            <div className="admin-search-row">
+              <input
+                id="article-search"
+                className="admin-search"
+                type="search"
+                placeholder="Search articles…"
+                value={articleSearch}
+                onChange={(e) => setArticleSearch(e.target.value)}
+              />
+              <select
+                id="article-status-filter"
+                value={articleStatusFilter}
+                onChange={(e) => setArticleStatusFilter(e.target.value)}
+                className="admin-select-inline"
+              >
+                <option value="">All statuses</option>
+                {articleStatusOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="admin-list">
+              {articles
+                .filter((a) => {
+                  const q = articleSearch.toLowerCase().trim();
+                  const matchSearch = !q || `${a.title} ${a.excerpt} ${a.category} ${a.tags.join(" ")}`.toLowerCase().includes(q);
+                  const matchStatus = !articleStatusFilter || a.status === articleStatusFilter;
+                  return matchSearch && matchStatus;
+                })
+                .map((article) => (
+                  <div className="admin-list-item" key={article.id}>
+                    <div>
+                      <strong>{article.title}</strong>
+                      <span>{article.excerpt.slice(0, 80)}{article.excerpt.length > 80 ? "…" : ""}</span>
+                      <div className="admin-badges">
+                        <span className="admin-badge">{article.category}</span>
+                        <span className={`admin-badge${article.status === "published" ? "" : " is-muted"}`}>{article.status}</span>
+                        {article.isFeatured && <span className="admin-badge"><Star size={10} /> Featured</span>}
+                        <span className="admin-badge">{article.readingTime}m read</span>
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      {article.status === "published" ? (
+                        <a className="icon-btn" href={`/articles/${article.slug}`} target="_blank" rel="noreferrer" aria-label="Preview">
+                          <ExternalLink size={14} />
+                        </a>
+                      ) : null}
+                      {article.status === "published" ? (
+                        <button className="icon-btn" type="button" aria-label="Unpublish" onClick={() => void handlePublishArticle(article.id, false)} disabled={saving}>
+                          <BookOpen size={14} />
+                        </button>
+                      ) : (
+                        <button className="icon-btn" type="button" aria-label="Publish" onClick={() => void handlePublishArticle(article.id, true)} disabled={saving}>
+                          <CheckCircle size={14} />
+                        </button>
+                      )}
+                      <button className="icon-btn" type="button" aria-label="Duplicate" onClick={() => void handleDuplicateArticle(article.id)} disabled={saving}>
+                        <FileText size={14} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label="Edit" onClick={() => editArticle(article)}>
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        className="icon-btn danger"
+                        type="button"
+                        aria-label="Delete article"
+                        onClick={() => setDeleteTarget({ type: "article", id: article.id, label: article.title })}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              {articles.length === 0 && <p className="admin-empty">No articles yet. Create your first one!</p>}
+            </div>
+          </Card>
+        </div>
+
+        {/* ─── Theme Tab ────────────────────────────────────────────────────── */}
+        <div className={`admin-grid${activeTab === "theme" ? "" : " admin-hidden"}`}>
+          <Card className="admin-card-theme">
+            <div className="admin-card-head">
+              <h3><Palette size={18} /> Theme Studio</h3>
+            </div>
+            <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
+              Customize the site color palette. Changes are applied live to the site. Reset returns to default dark theme.
+            </p>
+            <form className="admin-form theme-form" onSubmit={handleSaveTheme} id="theme-form">
+              <div className="theme-color-grid">
+                {themeColorKeys.map(({ key, label }) => (
+                  <div key={key} className="theme-color-row">
+                    <div className="theme-color-swatch" style={{ background: themeForm[key] ?? themeDefaults[key] ?? "#000" }} aria-hidden="true" />
+                    <label>
+                      {label}
+                      <input
+                        id={`theme-color-${key}`}
+                        type="color"
+                        value={themeForm[key] ?? themeDefaults[key] ?? "#000000"}
+                        onChange={(e) => setThemeForm({ ...themeForm, [key]: e.target.value })}
+                      />
+                      <input
+                        type="text"
+                        value={themeForm[key] ?? themeDefaults[key] ?? ""}
+                        onChange={(e) => setThemeForm({ ...themeForm, [key]: e.target.value })}
+                        placeholder="#000000"
+                        maxLength={7}
+                        className="theme-hex-input"
+                      />
+                    </label>
+                    {themeData[key] !== themeDefaults[key] && themeData[key] ? (
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        aria-label={`Reset ${label} to default`}
+                        onClick={() => setThemeForm({ ...themeForm, [key]: themeDefaults[key] ?? "" })}
+                      >
+                        <X size={12} />
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+
+              <div className="actions" style={{ marginTop: 20 }}>
+                <button className="btn btn-primary" type="submit" disabled={themeSaving}>
+                  {themeSaving ? "Saving…" : "Save Theme"}
+                </button>
+                <button className="btn" type="button" onClick={() => void handleResetTheme()} disabled={themeSaving}>
+                  Reset to Defaults
+                </button>
+              </div>
+            </form>
+          </Card>
+        </div>
+
         <div className="actions with-space">
           <Button to="/">Back to portfolio</Button>
+
         </div>
       </div>
       {mediaPickerTarget ? (

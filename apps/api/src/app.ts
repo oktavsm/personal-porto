@@ -7,6 +7,7 @@ import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { config } from "./config.js";
 import { authPlugin } from "./plugins/auth.js";
+import { articleRoutes } from "./routes/articles.js";
 import { authRoutes } from "./routes/auth.js";
 import { certificationRoutes } from "./routes/certifications.js";
 import { contactRoutes } from "./routes/contact.js";
@@ -19,6 +20,7 @@ import { pageRoutes } from "./routes/pages.js";
 import { portfolioContextRoutes } from "./routes/portfolioContext.js";
 import { projectRoutes } from "./routes/projects.js";
 import { resumeRoutes } from "./routes/resume.js";
+import { themeRoutes } from "./routes/theme.js";
 import "./types.js";
 
 export async function buildApp() {
@@ -67,6 +69,8 @@ export async function buildApp() {
   await app.register(musicRoutes);
   await app.register(pageRoutes);
   await app.register(portfolioContextRoutes);
+  await app.register(articleRoutes);
+  await app.register(themeRoutes);
 
   app.setNotFoundHandler((request, reply) => {
     reply.code(404).send({ message: `Route not found: ${request.method} ${request.url}` });
