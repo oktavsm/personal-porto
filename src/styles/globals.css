@@ -306,6 +306,7 @@ h4 {
 
 p {
   color: var(--muted);
+  white-space: pre-wrap;
 }
 
 .hero-copy {
@@ -603,6 +604,11 @@ p {
 
 .card p {
   margin: 0;
+  white-space: pre-wrap;
+}
+
+.card p + p {
+  margin-top: 16px;
 }
 
 .memory-grid {
