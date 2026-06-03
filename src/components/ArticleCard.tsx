@@ -14,46 +14,45 @@ export function ArticleCard({ article, featured = false }: { article: PublicArti
   return (
     <Link
       to={`/articles/${article.slug}`}
-      className={`article-card card${featured ? " article-card-featured" : ""}`}
+      className={`article-card${featured ? " is-featured" : ""}`}
       aria-label={`Read: ${article.title}`}
     >
       {/* Cover image */}
       {article.coverImage ? (
-        <div className="article-card-cover">
-          <img src={article.coverImage} alt={article.coverAlt || article.title} />
-        </div>
+        <img src={article.coverImage} alt={article.coverAlt || article.title} className="article-card-cover" />
       ) : (
-        <div className="article-card-cover article-card-cover-placeholder">
-          <BookOpen size={28} />
+        <div className="article-card-cover" style={{ display: "grid", placeItems: "center" }}>
+          <BookOpen size={28} style={{ color: "var(--muted-2)" }} />
         </div>
       )}
 
       {/* Body */}
-      <div className="article-card-body">
+      <div className="article-card-content">
         {/* Meta top */}
-        <div className="article-card-meta-top">
-          <span className="article-badge article-badge-category">{article.category}</span>
+        <div className="article-card-meta">
+          <span>{article.category}</span>
+          <span className="article-card-meta-dot" />
           {article.isFeatured && (
-            <span className="article-badge article-badge-featured">
-              <Star size={11} /> Featured
-            </span>
+            <>
+              <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <Star size={11} /> Featured
+              </span>
+              <span className="article-card-meta-dot" />
+            </>
           )}
+          <span>{article.publishedAt ? formatDate(article.publishedAt) : "Draft"}</span>
         </div>
 
         {/* Title */}
         <h3 className="article-card-title">{article.title}</h3>
-        {article.subtitle && <p className="article-card-subtitle">{article.subtitle}</p>}
+        {article.subtitle && <p className="article-card-excerpt" style={{ fontStyle: "italic", marginBottom: 8, marginTop: 0 }}>{article.subtitle}</p>}
 
         {/* Excerpt */}
         <p className="article-card-excerpt">{article.excerpt}</p>
 
         {/* Meta bottom */}
-        <div className="article-card-meta-bottom">
-          <span className="article-card-meta-item">
-            <Calendar size={13} />
-            {article.publishedAt ? formatDate(article.publishedAt) : "Draft"}
-          </span>
-          <span className="article-card-meta-item">
+        <div className="article-card-meta" style={{ marginBottom: 16 }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <BookOpen size={13} />
             {article.readingTime} min read
           </span>
@@ -61,9 +60,9 @@ export function ArticleCard({ article, featured = false }: { article: PublicArti
 
         {/* Tags */}
         {article.tags.length > 0 && (
-          <div className="article-tags">
+          <div className="article-card-tags">
             {article.tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="article-tag">
+              <span key={tag} className="article-card-tag">
                 {tag}
               </span>
             ))}

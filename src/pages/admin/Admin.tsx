@@ -3006,11 +3006,7 @@ export function Admin() {
               {selectedSitePage && selectedSitePage.sections.length === 0 ? <p className="admin-empty">No sections found for this page.</p> : null}
             </div>
           </Card>
-        </div>
-
-
         {/* ─── Articles Tab ─────────────────────────────────────────────────── */}
-        <div className={`admin-grid${activeTab === "articles" ? "" : " admin-hidden"}`}>
           <Card className="admin-card-articles">
             <div className="admin-card-head">
               <h3>{editingArticleId ? "Edit Article" : "New Article"}</h3>
@@ -3034,7 +3030,6 @@ export function Admin() {
                 <input
                   value={articleForm.title}
                   onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
-                  required
                   placeholder="Article title"
                 />
               </label>
@@ -3059,7 +3054,6 @@ export function Admin() {
                 <textarea
                   value={articleForm.excerpt}
                   onChange={(e) => setArticleForm({ ...articleForm, excerpt: e.target.value })}
-                  required
                   rows={3}
                 />
               </label>

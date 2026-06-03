@@ -2,6 +2,7 @@ import { ArrowLeft, BookOpen, Calendar, Tag } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { publicApi, type PublicArticle, type PublicArticleBlock } from "../lib/publicApi";
+import { ArticleCard } from "../components/ArticleCard";
 
 // ─── Block Renderer ───────────────────────────────────────────────────────────
 
@@ -21,8 +22,8 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
     case "heading": {
       const level = typeof c["level"] === "number" ? c["level"] : 2;
       const text = String(c["text"] ?? "");
-      if (level === 2) return <h2 className="article-block-heading">{text}</h2>;
-      return <h3 className="article-block-subheading">{text}</h3>;
+      if (level === 2) return <h2 className="article-block-heading-2">{text}</h2>;
+      return <h3 className="article-block-heading-3">{text}</h3>;
     }
 
     case "image": {
@@ -31,9 +32,9 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
       const caption = c["caption"] ? String(c["caption"]) : null;
       const layout = String(c["layout"] ?? "inline");
       return (
-        <figure className={`article-block-image article-block-image-${layout}`}>
+        <figure className={`article-block-image layout-${layout}`}>
           <img src={src} alt={alt} />
-          {caption && <figcaption>{caption}</figcaption>}
+          {caption && <figcaption className="article-block-caption">{caption}</figcaption>}
         </figure>
       );
     }
@@ -43,8 +44,8 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
       const source = c["source"] ? String(c["source"]) : null;
       return (
         <blockquote className="article-block-quote">
-          <p>&#8220;{text}&#8221;</p>
-          {source && <cite>— {source}</cite>}
+          <p className="article-block-quote-text">&#8220;{text}&#8221;</p>
+          {source && <cite className="article-block-quote-source">{source}</cite>}
         </blockquote>
       );
     }
@@ -60,10 +61,10 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
         warning: "Heads Up",
       };
       return (
-        <aside className={`article-block-callout article-block-callout-${variant}`}>
-          <span className="callout-label">{labelMap[variant] ?? "Note"}</span>
-          {title && <strong className="callout-title">{title}</strong>}
-          <p>{text}</p>
+        <aside className={`article-block-callout variant-${variant}`}>
+          <span className="callout-label" style={{ fontWeight: 600, display: "block", marginBottom: 4 }}>{labelMap[variant] ?? "Note"}</span>
+          {title && <h4 className="callout-title">{title}</h4>}
+          <div>{text}</div>
         </aside>
       );
     }
@@ -93,9 +94,9 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
       const code = String(c["code"] ?? "");
       const lang = c["language"] ? String(c["language"]) : null;
       return (
-        <div className="article-block-code-wrap">
-          {lang && <span className="code-lang-label">{lang}</span>}
-          <pre className="article-block-code">
+        <div className="article-block-code">
+          {lang && <div className="article-block-code-lang">{lang}</div>}
+          <pre>
             <code>{code}</code>
           </pre>
         </div>
@@ -154,7 +155,7 @@ export function ArticleDetail() {
 
   if (loading) {
     return (
-      <section className="articles-section">
+      <section className="article-detail-section">
         <div className="container">
           <div className="articles-loading" data-reveal>
             <div className="articles-loading-dots">
@@ -169,7 +170,7 @@ export function ArticleDetail() {
 
   if (notFound || !article) {
     return (
-      <section className="articles-section">
+      <section className="article-detail-section">
         <div className="container">
           <div className="articles-empty" data-reveal>
             <BookOpen size={36} />
@@ -184,46 +185,46 @@ export function ArticleDetail() {
   }
 
   return (
-    <article className="article-detail-page">
+    <article className="article-detail-section">
       {/* SEO meta */}
       {article.seoTitle && <title>{article.seoTitle}</title>}
 
       {/* Back nav */}
       <div className="container">
-        <div className="article-detail-back" data-reveal>
-          <Link to="/articles" className="btn">
+        <div className="article-detail-back" data-reveal style={{ marginBottom: 40, marginTop: -20 }}>
+          <Link to="/articles" className="btn" style={{ background: "transparent", border: "1px solid var(--border)", padding: "8px 16px" }}>
             <ArrowLeft size={16} /> Notes &amp; Reflections
           </Link>
         </div>
       </div>
 
       {/* Hero */}
-      <header className="article-detail-hero">
+      <header className="article-header">
         <div className="container">
-          <div className="article-detail-meta-top" data-reveal>
+          <div className="article-meta" data-reveal style={{ marginBottom: 24 }}>
             <span className="article-badge article-badge-category">{article.category}</span>
-            <span className="article-detail-date">
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <Calendar size={14} />
               {article.publishedAt ? formatDate(article.publishedAt) : "Draft"}
             </span>
-            <span className="article-detail-reading">
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <BookOpen size={14} />
               {article.readingTime} min read
             </span>
           </div>
 
-          <h1 className="article-detail-title" data-reveal>
+          <h1 className="article-title" data-reveal>
             {article.title}
           </h1>
 
           {article.subtitle && (
-            <p className="article-detail-subtitle" data-reveal>
+            <p className="article-subtitle" data-reveal>
               {article.subtitle}
             </p>
           )}
 
-          <p className="article-detail-author" data-reveal>
-            By <strong>{article.author.name}</strong>
+          <p data-reveal style={{ color: "var(--muted-2)", fontSize: "0.95rem" }}>
+            By <strong style={{ color: "var(--text)" }}>{article.author.name}</strong>
             {article.author.role && <span> · {article.author.role}</span>}
           </p>
         </div>
@@ -231,15 +232,15 @@ export function ArticleDetail() {
 
       {/* Cover image */}
       {article.coverImage && (
-        <div className="article-detail-cover" data-reveal>
-          <div className="container">
+        <div className="container">
+          <div className="article-hero-image" data-reveal>
             <img src={article.coverImage} alt={article.coverAlt || article.title} />
           </div>
         </div>
       )}
 
       {/* Body */}
-      <div className="article-detail-body container" data-reveal>
+      <div className="article-content" data-reveal>
         {article.blocks.map((block) => (
           <BlockRenderer key={block.id} block={block} />
         ))}
@@ -253,44 +254,31 @@ export function ArticleDetail() {
 
       {/* Tags */}
       {article.tags.length > 0 && (
-        <footer className="article-detail-tags container" data-reveal>
-          <Tag size={15} />
-          {article.tags.map((tag) => (
-            <span key={tag} className="article-tag">
-              {tag}
-            </span>
-          ))}
+        <footer className="article-footer" data-reveal>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--muted-2)" }}>
+            <Tag size={15} />
+            <span style={{ fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Tags</span>
+          </div>
+          <div className="article-footer-tags">
+            {article.tags.map((tag) => (
+              <span key={tag} className="article-card-tag">
+                {tag}
+              </span>
+            ))}
+          </div>
         </footer>
       )}
 
       {/* Related */}
       {related.length > 0 && (
-        <section className="article-related">
+        <section className="article-related" style={{ marginTop: 80 }}>
           <div className="container">
             <div className="section-kicker" data-reveal>
               More from {article.category}
             </div>
-            <div className="articles-grid articles-grid-sm" data-reveal>
+            <div className="articles-grid" data-reveal style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
               {related.map((a) => (
-                <Link
-                  key={a.id}
-                  to={`/articles/${a.slug}`}
-                  className="article-related-card card"
-                  aria-label={`Read: ${a.title}`}
-                >
-                  {a.coverImage && (
-                    <img
-                      src={a.coverImage}
-                      alt={a.coverAlt || a.title}
-                      className="article-related-cover"
-                    />
-                  )}
-                  <span className="article-badge article-badge-category">{a.category}</span>
-                  <strong>{a.title}</strong>
-                  <span className="article-card-meta-item">
-                    <BookOpen size={12} /> {a.readingTime} min
-                  </span>
-                </Link>
+                <ArticleCard key={a.id} article={a} />
               ))}
             </div>
           </div>
