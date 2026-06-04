@@ -1,5 +1,5 @@
 import { ArrowLeft, BookOpen, Calendar, Tag } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { publicApi, type PublicArticle, type PublicArticleBlock } from "../lib/publicApi";
 import { ArticleCard } from "../components/ArticleCard";
@@ -36,6 +36,60 @@ function parseMarkdown(text: string) {
   return { __html: html };
 }
 
+function ArticleGalleryBlock({
+  images,
+  layout,
+}: {
+  images: { src: string; alt?: string; caption?: string }[];
+  layout: string;
+}) {
+  const galleryRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    if (layout !== "carousel" || images.length < 2 || isPaused) return undefined;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return undefined;
+
+    const interval = window.setInterval(() => {
+      const node = galleryRef.current;
+      if (!node) return;
+
+      const firstItem = node.querySelector<HTMLElement>(".gallery-item");
+      const step = firstItem ? firstItem.offsetWidth + 16 : node.clientWidth * 0.86;
+      const nearEnd = node.scrollLeft + node.clientWidth >= node.scrollWidth - step * 0.35;
+
+      node.scrollTo({
+        left: nearEnd ? 0 : node.scrollLeft + step,
+        behavior: "smooth",
+      });
+    }, 3600);
+
+    return () => window.clearInterval(interval);
+  }, [images.length, isPaused, layout]);
+
+  return (
+    <div
+      className={`article-block-gallery layout-${layout}`}
+      ref={galleryRef}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+      onFocus={() => setIsPaused(true)}
+      onBlur={() => setIsPaused(false)}
+      onTouchStart={() => setIsPaused(true)}
+      onTouchEnd={() => setIsPaused(false)}
+    >
+      {images.map((img, i) => (
+        <figure key={`${img.src}-${i}`} className="gallery-item">
+          <img src={img.src} alt={img.alt || ""} />
+          {img.caption && <figcaption className="article-block-caption">{img.caption}</figcaption>}
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 function BlockRenderer({ block }: { block: PublicArticleBlock }) {
   const c = getBlockContent<Record<string, unknown>>(block);
 
@@ -66,16 +120,7 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
     case "gallery": {
       const images = (c["images"] as { src: string; alt?: string; caption?: string }[]) || [];
       const layout = String(c["layout"] ?? "grid");
-      return (
-        <div className={`article-block-gallery layout-${layout}`}>
-          {images.map((img, i) => (
-            <figure key={i} className="gallery-item">
-              <img src={img.src} alt={img.alt || ""} />
-              {img.caption && <figcaption className="article-block-caption">{img.caption}</figcaption>}
-            </figure>
-          ))}
-        </div>
-      );
+      return <ArticleGalleryBlock images={images} layout={layout} />;
     }
 
     case "quote": {
