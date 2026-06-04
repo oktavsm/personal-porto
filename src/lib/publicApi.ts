@@ -107,6 +107,17 @@ export type PublicMusicTrack = {
   sortOrder: number;
 };
 
+export type PublicContentCategory = {
+  id: string;
+  scope: string;
+  label: string;
+  slug: string;
+  description?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  usageCount: number;
+};
+
 export type PublicSiteBlock = {
   id: string;
   type: string;
@@ -145,6 +156,8 @@ export const publicApi = {
   experiences: () => request<{ data: PublicExperience[] }>("/api/public/experiences"),
   experience: (slug: string) => request<{ data: PublicExperience }>(`/api/public/experiences/${slug}`),
   music: () => request<{ data: PublicMusicTrack[] }>("/api/public/music"),
+  categories: (scope: "article" | "project" | "experience") =>
+    request<{ data: PublicContentCategory[] }>(`/api/public/categories?scope=${encodeURIComponent(scope)}`),
   page: (slug: string) => request<{ data: PublicSitePage }>(`/api/public/pages/${slug}`),
   // Article Studio
   articles: (params?: { category?: string; tag?: string; featured?: string; limit?: string }) => {

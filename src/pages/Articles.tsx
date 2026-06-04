@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArticleCard } from "../components/ArticleCard";
 import { publicApi, type PublicArticle } from "../lib/publicApi";
 
-const CATEGORIES = [
+const fallbackCategories = [
   "All",
   "Reflection",
   "Workshop",
@@ -17,6 +17,7 @@ const CATEGORIES = [
 
 export function Articles() {
   const [articles, setArticles] = useState<PublicArticle[]>([]);
+  const [categories, setCategories] = useState(fallbackCategories);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("All");
@@ -25,10 +26,22 @@ export function Articles() {
 
   useEffect(() => {
     document.title = "Notes & Reflections — Oktavianus Samuel";
-    publicApi
-      .articles()
-      .then(({ data }) => {
+    Promise.allSettled([publicApi.articles(), publicApi.categories("article")])
+      .then(([articleResponse, categoryResponse]) => {
+        if (articleResponse.status !== "fulfilled") {
+          throw new Error("Could not load articles.");
+        }
+        const { data } = articleResponse.value;
         setArticles(data);
+        if (categoryResponse.status === "fulfilled") {
+          const labels = categoryResponse.value.data.map((category) => category.label);
+          const fallbackLabels = Array.from(new Set(data.map((article) => article.category)));
+          const nextLabels = labels.length > 0 ? labels : fallbackLabels;
+          setCategories(["All", ...nextLabels.filter((label) => label !== "All")]);
+        } else {
+          const labels = Array.from(new Set(data.map((article) => article.category)));
+          setCategories(["All", ...labels.filter((label) => label !== "All")]);
+        }
         setLoading(false);
       })
       .catch(() => {
@@ -36,6 +49,12 @@ export function Articles() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    if (!categories.includes(activeCategory)) {
+      setActiveCategory("All");
+    }
+  }, [activeCategory, categories]);
 
   const featured = useMemo(() => articles.find((a) => a.isFeatured), [articles]);
 
@@ -102,7 +121,7 @@ export function Articles() {
 
           {/* Category filter pills */}
           <div className="articles-filters" role="group" aria-label="Filter by category">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 id={`article-filter-${cat.toLowerCase().replace(/\s+/g, "-")}`}

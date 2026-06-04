@@ -9,6 +9,7 @@ import { config } from "./config.js";
 import { authPlugin } from "./plugins/auth.js";
 import { articleRoutes } from "./routes/articles.js";
 import { authRoutes } from "./routes/auth.js";
+import { categoryRoutes } from "./routes/categories.js";
 import { certificationRoutes } from "./routes/certifications.js";
 import { contactRoutes } from "./routes/contact.js";
 import { experienceRoutes } from "./routes/experiences.js";
@@ -66,6 +67,7 @@ export async function buildApp() {
   await app.register(certificationRoutes);
   await app.register(liveSystemRoutes);
   await app.register(contactRoutes);
+  await app.register(categoryRoutes);
   await app.register(musicRoutes);
   await app.register(pageRoutes);
   await app.register(portfolioContextRoutes);

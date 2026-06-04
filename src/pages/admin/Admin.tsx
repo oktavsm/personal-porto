@@ -7,6 +7,7 @@ import {
   type AdminArticleBlock,
   type AdminCertification,
   type AdminContactLink,
+  type AdminContentCategory,
   type AdminExperience,
   type AdminLiveSystem,
   type AdminMediaAsset,
@@ -18,6 +19,7 @@ import {
   type AdminSiteSection,
   type AdminTheme,
   type AdminUser,
+  type ContentCategoryScope,
 } from "../../lib/adminApi";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -37,9 +39,10 @@ type DeleteTarget =
   | { type: "experience"; id: string; label: string }
   | { type: "music"; id: string; label: string }
   | { type: "article"; id: string; label: string }
+  | { type: "category"; id: string; label: string }
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
-type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "pages" | "articles" | "theme";
+type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "theme";
 type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage" | "articleCover";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
@@ -51,6 +54,7 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "certifications", label: "Certifications" },
   { id: "systems", label: "Systems" },
   { id: "contacts", label: "Contacts" },
+  { id: "categories", label: "Categories" },
   { id: "pages", label: "Pages" },
   { id: "articles", label: "Articles" },
   { id: "theme", label: "Theme" },
@@ -83,6 +87,15 @@ const emptyContact = {
   value: "",
   url: "",
   isPrimary: false,
+  sortOrder: 0,
+};
+
+const emptyCategory = {
+  scope: "article" as ContentCategoryScope,
+  label: "",
+  slug: "",
+  description: "",
+  isActive: true,
   sortOrder: 0,
 };
 
@@ -172,10 +185,19 @@ const emptyPageBlock = {
   isPublished: true,
 };
 
-const projectCategoryOptions = ["Android", "Web", "Automation", "AI", "Networking", "Academic", "Utility"].map((value) => ({ value, label: value }));
+const fallbackProjectCategories = ["Android", "Web", "Automation", "AI", "Networking", "Academic", "Utility"];
+const fallbackExperienceCategories = ["Leadership", "Teaching", "Scholarship", "Service", "Community", "Technical"];
+const fallbackArticleCategories = [
+  "Reflection", "Workshop", "Project Log", "Learning Note",
+  "TELADAN Journey", "Event Story", "Technical Note", "Personal Essay",
+];
+const categoryScopeOptions: { value: ContentCategoryScope; label: string }[] = [
+  { value: "article", label: "Articles" },
+  { value: "project", label: "Projects" },
+  { value: "experience", label: "Experiences" },
+];
 const projectPriorityOptions = ["Flagship", "Featured", "Archive"].map((value) => ({ value, label: value }));
 const projectStatusOptions = ["Deployed", "In Development", "Prototype", "Paused", "Archived"].map((value) => ({ value, label: value }));
-const experienceCategoryOptions = ["Leadership", "Teaching", "Scholarship", "Service", "Community", "Technical"].map((value) => ({ value, label: value }));
 const contactTypeOptions = [
   { value: "email", label: "Email" },
   { value: "github", label: "GitHub" },
@@ -185,11 +207,6 @@ const contactTypeOptions = [
   { value: "whatsapp", label: "WhatsApp" },
   { value: "custom", label: "Custom" },
 ];
-
-const articleCategoryOptions = [
-  "Reflection", "Workshop", "Project Log", "Learning Note",
-  "TELADAN Journey", "Event Story", "Technical Note", "Personal Essay",
-].map((value) => ({ value, label: value }));
 
 const articleStatusOptions = [
   { value: "draft", label: "Draft" },
@@ -242,6 +259,32 @@ type AdminSelectOption = {
   value: string;
   label: string;
 };
+
+function optionsFromLabels(labels: string[]) {
+  return labels.map((value) => ({ value, label: value }));
+}
+
+function categoryScopeLabel(scope: ContentCategoryScope) {
+  return categoryScopeOptions.find((option) => option.value === scope)?.label ?? scope;
+}
+
+function categoryOptionsFor(
+  categories: AdminContentCategory[],
+  scope: ContentCategoryScope,
+  fallbackLabels: string[],
+  currentValue?: string,
+) {
+  const labels = [
+    ...categories
+      .filter((category) => category.scope === scope && category.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label))
+      .map((category) => category.label),
+    ...fallbackLabels,
+    ...(currentValue ? [currentValue] : []),
+  ];
+
+  return optionsFromLabels(Array.from(new Set(labels.filter(Boolean))));
+}
 
 function formatBytes(value: number) {
   if (value < 1024) return `${value} B`;
@@ -942,9 +985,11 @@ export function Admin() {
   const [experiences, setExperiences] = useState<AdminExperience[]>([]);
   const [musicTracks, setMusicTracks] = useState<AdminMusicTrack[]>([]);
   const [sitePages, setSitePages] = useState<AdminSitePage[]>([]);
+  const [categories, setCategories] = useState<AdminContentCategory[]>([]);
   const [certForm, setCertForm] = useState(emptyCertification);
   const [systemForm, setSystemForm] = useState(emptySystem);
   const [contactForm, setContactForm] = useState(emptyContact);
+  const [categoryForm, setCategoryForm] = useState(emptyCategory);
   const [resumeForm, setResumeForm] = useState(emptyResumeForm);
   const [mediaForm, setMediaForm] = useState({ altText: "", caption: "" });
   const [projectForm, setProjectForm] = useState(emptyProject);
@@ -958,6 +1003,7 @@ export function Admin() {
   const [editingCertificationId, setEditingCertificationId] = useState<string | null>(null);
   const [editingSystemId, setEditingSystemId] = useState<string | null>(null);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [editingExperienceId, setEditingExperienceId] = useState<string | null>(null);
   const [editingMusicId, setEditingMusicId] = useState<string | null>(null);
@@ -977,6 +1023,8 @@ export function Admin() {
   const [certificationSearch, setCertificationSearch] = useState("");
   const [systemSearch, setSystemSearch] = useState("");
   const [contactSearch, setContactSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [categoryScopeFilter, setCategoryScopeFilter] = useState<ContentCategoryScope | "">("");
   const [articleSearch, setArticleSearch] = useState("");
   const [articleStatusFilter, setArticleStatusFilter] = useState("");
   const [articles, setArticles] = useState<AdminArticle[]>([]);
@@ -1015,6 +1063,18 @@ export function Admin() {
     [filteredAudioMediaAssets],
   );
   const mediaById = useMemo(() => new Map(mediaAssets.map((asset) => [asset.id, asset])), [mediaAssets]);
+  const projectCategoryOptions = useMemo(
+    () => categoryOptionsFor(categories, "project", fallbackProjectCategories, projectForm.category),
+    [categories, projectForm.category],
+  );
+  const experienceCategoryOptions = useMemo(
+    () => categoryOptionsFor(categories, "experience", fallbackExperienceCategories, experienceForm.category),
+    [categories, experienceForm.category],
+  );
+  const articleCategoryOptions = useMemo(
+    () => categoryOptionsFor(categories, "article", fallbackArticleCategories, articleForm.category),
+    [articleForm.category, categories],
+  );
   const filteredProjects = useMemo(
     () => projects.filter((project) => matchesSearch(projectSearch, [project.title, project.slug, project.category, project.priority, project.status, project.summary, project.isFeatured, project.isPublished])),
     [projects, projectSearch],
@@ -1045,6 +1105,14 @@ export function Admin() {
   const filteredContacts = useMemo(
     () => contacts.filter((contact) => matchesSearch(contactSearch, [contact.type, contact.label, contact.value, contact.url, contact.isPrimary])),
     [contacts, contactSearch],
+  );
+  const filteredCategories = useMemo(
+    () =>
+      categories.filter((category) => {
+        const matchesScope = !categoryScopeFilter || category.scope === categoryScopeFilter;
+        return matchesScope && matchesSearch(categorySearch, [category.scope, category.label, category.slug, category.description, category.isActive, category.usageCount]);
+      }),
+    [categories, categoryScopeFilter, categorySearch],
   );
   const selectedSitePage = useMemo(() => sitePages.find((page) => page.slug === selectedPageSlug) ?? sitePages[0] ?? null, [sitePages, selectedPageSlug]);
   const pageOptions = useMemo(() => sitePages.map((page) => ({ value: page.slug, label: page.title })), [sitePages]);
@@ -1100,10 +1168,11 @@ export function Admin() {
   }
 
   async function loadAdminData() {
-    const [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse] = await Promise.allSettled([
+    const [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse] = await Promise.allSettled([
       adminApi.certifications(),
       adminApi.systems(),
       adminApi.contact(),
+      adminApi.categories(),
       adminApi.media(),
       adminApi.resume(),
       adminApi.projects(),
@@ -1117,6 +1186,7 @@ export function Admin() {
     if (certificationResponse.status === "fulfilled") setCertifications(certificationResponse.value.data);
     if (systemResponse.status === "fulfilled") setSystems(systemResponse.value.data);
     if (contactResponse.status === "fulfilled") setContacts(contactResponse.value.data);
+    if (categoryResponse.status === "fulfilled") setCategories(categoryResponse.value.data);
     if (mediaResponse.status === "fulfilled") setMediaAssets(mediaResponse.value.data);
     if (resumeResponse.status === "fulfilled") setResumeVersions(resumeResponse.value.data);
     if (projectResponse.status === "fulfilled") setProjects(projectResponse.value.data);
@@ -1133,7 +1203,7 @@ export function Admin() {
       setThemeForm(themeResponse.value.data);
     }
 
-    const failures = [certificationResponse, systemResponse, contactResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse].filter(
+    const failures = [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse].filter(
       (response) => response.status === "rejected",
     );
     if (failures.length > 0) {
@@ -1176,6 +1246,7 @@ export function Admin() {
     setExperiences([]);
     setMusicTracks([]);
     setSitePages([]);
+    setCategories([]);
     setArticles([]);
     setThemeData({});
     setThemeForm({});
@@ -1243,6 +1314,27 @@ export function Admin() {
       setEditingContactId(null);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to save contact link.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleCreateCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      setNotice(null);
+      if (editingCategoryId) {
+        await adminApi.updateCategory(editingCategoryId, categoryForm);
+      } else {
+        await adminApi.createCategory(categoryForm);
+      }
+      resetCategoryForm();
+      await loadAdminData();
+      setNotice(editingCategoryId ? "Category updated." : "Category added.");
+      setEditingCategoryId(null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to save category.");
     } finally {
       setSaving(false);
     }
@@ -1613,6 +1705,31 @@ export function Admin() {
     }
   }
 
+  async function handleReorderCategories(id: string, direction: "up" | "down") {
+    const category = categories.find((item) => item.id === id);
+    if (!category) return;
+    const scopedCategories = categories.filter((item) => item.scope === category.scope);
+    const nextScopedCategories = moveId(scopedCategories, id, direction);
+    if (!nextScopedCategories) return;
+
+    const nextScopedIdSet = new Set(nextScopedCategories.map((item) => item.id));
+    setCategories((current) => [
+      ...current.filter((item) => !nextScopedIdSet.has(item.id)),
+      ...nextScopedCategories,
+    ].sort((a, b) => a.scope.localeCompare(b.scope) || a.sortOrder - b.sortOrder || a.label.localeCompare(b.label)));
+
+    setSaving(true);
+    try {
+      await adminApi.reorderCategories({ ids: nextScopedCategories.map((item) => item.id) });
+      await loadAdminData();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to reorder categories.");
+      await loadAdminData();
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // ─── Article Handlers ──────────────────────────────────────────────────────
 
   function resetArticleForm() {
@@ -1874,6 +1991,11 @@ export function Admin() {
     setEditingContactId(null);
   }
 
+  function resetCategoryForm() {
+    setCategoryForm(emptyCategory);
+    setEditingCategoryId(null);
+  }
+
   function resetProjectForm() {
     setProjectForm(emptyProject);
     setEditingProjectId(null);
@@ -1939,6 +2061,19 @@ export function Admin() {
       url: contact.url,
       isPrimary: contact.isPrimary,
       sortOrder: contact.sortOrder,
+    });
+  }
+
+  function editCategory(category: AdminContentCategory) {
+    setActiveTab("categories");
+    setEditingCategoryId(category.id);
+    setCategoryForm({
+      scope: category.scope,
+      label: category.label,
+      slug: category.slug,
+      description: category.description ?? "",
+      isActive: category.isActive,
+      sortOrder: category.sortOrder,
     });
   }
 
@@ -2057,6 +2192,7 @@ export function Admin() {
       if (deleteTarget.type === "experience") await adminApi.deleteExperience(deleteTarget.id);
       if (deleteTarget.type === "music") await adminApi.deleteMusic(deleteTarget.id);
       if (deleteTarget.type === "article") await adminApi.deleteArticle(deleteTarget.id);
+      if (deleteTarget.type === "category") await adminApi.deleteCategory(deleteTarget.id);
       if (deleteTarget.type === "pageBlock") await adminApi.deletePageBlock(deleteTarget.pageSlug, deleteTarget.sectionKey, deleteTarget.id);
       setDeleteTarget(null);
       await loadAdminData();
@@ -2153,6 +2289,10 @@ export function Admin() {
           <div className="admin-stat">
             <span>Contact Links</span>
             <strong>{contacts.length}</strong>
+          </div>
+          <div className="admin-stat">
+            <span>Categories</span>
+            <strong>{categories.length}</strong>
           </div>
           <div className="admin-stat">
             <span>Media Assets</span>
@@ -2996,6 +3136,105 @@ export function Admin() {
                 );
               })}
               {filteredContacts.length === 0 ? <p className="admin-empty">No contact links matched this search.</p> : null}
+            </div>
+          </Card>
+
+          <Card className="admin-card-categories">
+            <div className="admin-card-head">
+              <h3>{editingCategoryId ? "Edit category" : "New category"}</h3>
+              {editingCategoryId ? (
+                <button className="icon-btn" type="button" aria-label="Cancel category edit" onClick={resetCategoryForm}>
+                  <X size={15} />
+                </button>
+              ) : null}
+            </div>
+            <form className="admin-form" onSubmit={handleCreateCategory}>
+              <AdminSelect
+                label="Content Area"
+                value={categoryForm.scope}
+                options={categoryScopeOptions}
+                onChange={(scope) => setCategoryForm({ ...categoryForm, scope: scope as ContentCategoryScope })}
+              />
+              <label>
+                Label
+                <input value={categoryForm.label} onChange={(event) => setCategoryForm({ ...categoryForm, label: event.target.value })} placeholder="Technical Note" required />
+              </label>
+              <label>
+                Slug
+                <input value={categoryForm.slug} onChange={(event) => setCategoryForm({ ...categoryForm, slug: event.target.value })} placeholder="auto from label if empty" />
+              </label>
+              <label>
+                Description
+                <textarea value={categoryForm.description} onChange={(event) => setCategoryForm({ ...categoryForm, description: event.target.value })} placeholder="Internal note for this category" />
+              </label>
+              <label>
+                Display Order
+                <input value={categoryForm.sortOrder} onChange={(event) => setCategoryForm({ ...categoryForm, sortOrder: Number(event.target.value) })} type="number" />
+              </label>
+              <label className="admin-check">
+                <input checked={categoryForm.isActive} onChange={(event) => setCategoryForm({ ...categoryForm, isActive: event.target.checked })} type="checkbox" />
+                Active in dropdowns
+              </label>
+              <button className="btn btn-primary" type="submit" disabled={saving}>
+                <Plus size={16} /> {editingCategoryId ? "Update Category" : "Add Category"}
+              </button>
+            </form>
+          </Card>
+
+          <Card className="admin-card-categories">
+            <h3>Categories</h3>
+            <div className="admin-search-row">
+              <input
+                id="category-search"
+                className="admin-search"
+                type="search"
+                placeholder="Search label, slug, or scope"
+                value={categorySearch}
+                onChange={(event) => setCategorySearch(event.target.value)}
+              />
+              <div className="admin-select-inline">
+                <AdminSelect
+                  label="Scope"
+                  value={categoryScopeFilter}
+                  options={[{ value: "", label: "All areas" }, ...categoryScopeOptions]}
+                  placeholder="All areas"
+                  onChange={(scope) => setCategoryScopeFilter(scope as ContentCategoryScope | "")}
+                />
+              </div>
+              <span className="admin-count">{filteredCategories.length} of {categories.length}</span>
+            </div>
+            <div className="admin-list">
+              {filteredCategories.map((category) => {
+                const scopedCategories = categories.filter((item) => item.scope === category.scope);
+                const categoryIndex = scopedCategories.findIndex((item) => item.id === category.id);
+                return (
+                  <div className="admin-list-item" key={category.id}>
+                    <div>
+                      <strong>{category.label}</strong>
+                      <span>{categoryScopeLabel(category.scope)} · {category.slug}</span>
+                      <div className="admin-badges">
+                        <span className={`admin-badge${category.isActive ? "" : " is-muted"}`}>{category.isActive ? "Active" : "Hidden"}</span>
+                        <span className="admin-badge">{category.usageCount} used</span>
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      <button className="icon-btn" type="button" aria-label={`Move ${category.label} up`} onClick={() => void handleReorderCategories(category.id, "up")} disabled={categoryIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${category.label} down`} onClick={() => void handleReorderCategories(category.id, "down")} disabled={categoryIndex === scopedCategories.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${category.label}`} onClick={() => editCategory(category)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${category.label}`} onClick={() => setDeleteTarget({ type: "category", id: category.id, label: category.label })}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredCategories.length === 0 ? <p className="admin-empty">No categories matched this search.</p> : null}
             </div>
           </Card>
 

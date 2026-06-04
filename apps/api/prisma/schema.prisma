@@ -224,6 +224,21 @@ model ContactLink {
   sortOrder Int     @default(0)
 }
 
+model ContentCategory {
+  id          String   @id @default(cuid())
+  scope       String
+  label       String
+  slug        String
+  description String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([scope, slug])
+  @@index([scope, sortOrder])
+}
+
 model MusicTrack {
   id           String      @id @default(cuid())
   title        String
@@ -333,4 +348,3 @@ model ThemeSetting {
   key   String @unique
   value String
 }
-

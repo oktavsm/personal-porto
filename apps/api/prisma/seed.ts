@@ -4,6 +4,7 @@ import { copyFile, mkdir, stat } from "node:fs/promises";
 import { basename, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { hashPassword } from "../src/plugins/auth.js";
+import { slugify } from "../src/lib/strings.js";
 import { certifications } from "../../../src/data/certifications.js";
 import { experiences } from "../../../src/data/experiences.js";
 import { media } from "../../../src/data/media.js";
@@ -68,6 +69,21 @@ const musicTracks = [
   },
 ];
 
+const defaultCategories = {
+  article: [
+    "Reflection",
+    "Workshop",
+    "Project Log",
+    "Learning Note",
+    "TELADAN Journey",
+    "Event Story",
+    "Technical Note",
+    "Personal Essay",
+  ],
+  project: ["Android", "Web", "Automation", "AI", "Networking", "Academic", "Utility"],
+  experience: ["Leadership", "Teaching", "Scholarship", "Service", "Community", "Technical"],
+} as const;
+
 function sourceUrlToPath(sourceUrl: string) {
   if (sourceUrl.startsWith("file://")) return fileURLToPath(sourceUrl);
   return sourceUrl;
@@ -115,6 +131,34 @@ async function ensureSeedMedia(sourceUrl: string, caption?: string) {
   });
 }
 
+async function seedContentCategories() {
+  const categoriesByScope = {
+    article: [...defaultCategories.article],
+    project: Array.from(new Set([...defaultCategories.project, ...projects.map((project) => project.category)])),
+    experience: Array.from(new Set([...defaultCategories.experience, ...experiences.map((experience) => experience.category)])),
+  };
+
+  for (const [scope, labels] of Object.entries(categoriesByScope)) {
+    for (const [index, label] of labels.entries()) {
+      await prisma.contentCategory.upsert({
+        where: { scope_slug: { scope, slug: slugify(label) } },
+        update: {
+          label,
+          sortOrder: index,
+          isActive: true,
+        },
+        create: {
+          scope,
+          label,
+          slug: slugify(label),
+          sortOrder: index,
+          isActive: true,
+        },
+      });
+    }
+  }
+}
+
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL;
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -130,6 +174,8 @@ async function main() {
       },
     });
   }
+
+  await seedContentCategories();
 
   for (const page of siteContentPages) {
     const savedPage = await prisma.sitePage.upsert({

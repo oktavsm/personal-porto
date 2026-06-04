@@ -556,7 +556,8 @@ p {
 }
 
 .section-head-center {
-  display: block;
+  display: grid;
+  justify-items: center;
   text-align: center;
 }
 
@@ -2084,6 +2085,7 @@ body.is-embedded .chat-panel {
 .admin-page[data-admin-tab="certifications"] .admin-grid > .card:not(.admin-card-certifications),
 .admin-page[data-admin-tab="systems"] .admin-grid > .card:not(.admin-card-systems),
 .admin-page[data-admin-tab="contacts"] .admin-grid > .card:not(.admin-card-contacts),
+.admin-page[data-admin-tab="categories"] .admin-grid > .card:not(.admin-card-categories),
 .admin-page[data-admin-tab="pages"] .admin-grid > .card:not(.admin-card-pages),
 .admin-page[data-admin-tab="articles"] .admin-grid > .card:not(.admin-card-articles):not(.admin-card-articles-list),
 .admin-page[data-admin-tab="theme"] .admin-grid > .card:not(.admin-card-theme) {
@@ -3190,6 +3192,11 @@ body.is-embedded .chat-panel {
   padding-top: 140px;
   padding-bottom: 80px;
   min-height: 100vh;
+}
+
+.articles-section .section-head-center {
+  width: min(100%, 820px);
+  margin: 0 auto;
 }
 
 .articles-heading {

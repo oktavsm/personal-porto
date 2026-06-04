@@ -136,6 +136,21 @@ export type AdminMusicTrack = {
   sortOrder: number;
 };
 
+export type ContentCategoryScope = "article" | "project" | "experience";
+
+export type AdminContentCategory = {
+  id: string;
+  scope: ContentCategoryScope;
+  label: string;
+  slug: string;
+  description?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type AdminProject = {
   id: string;
   slug: string;
@@ -332,6 +347,15 @@ type ReorderPayload = {
   ids: string[];
 };
 
+type CategoryPayload = {
+  scope: ContentCategoryScope;
+  label: string;
+  slug?: string;
+  description?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+};
+
 export const adminApi = {
   health: () => request<{ ok: boolean; service: string; time: string }>("/api/health"),
   me: () => request<{ user: AdminUser }>("/api/admin/me"),
@@ -398,6 +422,24 @@ export const adminApi = {
   deleteContact: (id: string) => request<{ ok: boolean }>(`/api/admin/contact/${id}`, { method: "DELETE" }),
   reorderContact: (payload: ReorderPayload) =>
     request<{ ok: boolean }>("/api/admin/contact/reorder", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  categories: (scope?: ContentCategoryScope) =>
+    request<{ data: AdminContentCategory[] }>(`/api/admin/categories${scope ? `?scope=${encodeURIComponent(scope)}` : ""}`),
+  createCategory: (payload: CategoryPayload) =>
+    request<{ data: AdminContentCategory }>("/api/admin/categories", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateCategory: (id: string, payload: CategoryPayload) =>
+    request<{ data: AdminContentCategory }>(`/api/admin/categories/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deleteCategory: (id: string) => request<{ ok: boolean }>(`/api/admin/categories/${id}`, { method: "DELETE" }),
+  reorderCategories: (payload: ReorderPayload) =>
+    request<{ ok: boolean }>("/api/admin/categories/reorder", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
