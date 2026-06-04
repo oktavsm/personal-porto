@@ -66,6 +66,7 @@ function serializeArticle(article: ArticleWithRelations, publicOnly = false) {
     category: article.category,
     status: article.status,
     isFeatured: article.isFeatured,
+    coverAssetId: article.coverAssetId,
     coverImage: article.coverAsset?.publicUrl ?? null,
     coverAlt: article.coverAsset?.altText ?? null,
     seoTitle: article.seoTitle,

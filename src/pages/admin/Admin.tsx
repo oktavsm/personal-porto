@@ -249,6 +249,19 @@ function formatBytes(value: number) {
   return `${(value / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function selectedFilesLabel(files: File[]) {
+  if (files.length === 0) return "Choose file";
+  if (files.length === 1) return files[0]?.name ?? "1 file selected";
+  return `${files.length} files selected`;
+}
+
+function selectedFilesMeta(files: File[], placeholder: string) {
+  if (files.length === 0) return placeholder;
+  const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+  if (files.length === 1) return formatBytes(files[0]?.size ?? 0);
+  return `${formatBytes(totalSize)} total`;
+}
+
 function moveId<T extends { id: string }>(items: T[], id: string, direction: "up" | "down") {
   const currentIndex = items.findIndex((item) => item.id === id);
   if (currentIndex < 0) return null;
@@ -580,6 +593,74 @@ function AdminListTools({
   );
 }
 
+function AdminFilePicker({
+  label,
+  accept,
+  files,
+  multiple = false,
+  placeholder,
+  onChange,
+  onClear,
+}: {
+  label: string;
+  accept: string;
+  files: File[];
+  multiple?: boolean;
+  placeholder: string;
+  onChange: (files: File[]) => void;
+  onClear?: () => void;
+}) {
+  const inputId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="admin-file-field">
+      <span>{label}</span>
+      <label className="admin-file-picker" htmlFor={inputId}>
+        <input
+          id={inputId}
+          ref={inputRef}
+          className="admin-file-input"
+          accept={accept}
+          multiple={multiple}
+          onChange={(event) => onChange(Array.from(event.target.files ?? []))}
+          type="file"
+        />
+        <span className="admin-file-icon">
+          <Upload size={16} />
+        </span>
+        <span className="admin-file-copy">
+          <strong>{selectedFilesLabel(files)}</strong>
+          <small>{selectedFilesMeta(files, placeholder)}</small>
+        </span>
+      </label>
+      {files.length > 0 ? (
+        <div className="admin-file-selection">
+          {files.slice(0, 4).map((file) => (
+            <span className="admin-file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+              {file.name}
+            </span>
+          ))}
+          {files.length > 4 ? <span className="admin-file-chip">+{files.length - 4} more</span> : null}
+          {onClear ? (
+            <button
+              className="icon-btn"
+              type="button"
+              aria-label={`Clear ${label}`}
+              onClick={() => {
+                if (inputRef.current) inputRef.current.value = "";
+                onClear();
+              }}
+            >
+              <X size={14} />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function blockField(block: { contentJson: unknown }, field: "title" | "text" | "imageKey" | "mediaAssetId" | "imageUrl") {
   const content = block.contentJson && typeof block.contentJson === "object" && !Array.isArray(block.contentJson) ? (block.contentJson as Record<string, unknown>) : {};
   return typeof content[field] === "string" ? content[field] : "";
@@ -871,7 +952,7 @@ export function Admin() {
   const [musicForm, setMusicForm] = useState(emptyMusic);
   const [pageSectionForm, setPageSectionForm] = useState(emptyPageSection);
   const [pageBlockForm, setPageBlockForm] = useState(emptyPageBlock);
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [editingMediaId, setEditingMediaId] = useState<string | null>(null);
   const [editingCertificationId, setEditingCertificationId] = useState<string | null>(null);
@@ -1336,20 +1417,21 @@ export function Admin() {
 
   async function handleUploadMedia(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!mediaFile) {
-      setNotice("Choose a file first.");
+    if (mediaFiles.length === 0) {
+      setNotice("Choose at least one file first.");
       return;
     }
 
     setSaving(true);
     setNotice(null);
     try {
-      const upload = await adminApi.uploadMedia(mediaFile);
-      setMediaAssets((current) => [upload.data, ...current.filter((asset) => asset.id !== upload.data.id)]);
-      setMediaFile(null);
+      const upload = await adminApi.uploadMediaBatch(mediaFiles);
+      const uploadedIds = new Set(upload.data.map((asset) => asset.id));
+      setMediaAssets((current) => [...upload.data, ...current.filter((asset) => !uploadedIds.has(asset.id))]);
+      setMediaFiles([]);
       event.currentTarget.reset();
       void loadAdminData();
-      setNotice("Media uploaded.");
+      setNotice(`${upload.data.length} media file${upload.data.length === 1 ? "" : "s"} uploaded.`);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to upload media.");
     } finally {
@@ -1553,7 +1635,7 @@ export function Admin() {
       category: article.category,
       status: article.status,
       isFeatured: article.isFeatured,
-      coverAssetId: "",
+      coverAssetId: article.coverAssetId ?? "",
       seoTitle: article.seoTitle ?? "",
       seoDescription: article.seoDescription ?? "",
       authorName: article.author.name,
@@ -2515,10 +2597,14 @@ export function Admin() {
                 Notes
                 <input value={resumeForm.notes} onChange={(event) => setResumeForm({ ...resumeForm, notes: event.target.value })} placeholder="Optional internal note" />
               </label>
-              <label>
-                CV PDF
-                <input accept="application/pdf" onChange={(event) => setResumeFile(event.target.files?.[0] ?? null)} type="file" required />
-              </label>
+              <AdminFilePicker
+                label="CV PDF"
+                accept="application/pdf"
+                files={resumeFile ? [resumeFile] : []}
+                placeholder="PDF only"
+                onChange={(files) => setResumeFile(files[0] ?? null)}
+                onClear={() => setResumeFile(null)}
+              />
               <button className="btn btn-primary" type="submit" disabled={saving}>
                 <Upload size={16} /> Upload and Activate CV
               </button>
@@ -2588,12 +2674,17 @@ export function Admin() {
               </form>
             ) : (
               <form className="admin-form" onSubmit={handleUploadMedia}>
-                <label>
-                  File
-                  <input accept="image/*,application/pdf,audio/*,video/mp4" onChange={(event) => setMediaFile(event.target.files?.[0] ?? null)} type="file" required />
-                </label>
+                <AdminFilePicker
+                  label="Files"
+                  accept="image/*,application/pdf,audio/*,video/mp4"
+                  files={mediaFiles}
+                  multiple
+                  placeholder="Images, PDF, audio, or video. Batch upload supported."
+                  onChange={setMediaFiles}
+                  onClear={() => setMediaFiles([])}
+                />
                 <button className="btn btn-primary" type="submit" disabled={saving}>
-                  <Upload size={16} /> Upload Media
+                  <Upload size={16} /> Upload {mediaFiles.length > 1 ? `${mediaFiles.length} Files` : "Media"}
                 </button>
               </form>
             )}

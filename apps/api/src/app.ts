@@ -47,7 +47,7 @@ export async function buildApp() {
   await app.register(multipart, {
     limits: {
       fileSize: config.maxUploadMb * 1024 * 1024,
-      files: 1,
+      files: 20,
     },
   });
   await app.register(fastifyStatic, {

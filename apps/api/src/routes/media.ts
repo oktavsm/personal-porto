@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import type { MultipartFile } from "@fastify/multipart";
 import { createWriteStream } from "node:fs";
 import { mkdir, unlink } from "node:fs/promises";
 import { extname, join } from "node:path";
@@ -23,43 +24,59 @@ function safeExtension(filename: string) {
   return extension.replace(/[^a-z0-9.]/g, "") || "";
 }
 
+async function saveMediaFile(part: MultipartFile) {
+  if (!allowedMimeTypes.has(part.mimetype)) {
+    throw new Error(`Unsupported file type: ${part.mimetype}`);
+  }
+
+  const filename = `${randomUUID()}${safeExtension(part.filename)}`;
+  const storagePath = join(config.uploadDir, filename);
+  let sizeBytes = 0;
+  part.file.on("data", (chunk: Buffer) => {
+    sizeBytes += chunk.length;
+  });
+  await pipeline(part.file, createWriteStream(storagePath));
+
+  return prisma.mediaAsset.create({
+    data: {
+      filename,
+      originalName: part.filename,
+      mimeType: part.mimetype,
+      sizeBytes,
+      storagePath,
+      publicUrl: `${config.publicUploadBaseUrl.replace(/\/$/, "")}/${filename}`,
+    },
+  });
+}
+
 export async function mediaRoutes(app: FastifyInstance) {
   app.get("/api/admin/media", { preHandler: app.requireAdmin }, async () => ({
     data: await prisma.mediaAsset.findMany({ orderBy: { createdAt: "desc" } }),
   }));
 
   app.post("/api/admin/media", { preHandler: app.requireAdmin }, async (request, reply) => {
-    const part = await request.file();
-    if (!part) {
-      return reply.code(400).send({ message: "File is required" });
-    }
-
-    if (!allowedMimeTypes.has(part.mimetype)) {
-      return reply.code(400).send({ message: `Unsupported file type: ${part.mimetype}` });
-    }
-
     await mkdir(config.uploadDir, { recursive: true });
 
-    const filename = `${randomUUID()}${safeExtension(part.filename)}`;
-    const storagePath = join(config.uploadDir, filename);
-    let sizeBytes = 0;
-    part.file.on("data", (chunk: Buffer) => {
-      sizeBytes += chunk.length;
-    });
-    await pipeline(part.file, createWriteStream(storagePath));
+    const createdMedia = [];
+    try {
+      for await (const part of request.files()) {
+        createdMedia.push(await saveMediaFile(part));
+      }
+    } catch (error) {
+      await Promise.all(
+        createdMedia.map(async (media) => {
+          await prisma.mediaAsset.delete({ where: { id: media.id } }).catch(() => undefined);
+          await unlink(media.storagePath).catch(() => undefined);
+        }),
+      );
+      return reply.code(400).send({ message: error instanceof Error ? error.message : "Failed to upload media." });
+    }
 
-    const media = await prisma.mediaAsset.create({
-      data: {
-        filename,
-        originalName: part.filename,
-        mimeType: part.mimetype,
-        sizeBytes,
-        storagePath,
-        publicUrl: `${config.publicUploadBaseUrl.replace(/\/$/, "")}/${filename}`,
-      },
-    });
+    if (createdMedia.length === 0) {
+      return reply.code(400).send({ message: "At least one file is required" });
+    }
 
-    return reply.code(201).send({ data: media });
+    return reply.code(201).send({ data: createdMedia });
   });
 
   app.delete<{ Params: { id: string } }>("/api/admin/media/:id", { preHandler: app.requireAdmin }, async (request, reply) => {

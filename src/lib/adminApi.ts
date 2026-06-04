@@ -402,10 +402,11 @@ export const adminApi = {
       body: JSON.stringify(payload),
     }),
   media: () => request<{ data: AdminMediaAsset[] }>("/api/admin/media"),
-  uploadMedia: (file: File) => {
+  uploadMedia: (file: File) => adminApi.uploadMediaBatch([file]).then(({ data }) => ({ data: data[0] })),
+  uploadMediaBatch: (files: File[]) => {
     const formData = new FormData();
-    formData.append("file", file);
-    return request<{ data: AdminMediaAsset }>("/api/admin/media", {
+    files.forEach((file) => formData.append("files", file));
+    return request<{ data: AdminMediaAsset[] }>("/api/admin/media", {
       method: "POST",
       body: formData,
     });
@@ -559,6 +560,7 @@ export type AdminArticle = {
   category: string;
   status: string;
   isFeatured: boolean;
+  coverAssetId?: string | null;
   coverImage?: string | null;
   coverAlt?: string | null;
   seoTitle?: string | null;
@@ -595,4 +597,3 @@ type ArticlePayload = {
     sortOrder?: number;
   }[];
 };
-
