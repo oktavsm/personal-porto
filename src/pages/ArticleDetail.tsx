@@ -12,12 +12,36 @@ function getBlockContent<T extends Record<string, unknown>>(block: PublicArticle
     : {}) as T;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function isSafeMarkdownHref(value: string) {
+  return /^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(value.trim());
+}
+
+function parseMarkdown(text: string) {
+  const html = escapeHtml(text)
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {
+      if (!isSafeMarkdownHref(href)) return label;
+      return `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    })
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>");
+  return { __html: html };
+}
+
 function BlockRenderer({ block }: { block: PublicArticleBlock }) {
   const c = getBlockContent<Record<string, unknown>>(block);
 
   switch (block.type) {
     case "paragraph":
-      return <p className="article-block-paragraph">{String(c["text"] ?? "")}</p>;
+      return <p className="article-block-paragraph" dangerouslySetInnerHTML={parseMarkdown(String(c["text"] ?? ""))} />;
 
     case "heading": {
       const level = typeof c["level"] === "number" ? c["level"] : 2;
@@ -39,12 +63,27 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
       );
     }
 
+    case "gallery": {
+      const images = (c["images"] as { src: string; alt?: string; caption?: string }[]) || [];
+      const layout = String(c["layout"] ?? "grid");
+      return (
+        <div className={`article-block-gallery layout-${layout}`}>
+          {images.map((img, i) => (
+            <figure key={i} className="gallery-item">
+              <img src={img.src} alt={img.alt || ""} />
+              {img.caption && <figcaption className="article-block-caption">{img.caption}</figcaption>}
+            </figure>
+          ))}
+        </div>
+      );
+    }
+
     case "quote": {
       const text = String(c["text"] ?? "");
       const source = c["source"] ? String(c["source"]) : null;
       return (
         <blockquote className="article-block-quote">
-          <p className="article-block-quote-text">&#8220;{text}&#8221;</p>
+          <p className="article-block-quote-text" dangerouslySetInnerHTML={parseMarkdown(`"${text}"`)} />
           {source && <cite className="article-block-quote-source">{source}</cite>}
         </blockquote>
       );
@@ -64,7 +103,7 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
         <aside className={`article-block-callout variant-${variant}`}>
           <span className="callout-label" style={{ fontWeight: 600, display: "block", marginBottom: 4 }}>{labelMap[variant] ?? "Note"}</span>
           {title && <h4 className="callout-title">{title}</h4>}
-          <div>{text}</div>
+          <div dangerouslySetInnerHTML={parseMarkdown(text)} />
         </aside>
       );
     }
@@ -76,7 +115,7 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
         return (
           <ol className="article-block-list">
             {items.map((item, i) => (
-              <li key={i}>{item}</li>
+              <li key={i} dangerouslySetInnerHTML={parseMarkdown(item)} />
             ))}
           </ol>
         );
@@ -84,7 +123,7 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
       return (
         <ul className="article-block-list">
           {items.map((item, i) => (
-            <li key={i}>{item}</li>
+            <li key={i} dangerouslySetInnerHTML={parseMarkdown(item)} />
           ))}
         </ul>
       );
@@ -141,7 +180,15 @@ export function ArticleDetail() {
       .article(slug)
       .then(({ data }) => {
         setArticle(data);
-        document.title = `${data.title} — Oktavianus Samuel`;
+        document.title = data.seoTitle ? `${data.seoTitle} — Oktavianus Samuel` : `${data.title} — Oktavianus Samuel`;
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (!metaDesc) {
+          metaDesc = document.createElement("meta");
+          metaDesc.setAttribute("name", "description");
+          document.head.appendChild(metaDesc);
+        }
+        metaDesc.setAttribute("content", data.seoDescription || data.excerpt);
+
         // Load related articles from same category
         return publicApi.articles({ category: data.category, limit: "4" }).then(({ data: all }) => {
           setRelated(all.filter((a) => a.slug !== slug).slice(0, 3));
@@ -151,18 +198,28 @@ export function ArticleDetail() {
         setNotFound(true);
       })
       .finally(() => setLoading(false));
+
+    return () => {
+      // Clean up meta description on unmount
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute("content", "Portfolio of Oktavianus Samuel Minarto");
+    };
   }, [slug]);
 
   if (loading) {
     return (
       <section className="article-detail-section">
-        <div className="container">
-          <div className="articles-loading" data-reveal>
-            <div className="articles-loading-dots">
-              <span /><span /><span />
-            </div>
-            <p>Loading article…</p>
-          </div>
+        <div className="container" style={{ maxWidth: 720, margin: "0 auto", padding: "100px 24px" }}>
+          <div className="skeleton" style={{ height: 40, width: "70%", marginBottom: 16, borderRadius: 8 }} />
+          <div className="skeleton" style={{ height: 24, width: "40%", marginBottom: 40, borderRadius: 4 }} />
+          <div className="skeleton" style={{ height: 300, width: "100%", marginBottom: 40, borderRadius: 18 }} />
+          <div className="skeleton" style={{ height: 16, width: "100%", marginBottom: 12, borderRadius: 4 }} />
+          <div className="skeleton" style={{ height: 16, width: "95%", marginBottom: 12, borderRadius: 4 }} />
+          <div className="skeleton" style={{ height: 16, width: "98%", marginBottom: 12, borderRadius: 4 }} />
+          <div className="skeleton" style={{ height: 16, width: "80%", marginBottom: 40, borderRadius: 4 }} />
+          
+          <div className="skeleton" style={{ height: 16, width: "95%", marginBottom: 12, borderRadius: 4 }} />
+          <div className="skeleton" style={{ height: 16, width: "90%", marginBottom: 12, borderRadius: 4 }} />
         </div>
       </section>
     );
@@ -186,9 +243,6 @@ export function ArticleDetail() {
 
   return (
     <article className="article-detail-section">
-      {/* SEO meta */}
-      {article.seoTitle && <title>{article.seoTitle}</title>}
-
       {/* Back nav */}
       <div className="container">
         <div className="article-detail-back" data-reveal style={{ marginBottom: 40, marginTop: -20 }}>

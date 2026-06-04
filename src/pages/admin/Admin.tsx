@@ -268,6 +268,40 @@ function matchesSearch(query: string, values: Array<string | number | boolean | 
   return values.some((value) => String(value ?? "").toLowerCase().includes(normalizedQuery));
 }
 
+function articleBlockLabel(block: ArticleBlockDraft) {
+  const content = block.contentJson;
+  switch (block.type) {
+    case "heading":
+      return `heading · H${Number(content.level || 2)}`;
+    case "image":
+      return `image · ${String(content.layout || "inline")}`;
+    case "gallery": {
+      const images = Array.isArray(content.images) ? content.images.length : 0;
+      const suffix = images === 1 ? "image" : "images";
+      return `gallery · ${String(content.layout || "grid")} · ${images} ${suffix}`;
+    }
+    case "callout":
+      return `callout · ${String(content.variant || "note")}`;
+    case "list":
+      return `list · ${String(content.style || "bullet")}`;
+    case "code":
+      return content.language ? `code · ${String(content.language)}` : "code";
+    default:
+      return block.type;
+  }
+}
+
+function articleBlockPreview(block: ArticleBlockDraft) {
+  const content = block.contentJson;
+  if (typeof content.text === "string" && content.text.trim()) return content.text.slice(0, 72);
+  if (typeof content.caption === "string" && content.caption.trim()) return content.caption.slice(0, 72);
+  if (typeof content.code === "string" && content.code.trim()) return content.code.slice(0, 72);
+  if (Array.isArray(content.items) && content.items.length > 0) return content.items.slice(0, 2).map(String).join(", ");
+  if (Array.isArray(content.images)) return `${content.images.length} selected media item${content.images.length === 1 ? "" : "s"}`;
+  if (typeof content.src === "string" && content.src.trim()) return content.src;
+  return `<${block.type}>`;
+}
+
 function DeleteConfirmModal({
   target,
   saving,
@@ -577,6 +611,7 @@ function defaultBlockContent(type: string): Record<string, unknown> {
     case "paragraph": return { text: "" };
     case "heading": return { text: "", level: 2 };
     case "image": return { src: "", alt: "", caption: "", layout: "inline" };
+    case "gallery": return { images: [], layout: "grid" };
     case "quote": return { text: "", source: "" };
     case "callout": return { variant: "note", title: "", text: "" };
     case "list": return { items: [""], style: "bullet" };
@@ -590,6 +625,16 @@ function publicPagePath(slug: string) {
   if (slug === "home") return "/";
   if (slug === "lead-self") return "/lead-self";
   return `/${slug}`;
+}
+
+const cardEnabledSections: Record<string, string[]> = {
+  home: ["early-story", "values"],
+  "lead-self": ["evidence"],
+};
+
+function sectionSupportsCards(pageSlug?: string | null, sectionKey?: string | null) {
+  if (!pageSlug || !sectionKey) return false;
+  return cardEnabledSections[pageSlug]?.includes(sectionKey) ?? false;
 }
 
 function BlockDraftForm({
@@ -663,6 +708,43 @@ function BlockDraftForm({
             options={[
               { value: "inline", label: "Inline" },
               { value: "full", label: "Full width" },
+            ]}
+          />
+        </>
+      );
+    case "gallery":
+      return (
+        <>
+          <label>Select Images</label>
+          <div className="admin-gallery-picker" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", maxHeight: "200px", overflowY: "auto", padding: "8px", background: "var(--bg-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", marginBottom: "16px" }}>
+            {imageAssets.map((asset) => {
+              const currentImages = (value.images as { src: string }[]) || [];
+              const isSelected = currentImages.some((i) => i.src === asset.publicUrl);
+              return (
+                <label key={asset.id} className="admin-check" style={{ margin: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        update("images", [...currentImages, { src: asset.publicUrl, alt: asset.altText, caption: asset.caption }]);
+                      } else {
+                        update("images", currentImages.filter((i) => i.src !== asset.publicUrl));
+                      }
+                    }}
+                  />
+                  <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{asset.originalName}</span>
+                </label>
+              );
+            })}
+          </div>
+          <AdminSelect
+            label="Layout"
+            value={(value.layout as string) || "grid"}
+            onChange={(v) => update("layout", v)}
+            options={[
+              { value: "grid", label: "Grid Layout" },
+              { value: "carousel", label: "Carousel Layout" },
             ]}
           />
         </>
@@ -783,6 +865,7 @@ export function Admin() {
   const [systemForm, setSystemForm] = useState(emptySystem);
   const [contactForm, setContactForm] = useState(emptyContact);
   const [resumeForm, setResumeForm] = useState(emptyResumeForm);
+  const [mediaForm, setMediaForm] = useState({ altText: "", caption: "" });
   const [projectForm, setProjectForm] = useState(emptyProject);
   const [experienceForm, setExperienceForm] = useState(emptyExperience);
   const [musicForm, setMusicForm] = useState(emptyMusic);
@@ -790,6 +873,7 @@ export function Admin() {
   const [pageBlockForm, setPageBlockForm] = useState(emptyPageBlock);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [editingMediaId, setEditingMediaId] = useState<string | null>(null);
   const [editingCertificationId, setEditingCertificationId] = useState<string | null>(null);
   const [editingSystemId, setEditingSystemId] = useState<string | null>(null);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
@@ -887,6 +971,13 @@ export function Admin() {
     () => selectedSitePage?.sections.find((section) => section.key === editingPageSectionKey) ?? null,
     [editingPageSectionKey, selectedSitePage],
   );
+  const selectedSectionSupportsCards = sectionSupportsCards(selectedSitePage?.slug, selectedPageSection?.key);
+
+  useEffect(() => {
+    if (!selectedSectionSupportsCards && editingPageBlockId) {
+      resetPageBlockForm();
+    }
+  }, [editingPageBlockId, selectedSectionSupportsCards]);
 
   function handleSaveGallerySelection(selectedIds: string[]) {
     if (mediaPickerTarget === "projectGallery") {
@@ -1186,6 +1277,10 @@ export function Admin() {
       setNotice("Choose a page section first.");
       return;
     }
+    if (!sectionSupportsCards(selectedSitePage.slug, editingPageSectionKey)) {
+      setNotice("This section does not render repeatable cards on the public page.");
+      return;
+    }
 
     setSaving(true);
     setNotice(null);
@@ -1257,6 +1352,35 @@ export function Admin() {
       setNotice("Media uploaded.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to upload media.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function editMedia(asset: AdminMediaAsset) {
+    setEditingMediaId(asset.id);
+    setMediaForm({ altText: asset.altText || "", caption: asset.caption || "" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resetMediaForm() {
+    setEditingMediaId(null);
+    setMediaForm({ altText: "", caption: "" });
+  }
+
+  async function handleUpdateMedia(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingMediaId) return;
+
+    setSaving(true);
+    setNotice(null);
+    try {
+      const update = await adminApi.updateMedia(editingMediaId, mediaForm);
+      setMediaAssets((current) => current.map((asset) => (asset.id === update.data.id ? update.data : asset)));
+      resetMediaForm();
+      setNotice("Media updated.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to update media.");
     } finally {
       setSaving(false);
     }
@@ -2439,18 +2563,40 @@ export function Admin() {
 
           <Card className="admin-card-resume-media">
             <div className="admin-card-head">
-              <h3>Media upload</h3>
-              <Upload size={18} />
+              <h3>{editingMediaId ? "Edit media details" : "Media upload"}</h3>
+              {editingMediaId ? (
+                <button className="icon-btn" type="button" aria-label="Cancel edit" onClick={resetMediaForm}>
+                  <X size={15} />
+                </button>
+              ) : (
+                <Upload size={18} />
+              )}
             </div>
-            <form className="admin-form" onSubmit={handleUploadMedia}>
-              <label>
-                File
-                <input accept="image/*,application/pdf,audio/*,video/mp4" onChange={(event) => setMediaFile(event.target.files?.[0] ?? null)} type="file" required />
-              </label>
-              <button className="btn btn-primary" type="submit" disabled={saving}>
-                <Upload size={16} /> Upload Media
-              </button>
-            </form>
+            {editingMediaId ? (
+              <form className="admin-form" onSubmit={handleUpdateMedia}>
+                <label>
+                  Alt Text
+                  <input value={mediaForm.altText} onChange={(e) => setMediaForm({ ...mediaForm, altText: e.target.value })} placeholder="Describe the image..." />
+                </label>
+                <label>
+                  Caption
+                  <input value={mediaForm.caption} onChange={(e) => setMediaForm({ ...mediaForm, caption: e.target.value })} placeholder="Visible text below media..." />
+                </label>
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  <Pencil size={16} /> Save Changes
+                </button>
+              </form>
+            ) : (
+              <form className="admin-form" onSubmit={handleUploadMedia}>
+                <label>
+                  File
+                  <input accept="image/*,application/pdf,audio/*,video/mp4" onChange={(event) => setMediaFile(event.target.files?.[0] ?? null)} type="file" required />
+                </label>
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  <Upload size={16} /> Upload Media
+                </button>
+              </form>
+            )}
           </Card>
 
           <Card className="admin-card-resume-media">
@@ -2478,6 +2624,9 @@ export function Admin() {
                     <a className="icon-btn" href={asset.publicUrl} target="_blank" rel="noreferrer" aria-label={`Open ${asset.originalName}`}>
                       <ExternalLink size={15} />
                     </a>
+                    <button className="icon-btn" type="button" aria-label={`Edit ${asset.originalName}`} onClick={() => editMedia(asset)}>
+                      <Pencil size={15} />
+                    </button>
                     <button className="icon-btn danger" type="button" aria-label={`Delete ${asset.originalName}`} onClick={() => setDeleteTarget({ type: "media", id: asset.id, label: asset.originalName })}>
                       <Trash2 size={15} />
                     </button>
@@ -2884,52 +3033,64 @@ export function Admin() {
             {selectedPageSection ? (
               <div className="admin-block-editor">
                 <div className="admin-card-head">
-                  <h3>{editingPageBlockId ? "Edit section card" : "Add section card"}</h3>
-                  {editingPageBlockId ? (
+                  <h3>
+                    {selectedSectionSupportsCards
+                      ? editingPageBlockId
+                        ? "Edit section card"
+                        : "Add section card"
+                      : "Section cards unavailable"}
+                  </h3>
+                  {editingPageBlockId && selectedSectionSupportsCards ? (
                     <button className="icon-btn" type="button" aria-label="Cancel block edit" onClick={resetPageBlockForm}>
                       <X size={15} />
                     </button>
                   ) : null}
                 </div>
-                <form className="admin-form" onSubmit={handleSavePageBlock}>
-                  <label>
-                    Card Title
-                    <input value={pageBlockForm.title} onChange={(event) => setPageBlockForm({ ...pageBlockForm, title: event.target.value })} placeholder="Card heading" required />
-                  </label>
-                  <label>
-                    Card Text
-                    <textarea value={pageBlockForm.text} onChange={(event) => setPageBlockForm({ ...pageBlockForm, text: event.target.value })} placeholder="Short supporting text" required />
-                  </label>
-                  <label>
-                    Image Key
-                    <input value={pageBlockForm.imageKey} onChange={(event) => setPageBlockForm({ ...pageBlockForm, imageKey: event.target.value })} placeholder="Optional, e.g. earlySilat" />
-                    <span className="admin-help">Static fallback key. Choosing media below will override this image on the frontend.</span>
-                  </label>
-                  <div className="admin-media-picker-field">
-                    <div>
-                      <span>Bound Media</span>
-                      <small>{pageBlockForm.mediaAssetId ? mediaById.get(pageBlockForm.mediaAssetId)?.originalName ?? "Selected media" : "No image selected"}</small>
+                {selectedSectionSupportsCards ? (
+                  <form className="admin-form" onSubmit={handleSavePageBlock}>
+                    <label>
+                      Card Title
+                      <input value={pageBlockForm.title} onChange={(event) => setPageBlockForm({ ...pageBlockForm, title: event.target.value })} placeholder="Card heading" required />
+                    </label>
+                    <label>
+                      Card Text
+                      <textarea value={pageBlockForm.text} onChange={(event) => setPageBlockForm({ ...pageBlockForm, text: event.target.value })} placeholder="Short supporting text" required />
+                    </label>
+                    <label>
+                      Image Key
+                      <input value={pageBlockForm.imageKey} onChange={(event) => setPageBlockForm({ ...pageBlockForm, imageKey: event.target.value })} placeholder="Optional, e.g. earlySilat" />
+                      <span className="admin-help">Static fallback key. Choosing media below will override this image on the frontend.</span>
+                    </label>
+                    <div className="admin-media-picker-field">
+                      <div>
+                        <span>Bound Media</span>
+                        <small>{pageBlockForm.mediaAssetId ? mediaById.get(pageBlockForm.mediaAssetId)?.originalName ?? "Selected media" : "No image selected"}</small>
+                      </div>
+                      <button className="icon-btn" type="button" aria-label="Choose block image" onClick={() => setMediaPickerTarget("pageBlockImage")}>
+                        <FileText size={15} />
+                      </button>
                     </div>
-                    <button className="icon-btn" type="button" aria-label="Choose block image" onClick={() => setMediaPickerTarget("pageBlockImage")}>
-                      <FileText size={15} />
+                    <MediaSelectionPreview
+                      asset={pageBlockForm.mediaAssetId ? mediaById.get(pageBlockForm.mediaAssetId) : undefined}
+                      onClear={() => setPageBlockForm({ ...pageBlockForm, mediaAssetId: "", imageUrl: "" })}
+                    />
+                    <label>
+                      Display Order
+                      <input value={pageBlockForm.sortOrder} onChange={(event) => setPageBlockForm({ ...pageBlockForm, sortOrder: Number(event.target.value) })} type="number" />
+                    </label>
+                    <label className="admin-check">
+                      <input checked={pageBlockForm.isPublished} onChange={(event) => setPageBlockForm({ ...pageBlockForm, isPublished: event.target.checked })} type="checkbox" />
+                      Published
+                    </label>
+                    <button className="btn btn-primary" type="submit" disabled={saving}>
+                      <Plus size={16} /> {editingPageBlockId ? "Update Card" : "Add Card"}
                     </button>
-                  </div>
-                  <MediaSelectionPreview
-                    asset={pageBlockForm.mediaAssetId ? mediaById.get(pageBlockForm.mediaAssetId) : undefined}
-                    onClear={() => setPageBlockForm({ ...pageBlockForm, mediaAssetId: "", imageUrl: "" })}
-                  />
-                  <label>
-                    Display Order
-                    <input value={pageBlockForm.sortOrder} onChange={(event) => setPageBlockForm({ ...pageBlockForm, sortOrder: Number(event.target.value) })} type="number" />
-                  </label>
-                  <label className="admin-check">
-                    <input checked={pageBlockForm.isPublished} onChange={(event) => setPageBlockForm({ ...pageBlockForm, isPublished: event.target.checked })} type="checkbox" />
-                    Published
-                  </label>
-                  <button className="btn btn-primary" type="submit" disabled={saving}>
-                    <Plus size={16} /> {editingPageBlockId ? "Update Card" : "Add Card"}
-                  </button>
-                </form>
+                  </form>
+                ) : (
+                  <p className="admin-help">
+                    This section does not render repeatable cards on the public page. Use Section Media and CTA fields above, or delete any cards that were created here by mistake.
+                  </p>
+                )}
                 <div className="admin-list">
                   {selectedPageSection.blocks.map((block, index) => (
                     <div className="admin-list-item" key={block.id}>
@@ -2943,15 +3104,19 @@ export function Admin() {
                         </div>
                       </div>
                       <div className="admin-row-actions">
-                        <button className="icon-btn" type="button" aria-label="Move block up" onClick={() => void handleReorderPageBlock(block.id, "up")} disabled={index === 0 || saving}>
-                          <ArrowUp size={15} />
-                        </button>
-                        <button className="icon-btn" type="button" aria-label="Move block down" onClick={() => void handleReorderPageBlock(block.id, "down")} disabled={index === selectedPageSection.blocks.length - 1 || saving}>
-                          <ArrowDown size={15} />
-                        </button>
-                        <button className="icon-btn" type="button" aria-label="Edit block" onClick={() => editPageBlock(block)}>
-                          <Pencil size={15} />
-                        </button>
+                        {selectedSectionSupportsCards ? (
+                          <>
+                            <button className="icon-btn" type="button" aria-label="Move block up" onClick={() => void handleReorderPageBlock(block.id, "up")} disabled={index === 0 || saving}>
+                              <ArrowUp size={15} />
+                            </button>
+                            <button className="icon-btn" type="button" aria-label="Move block down" onClick={() => void handleReorderPageBlock(block.id, "down")} disabled={index === selectedPageSection.blocks.length - 1 || saving}>
+                              <ArrowDown size={15} />
+                            </button>
+                            <button className="icon-btn" type="button" aria-label="Edit block" onClick={() => editPageBlock(block)}>
+                              <Pencil size={15} />
+                            </button>
+                          </>
+                        ) : null}
                         <button
                           className="icon-btn danger"
                           type="button"
@@ -3149,16 +3314,8 @@ export function Admin() {
                         <GripVertical size={15} />
                       </button>
                       <div className="block-row-info">
-                        <span className="admin-badge">{block.type}</span>
-                        <span className="block-row-preview">
-                          {(() => {
-                            const c = block.contentJson;
-                            if (c["text"]) return String(c["text"]).slice(0, 60);
-                            if (c["code"]) return `<${block.type}>`;
-                            if (Array.isArray(c["items"])) return (c["items"] as string[]).slice(0, 2).join(", ");
-                            return `<${block.type}>`;
-                          })()}
-                        </span>
+                        <span className="admin-badge">{articleBlockLabel(block)}</span>
+                        <span className="block-row-preview">{articleBlockPreview(block)}</span>
                       </div>
                       <div className="admin-row-actions">
                         <button className="icon-btn" type="button" aria-label="Edit block" onClick={() => startEditBlock(index)}>
@@ -3218,7 +3375,7 @@ export function Admin() {
                 ) : (
                   <div className="article-block-type-picker">
                     <span style={{ fontSize: 12, color: "var(--muted-2)" }}>Add block:</span>
-                    {["paragraph", "heading", "image", "quote", "callout", "list", "code", "divider"].map((type) => (
+                    {["paragraph", "heading", "image", "gallery", "quote", "callout", "list", "code", "divider"].map((type) => (
                       <button key={type} className="article-block-type-btn" type="button" onClick={() => addBlock(type)}>
                         <Plus size={12} /> {type}
                       </button>
@@ -3249,17 +3406,15 @@ export function Admin() {
                 value={articleSearch}
                 onChange={(e) => setArticleSearch(e.target.value)}
               />
-              <select
-                id="article-status-filter"
-                value={articleStatusFilter}
-                onChange={(e) => setArticleStatusFilter(e.target.value)}
-                className="admin-select-inline"
-              >
-                <option value="">All statuses</option>
-                {articleStatusOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+              <div className="admin-select-inline">
+                <AdminSelect
+                  label="Status"
+                  value={articleStatusFilter}
+                  onChange={setArticleStatusFilter}
+                  options={[{ value: "", label: "All statuses" }, ...articleStatusOptions]}
+                  placeholder="All statuses"
+                />
+              </div>
             </div>
 
             <div className="admin-list">

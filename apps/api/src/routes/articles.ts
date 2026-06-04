@@ -55,6 +55,7 @@ function estimateReadingTime(blocks: BlockInput[]): number {
 
 function serializeArticle(article: ArticleWithRelations, publicOnly = false) {
   if (publicOnly && article.status !== "published") return null;
+  const publishedAt = article.publishedAt ?? (article.status === "published" ? article.updatedAt : null);
 
   return {
     id: article.id,
@@ -82,7 +83,7 @@ function serializeArticle(article: ArticleWithRelations, publicOnly = false) {
       sortOrder: b.sortOrder,
     })),
     readingTime: estimateReadingTime(article.blocks),
-    publishedAt: article.publishedAt,
+    publishedAt,
     createdAt: article.createdAt,
     updatedAt: article.updatedAt,
   };
@@ -155,6 +156,7 @@ export async function articleRoutes(app: FastifyInstance) {
     Querystring: { category?: string; tag?: string; featured?: string; limit?: string };
   }>("/api/public/articles", async (request) => {
     const { category, tag, featured, limit } = request.query;
+    const take = limit ? Math.min(Math.max(pickNumber(limit, 0), 1), 24) : undefined;
 
     const articles = await prisma.article.findMany({
       where: {
@@ -167,7 +169,7 @@ export async function articleRoutes(app: FastifyInstance) {
       },
       include: includeArticleRelations,
       orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }, { updatedAt: "desc" }],
-      ...(limit ? { take: parseInt(limit, 10) } : {}),
+      ...(take ? { take } : {}),
     });
 
     return { data: articles.map((a) => serializeArticle(a, true)).filter(Boolean) };
@@ -227,7 +229,12 @@ export async function articleRoutes(app: FastifyInstance) {
       }
 
       const article = await prisma.$transaction(async (tx) => {
-        const created = await tx.article.create({ data });
+        const created = await tx.article.create({
+          data: {
+            ...data,
+            publishedAt: data.status === "published" ? new Date() : null,
+          },
+        });
         await replaceArticleChildren(tx, created.id, request.body);
         return tx.article.findUniqueOrThrow({
           where: { id: created.id },
@@ -252,7 +259,13 @@ export async function articleRoutes(app: FastifyInstance) {
       }
 
       const article = await prisma.$transaction(async (tx) => {
-        await tx.article.update({ where: { id: request.params.id }, data });
+        await tx.article.update({
+          where: { id: request.params.id },
+          data: {
+            ...data,
+            publishedAt: data.status === "published" && !exists.publishedAt ? new Date() : exists.publishedAt,
+          },
+        });
         await replaceArticleChildren(tx, request.params.id, request.body);
         return tx.article.findUniqueOrThrow({
           where: { id: request.params.id },

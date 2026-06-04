@@ -411,6 +411,11 @@ export const adminApi = {
     });
   },
   deleteMedia: (id: string) => request<{ ok: boolean }>(`/api/admin/media/${id}`, { method: "DELETE" }),
+  updateMedia: (id: string, payload: { altText?: string; caption?: string }) =>
+    request<{ data: AdminMediaAsset }>(`/api/admin/media/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    }),
   resume: () => request<{ data: AdminResumeVersion[] }>("/api/admin/resume"),
   createResume: (payload: ResumePayload) =>
     request<{ data: AdminResumeVersion }>("/api/admin/resume", {

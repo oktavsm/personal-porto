@@ -73,4 +73,25 @@ export async function mediaRoutes(app: FastifyInstance) {
 
     return { ok: true };
   });
+
+  app.put<{ Params: { id: string }; Body: { altText?: string; caption?: string } }>(
+    "/api/admin/media/:id",
+    { preHandler: app.requireAdmin },
+    async (request, reply) => {
+      const media = await prisma.mediaAsset.findUnique({ where: { id: request.params.id } });
+      if (!media) {
+        return reply.code(404).send({ message: "Media not found" });
+      }
+
+      const updatedMedia = await prisma.mediaAsset.update({
+        where: { id: media.id },
+        data: {
+          altText: request.body.altText,
+          caption: request.body.caption,
+        },
+      });
+
+      return { data: updatedMedia };
+    }
+  );
 }

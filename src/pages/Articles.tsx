@@ -119,11 +119,15 @@ export function Articles() {
 
         {/* Loading */}
         {loading && (
-          <div className="articles-loading" data-reveal>
-            <div className="articles-loading-dots">
-              <span /><span /><span />
-            </div>
-            <p>Loading articles…</p>
+          <div className="articles-grid" data-reveal>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="article-card" style={{ display: "flex", flexDirection: "column", padding: 24, gap: 16 }}>
+                <div className="skeleton" style={{ height: 160, borderRadius: 12 }} />
+                <div className="skeleton" style={{ height: 24, width: "80%", borderRadius: 4 }} />
+                <div className="skeleton" style={{ height: 16, width: "100%", borderRadius: 4 }} />
+                <div className="skeleton" style={{ height: 16, width: "60%", borderRadius: 4 }} />
+              </div>
+            ))}
           </div>
         )}
 
