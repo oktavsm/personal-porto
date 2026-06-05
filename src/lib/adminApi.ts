@@ -343,6 +343,19 @@ type PageBlockPayload = {
   isPublished?: boolean;
 };
 
+type ArticleGenerateDraftPayload = {
+  topic?: string;
+  rawNotes: string;
+  category: string;
+  tone?: string;
+  language?: string;
+  targetLength?: string;
+  sourceContext?: string;
+  articleContext?: string;
+  mediaAssetIds?: string[];
+  mediaContext?: Record<string, string>;
+};
+
 type ReorderPayload = {
   ids: string[];
 };
@@ -572,6 +585,11 @@ export const adminApi = {
     request<{ data: AdminArticle }>(`/api/admin/articles/${id}/unpublish`, { method: "POST" }),
   duplicateArticle: (id: string) =>
     request<{ data: AdminArticle }>(`/api/admin/articles/${id}/duplicate`, { method: "POST" }),
+  generateArticleDraft: (payload: ArticleGenerateDraftPayload) =>
+    request<{ data: AdminArticle }>("/api/admin/articles/generate-draft", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
 
   // ─── Theme Studio ────────────────────────────────────────────────────────────
 

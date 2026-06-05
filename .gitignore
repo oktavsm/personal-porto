@@ -13,6 +13,7 @@ apps/api/uploads/
 .agents/
 .codex/
 .antigravitycli/
-docs/
 
-AGENTS.md
+/docs/legacy/
+/docs/agents-codex/
+/docs/*.pdf

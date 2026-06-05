@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Star, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, Upload, X } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -249,11 +249,26 @@ const emptyArticleForm = {
   tags: "",
 };
 
+const emptyArticleGeneratorForm = {
+  topic: "",
+  rawNotes: "",
+  category: "Reflection",
+  tone: "reflective, grounded, personal, professional",
+  language: "English",
+  targetLength: "medium",
+  sourceContext: "",
+  articleContext: "",
+  mediaAssetIds: [] as string[],
+  mediaContext: {} as Record<string, string>,
+};
+
 type ArticleBlockDraft = {
   id: string; // local only for dnd key
   type: string;
   contentJson: Record<string, unknown>;
 };
+
+type ArticleGeneratorForm = typeof emptyArticleGeneratorForm;
 
 
 
@@ -652,6 +667,242 @@ function AdminListTools({
   );
 }
 
+function ArticleGeneratorModal({
+  value,
+  categories,
+  imageAssets,
+  saving,
+  onChange,
+  onCancel,
+  onSubmit,
+}: {
+  value: ArticleGeneratorForm;
+  categories: AdminSelectOption[];
+  imageAssets: AdminMediaAsset[];
+  saving: boolean;
+  onChange: (value: ArticleGeneratorForm) => void;
+  onCancel: () => void;
+  onSubmit: () => void;
+}) {
+  const [mediaSearch, setMediaSearch] = useState("");
+  const selectedAssets = imageAssets.filter((asset) => value.mediaAssetIds.includes(asset.id));
+  const filteredAssets = useMemo(() => {
+    const query = mediaSearch.toLowerCase().trim();
+    if (!query) return imageAssets;
+    return imageAssets.filter((asset) =>
+      `${asset.originalName} ${asset.altText ?? ""} ${asset.caption ?? ""}`.toLowerCase().includes(query),
+    );
+  }, [imageAssets, mediaSearch]);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  function update(partial: Partial<ArticleGeneratorForm>) {
+    onChange({ ...value, ...partial });
+  }
+
+  function toggleAsset(assetId: string) {
+    const selected = value.mediaAssetIds.includes(assetId);
+    const mediaAssetIds = selected
+      ? value.mediaAssetIds.filter((id) => id !== assetId)
+      : [...value.mediaAssetIds, assetId];
+    const mediaContext = selected
+      ? Object.fromEntries(Object.entries(value.mediaContext).filter(([id]) => id !== assetId))
+      : value.mediaContext;
+    update({ mediaAssetIds, mediaContext });
+  }
+
+  function updateMediaContext(assetId: string, context: string) {
+    update({ mediaContext: { ...value.mediaContext, [assetId]: context } });
+  }
+
+  return createPortal(
+    <div className="admin-modal-backdrop" role="presentation">
+      <div className="admin-modal admin-generator-modal" role="dialog" aria-modal="true" aria-labelledby="article-generator-title">
+        <div className="admin-card-head">
+          <div>
+            <div className="section-kicker">Article Generator</div>
+            <h3 id="article-generator-title">Generate article draft</h3>
+          </div>
+          <button className="icon-btn" type="button" aria-label="Close article generator" onClick={onCancel} disabled={saving}>
+            <X size={15} />
+          </button>
+        </div>
+
+        <form
+          className="admin-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            onSubmit();
+          }}
+        >
+          <div className="admin-form-pair">
+            <label>
+              Topic
+              <input
+                value={value.topic}
+                onChange={(event) => update({ topic: event.target.value })}
+                placeholder="e.g. Wi-Fi camp reflection"
+              />
+            </label>
+            <AdminSelect
+              label="Category"
+              value={value.category}
+              options={categories}
+              onChange={(category) => update({ category })}
+            />
+          </div>
+
+          <label>
+            Raw story / notes
+            <textarea
+              value={value.rawNotes}
+              onChange={(event) => update({ rawNotes: event.target.value })}
+              placeholder="Tell the rough story, timeline, what happened, what you learned, and what feeling you want the article to carry."
+              rows={8}
+              required
+            />
+          </label>
+
+          <div className="admin-form-pair">
+            <AdminSelect
+              label="Language"
+              value={value.language}
+              onChange={(language) => update({ language })}
+              options={[
+                { value: "English", label: "English" },
+                { value: "Indonesian", label: "Indonesian" },
+                { value: "Mixed Indonesian-English", label: "Mixed casual" },
+              ]}
+            />
+            <AdminSelect
+              label="Length"
+              value={value.targetLength}
+              onChange={(targetLength) => update({ targetLength })}
+              options={[
+                { value: "short", label: "Short" },
+                { value: "medium", label: "Medium" },
+                { value: "long", label: "Long" },
+              ]}
+            />
+          </div>
+
+          <label>
+            Tone
+            <input
+              value={value.tone}
+              onChange={(event) => update({ tone: event.target.value })}
+              placeholder="reflective, grounded, personal, professional"
+            />
+          </label>
+
+          <details>
+            <summary className="admin-seo-toggle">Extra context (optional)</summary>
+            <div className="admin-form-nested">
+              <label>
+                Portfolio/source context
+                <textarea
+                  value={value.sourceContext}
+                  onChange={(event) => update({ sourceContext: event.target.value })}
+                  placeholder="Optional extra facts n8n should know for this specific article."
+                  rows={3}
+                />
+              </label>
+              <label>
+                Writing style context
+                <textarea
+                  value={value.articleContext}
+                  onChange={(event) => update({ articleContext: event.target.value })}
+                  placeholder="Optional excerpt from article-context.md or writing preferences."
+                  rows={3}
+                />
+              </label>
+            </div>
+          </details>
+
+          <div className="admin-generator-media">
+            <div className="admin-card-head">
+              <div>
+                <strong>Relevant photos</strong>
+                <p className="admin-help">Only selected images are exposed to n8n. Add context so Gemini knows what each photo means.</p>
+              </div>
+              <span className="admin-badge">{value.mediaAssetIds.length} selected</span>
+            </div>
+            <AdminListTools
+              label="Search images"
+              value={mediaSearch}
+              placeholder="Search photo filename, alt, or caption"
+              count={filteredAssets.length}
+              total={imageAssets.length}
+              onChange={setMediaSearch}
+            />
+            <div className="admin-generator-media-grid">
+              {filteredAssets.map((asset) => {
+                const selected = value.mediaAssetIds.includes(asset.id);
+                return (
+                  <button
+                    className={`admin-media-picker-item${selected ? " is-selected" : ""}`}
+                    type="button"
+                    key={asset.id}
+                    aria-pressed={selected}
+                    onClick={() => toggleAsset(asset.id)}
+                  >
+                    <span className="admin-media-picker-thumb">
+                      <img src={asset.publicUrl} alt={asset.altText || asset.originalName} loading="lazy" />
+                      {selected ? (
+                        <span className="admin-media-picker-check">
+                          <Check size={16} />
+                        </span>
+                      ) : null}
+                    </span>
+                    <span>{asset.originalName}</span>
+                  </button>
+                );
+              })}
+              {filteredAssets.length === 0 ? <p className="admin-empty">No image media matched this search.</p> : null}
+            </div>
+
+            {selectedAssets.length > 0 ? (
+              <div className="admin-generator-context-list">
+                {selectedAssets.map((asset) => (
+                  <label className="admin-generator-context-item" key={asset.id}>
+                    <img src={asset.publicUrl} alt={asset.altText || asset.originalName} loading="lazy" />
+                    <span>
+                      <strong>{asset.originalName}</strong>
+                      <small>{asset.altText || asset.caption || "Add the story behind this photo"}</small>
+                    </span>
+                    <textarea
+                      value={value.mediaContext[asset.id] ?? ""}
+                      onChange={(event) => updateMediaContext(asset.id, event.target.value)}
+                      placeholder="Who/what is in this photo? Why is it relevant?"
+                      rows={2}
+                    />
+                  </label>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="admin-form-actions">
+            <button className="btn" type="button" onClick={onCancel} disabled={saving}>
+              Cancel
+            </button>
+            <button className="btn btn-primary" type="submit" disabled={saving || !value.rawNotes.trim()}>
+              <Sparkles size={15} /> {saving ? "Generating…" : "Generate Draft"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function AdminFilePicker({
   label,
   accept,
@@ -1046,6 +1297,8 @@ export function Admin() {
   const [articles, setArticles] = useState<AdminArticle[]>([]);
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const [articleForm, setArticleForm] = useState(emptyArticleForm);
+  const [articleGeneratorOpen, setArticleGeneratorOpen] = useState(false);
+  const [articleGeneratorForm, setArticleGeneratorForm] = useState<ArticleGeneratorForm>(emptyArticleGeneratorForm);
   const [articleBlocks, setArticleBlocks] = useState<ArticleBlockDraft[]>([]);
   const [editingBlockIdx, setEditingBlockIdx] = useState<number | null>(null);
   const [addingBlockType, setAddingBlockType] = useState<string | null>(null);
@@ -1873,6 +2126,29 @@ export function Admin() {
       await loadAdminData();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to duplicate.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleGenerateArticleDraft() {
+    setSaving(true);
+    setNotice(null);
+    try {
+      const result = await adminApi.generateArticleDraft({
+        ...articleGeneratorForm,
+        topic: articleGeneratorForm.topic.trim(),
+        rawNotes: articleGeneratorForm.rawNotes.trim(),
+        sourceContext: articleGeneratorForm.sourceContext.trim(),
+        articleContext: articleGeneratorForm.articleContext.trim(),
+      });
+      setArticles((current) => [result.data, ...current.filter((article) => article.id !== result.data.id)]);
+      editArticle(result.data);
+      setArticleGeneratorOpen(false);
+      setArticleGeneratorForm(emptyArticleGeneratorForm);
+      setNotice("Generated draft created. Review the blocks before publishing.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to generate article draft.");
     } finally {
       setSaving(false);
     }
@@ -3592,6 +3868,9 @@ export function Admin() {
             <div className="admin-card-head">
               <h3>{editingArticleId ? "Edit Article" : "New Article"}</h3>
               <div className="admin-row-actions">
+                <button className="btn compact" type="button" onClick={() => setArticleGeneratorOpen(true)} disabled={saving}>
+                  <Sparkles size={14} /> Generate Draft
+                </button>
                 {editingArticleId ? (
                   <>
                     <a className="icon-btn" href={`/articles/${articleForm.slug}`} target="_blank" rel="noreferrer" aria-label="Preview article">
@@ -4011,6 +4290,17 @@ export function Admin() {
 
         </div>
       </div>
+      {articleGeneratorOpen ? (
+        <ArticleGeneratorModal
+          value={articleGeneratorForm}
+          categories={articleCategoryOptions}
+          imageAssets={imageMediaAssets}
+          saving={saving}
+          onChange={setArticleGeneratorForm}
+          onCancel={() => setArticleGeneratorOpen(false)}
+          onSubmit={() => void handleGenerateArticleDraft()}
+        />
+      ) : null}
       {mediaPickerTarget ? (
         <GalleryMediaPickerModal
           title={
@@ -4020,7 +4310,9 @@ export function Admin() {
                 ? "Choose experience gallery images"
                 : mediaPickerTarget === "pageSectionImage"
                   ? "Choose section image"
-                  : "Choose section card image"
+                  : mediaPickerTarget === "articleCover"
+                    ? "Choose article cover image"
+                    : "Choose section card image"
           }
           assets={imageMediaAssets}
           selectedIds={
@@ -4032,7 +4324,11 @@ export function Admin() {
                   ? pageSectionForm.mediaAssetId
                     ? [pageSectionForm.mediaAssetId]
                     : []
-                  : pageBlockForm.mediaAssetId
+                  : mediaPickerTarget === "articleCover"
+                    ? articleForm.coverAssetId
+                      ? [articleForm.coverAssetId]
+                      : []
+                    : pageBlockForm.mediaAssetId
                     ? [pageBlockForm.mediaAssetId]
                     : []
           }

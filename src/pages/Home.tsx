@@ -497,7 +497,10 @@ export function Home() {
             <Button {...ctaTarget(closingPrimaryHref)} variant="primary">
               {settingString(closingSettings, "primaryCtaLabel", "View Projects")}
             </Button>
-            <Button {...ctaTarget(closingSecondaryHref)}>
+            <Button
+              {...ctaTarget(closingSecondaryHref)}
+              download={closingSecondaryHref === media.cv ? "Oktavianus-Samuel-Minarto-CV.pdf" : undefined}
+            >
               <Download size={16} /> {settingString(closingSettings, "secondaryCtaLabel", "Download Resume")}
             </Button>
             <Button {...ctaTarget(closingTertiaryHref)}>

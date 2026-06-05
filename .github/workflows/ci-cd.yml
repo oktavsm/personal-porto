@@ -73,6 +73,8 @@ jobs:
       PROD_SESSION_DAYS: ${{ secrets.PROD_SESSION_DAYS }}
       PROD_MAX_UPLOAD_MB: ${{ secrets.PROD_MAX_UPLOAD_MB }}
       PROD_PUBLIC_UPLOAD_BASE_URL: ${{ secrets.PROD_PUBLIC_UPLOAD_BASE_URL }}
+      PROD_ARTICLE_GENERATE_WEBHOOK_URL: ${{ secrets.PROD_ARTICLE_GENERATE_WEBHOOK_URL }}
+      PROD_ARTICLE_GENERATE_SECRET: ${{ secrets.PROD_ARTICLE_GENERATE_SECRET }}
       RUN_PROD_SEED: ${{ secrets.RUN_PROD_SEED }}
     steps:
       - name: Checkout
@@ -191,6 +193,8 @@ jobs:
           SESSION_DAYS="${PROD_SESSION_DAYS:-7}"
           MAX_UPLOAD_MB="${PROD_MAX_UPLOAD_MB:-25}"
           PUBLIC_UPLOAD_BASE_URL="${PROD_PUBLIC_UPLOAD_BASE_URL:-/uploads}"
+          ARTICLE_GENERATE_WEBHOOK_URL="${PROD_ARTICLE_GENERATE_WEBHOOK_URL:-}"
+          ARTICLE_GENERATE_SECRET="${PROD_ARTICLE_GENERATE_SECRET:-}"
           RUN_SEED="${RUN_PROD_SEED:-false}"
 
           ssh -i ~/.ssh/ec2_key -p "$EC2_PORT" "$EC2_USER@$EC2_HOST" bash -s -- \
@@ -215,6 +219,8 @@ jobs:
             "$SESSION_DAYS" \
             "$MAX_UPLOAD_MB" \
             "$PUBLIC_UPLOAD_BASE_URL" \
+            "$ARTICLE_GENERATE_WEBHOOK_URL" \
+            "$ARTICLE_GENERATE_SECRET" \
             "$RUN_SEED" <<'REMOTE_SCRIPT'
           set -euo pipefail
 
@@ -239,7 +245,9 @@ jobs:
           SESSION_DAYS="${19}"
           MAX_UPLOAD_MB="${20}"
           PUBLIC_UPLOAD_BASE_URL="${21}"
-          RUN_SEED="${22}"
+          ARTICLE_GENERATE_WEBHOOK_URL="${22}"
+          ARTICLE_GENERATE_SECRET="${23}"
+          RUN_SEED="${24}"
 
           APP_NAME="teladan-porto"
           ACTIVE_SLOT_FILE="$APP_DIR/active_slot"
@@ -292,6 +300,8 @@ jobs:
           ADMIN_PASSWORD=$ADMIN_PASSWORD
           MAX_UPLOAD_MB=$MAX_UPLOAD_MB
           PUBLIC_UPLOAD_BASE_URL=$PUBLIC_UPLOAD_BASE_URL
+          ARTICLE_GENERATE_WEBHOOK_URL=$ARTICLE_GENERATE_WEBHOOK_URL
+          ARTICLE_GENERATE_SECRET=$ARTICLE_GENERATE_SECRET
           ENV
 
           docker compose --env-file "$API_ENV_FILE" -f "$API_COMPOSE_FILE" -p "$APP_NAME-api" up -d --remove-orphans

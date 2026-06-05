@@ -101,6 +101,7 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
       const level = typeof c["level"] === "number" ? c["level"] : 2;
       const text = String(c["text"] ?? "");
       if (level === 2) return <h2 className="article-block-heading-2">{text}</h2>;
+      if (level === 4) return <h4 className="article-block-heading-4">{text}</h4>;
       return <h3 className="article-block-heading-3">{text}</h3>;
     }
 
@@ -156,7 +157,7 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
     case "list": {
       const items = Array.isArray(c["items"]) ? (c["items"] as string[]) : [];
       const style = String(c["style"] ?? "bullet");
-      if (style === "numbered") {
+      if (style === "number" || style === "numbered") {
         return (
           <ol className="article-block-list">
             {items.map((item, i) => (

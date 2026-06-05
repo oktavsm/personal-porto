@@ -57,7 +57,7 @@ export function Resume() {
               development, AI, automation, and network systems.
             </p>
             <div className="actions">
-              <Button href={resumeUrl} variant="primary">
+              <Button href={resumeUrl} variant="primary" download="Oktavianus-Samuel-Minarto-CV.pdf">
                 <Download size={16} /> Download CV
               </Button>
               <Button href="https://www.linkedin.com/in/oktaavsm/">

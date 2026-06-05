@@ -7,9 +7,10 @@ type ButtonProps = {
   to?: string;
   variant?: "primary" | "secondary" | "ghost";
   className?: string;
+  download?: boolean | string;
 };
 
-export function Button({ children, href, to, variant = "secondary", className = "" }: ButtonProps) {
+export function Button({ children, href, to, variant = "secondary", className = "", download }: ButtonProps) {
   const classes = `btn btn-${variant} ${className}`.trim();
 
   if (to) {
@@ -22,7 +23,13 @@ export function Button({ children, href, to, variant = "secondary", className = 
 
   if (href) {
     return (
-      <a className={classes} href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer">
+      <a
+        className={classes}
+        href={href}
+        target={!download && href.startsWith("http") ? "_blank" : undefined}
+        rel={!download && href.startsWith("http") ? "noreferrer" : undefined}
+        download={download}
+      >
         {children}
       </a>
     );

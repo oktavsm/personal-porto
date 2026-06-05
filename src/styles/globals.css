@@ -2740,6 +2740,12 @@ body.is-embedded .chat-panel {
   box-shadow: var(--shadow);
 }
 
+.btn.compact {
+  min-height: 32px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+}
+
 .admin-media-picker-modal {
   width: min(920px, 100%);
   max-height: min(760px, calc(100vh - 48px));
@@ -2747,6 +2753,88 @@ body.is-embedded .chat-panel {
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 16px;
   overflow: hidden;
+}
+
+.admin-generator-modal {
+  width: min(980px, calc(100vw - 32px));
+  max-height: min(860px, calc(100dvh - 40px));
+  overflow: auto;
+}
+
+.admin-generator-modal .admin-form {
+  gap: 18px;
+}
+
+.admin-generator-media {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(242, 238, 232, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  background: rgba(242, 238, 232, 0.025);
+}
+
+.admin-generator-media .admin-help {
+  margin: 4px 0 0;
+}
+
+.admin-generator-media-grid {
+  max-height: 260px;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 10px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.admin-generator-context-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-generator-context-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 0.75fr) minmax(220px, 1.25fr);
+  gap: 12px;
+  align-items: center;
+  border: 1px solid rgba(242, 238, 232, 0.11);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(5, 6, 8, 0.54);
+}
+
+.admin-generator-context-item img {
+  width: 64px;
+  height: 56px;
+  border: 1px solid rgba(242, 238, 232, 0.12);
+  border-radius: 10px;
+  object-fit: cover;
+  filter: grayscale(1);
+}
+
+.admin-generator-context-item span {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.admin-generator-context-item strong,
+.admin-generator-context-item small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-generator-context-item small {
+  color: var(--muted-2);
+}
+
+.admin-generator-context-item textarea {
+  min-height: 64px;
+  resize: vertical;
 }
 
 .admin-modal h3 {
@@ -3165,6 +3253,19 @@ body.is-embedded .chat-panel {
 
   .chat-panel {
     max-height: calc(100vh - 156px);
+  }
+
+  .admin-generator-context-item {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .admin-generator-context-item textarea {
+    grid-column: 1 / -1;
+  }
+
+  .admin-generator-context-item img {
+    width: 52px;
+    height: 52px;
   }
 
   body.is-embedded .chat-panel {

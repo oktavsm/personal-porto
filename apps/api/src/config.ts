@@ -17,4 +17,6 @@ export const config = {
   uploadDir: process.env.UPLOAD_DIR ?? "uploads",
   publicUploadBaseUrl: process.env.PUBLIC_UPLOAD_BASE_URL ?? "/uploads",
   maxUploadMb: Number(process.env.MAX_UPLOAD_MB ?? 25),
+  articleGenerateWebhookUrl: process.env.ARTICLE_GENERATE_WEBHOOK_URL ?? "",
+  articleGenerateSecret: process.env.ARTICLE_GENERATE_SECRET ?? "",
 };
