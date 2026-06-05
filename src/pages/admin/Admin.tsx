@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Star, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Star, Trash2, Upload, X } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -59,6 +59,8 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "articles", label: "Articles" },
   { id: "theme", label: "Theme" },
 ];
+
+const articleBlockTypes = ["paragraph", "heading", "image", "gallery", "quote", "callout", "list", "code", "divider"];
 
 const emptyCertification = {
   title: "",
@@ -356,6 +358,20 @@ function articleBlockPreview(block: ArticleBlockDraft) {
   if (Array.isArray(content.images)) return `${content.images.length} selected media item${content.images.length === 1 ? "" : "s"}`;
   if (typeof content.src === "string" && content.src.trim()) return content.src;
   return `<${block.type}>`;
+}
+
+function articleBlockThumbnail(block: ArticleBlockDraft) {
+  const content = block.contentJson;
+  if (block.type === "image" && typeof content.src === "string" && content.src.trim()) {
+    return content.src;
+  }
+
+  if (block.type === "gallery" && Array.isArray(content.images)) {
+    const firstImage = content.images.find((image) => image && typeof image === "object" && "src" in image) as { src?: unknown } | undefined;
+    return typeof firstImage?.src === "string" ? firstImage.src : "";
+  }
+
+  return "";
 }
 
 function DeleteConfirmModal({
@@ -1033,6 +1049,7 @@ export function Admin() {
   const [articleBlocks, setArticleBlocks] = useState<ArticleBlockDraft[]>([]);
   const [editingBlockIdx, setEditingBlockIdx] = useState<number | null>(null);
   const [addingBlockType, setAddingBlockType] = useState<string | null>(null);
+  const [insertAfterBlockIdx, setInsertAfterBlockIdx] = useState<number | null>(null);
   const [blockDraftForm, setBlockDraftForm] = useState<Record<string, unknown>>({});
   const [dragOverBlockIdx, setDragOverBlockIdx] = useState<number | null>(null);
   const [themeData, setThemeData] = useState<AdminTheme>({});
@@ -1738,6 +1755,7 @@ export function Admin() {
     setEditingArticleId(null);
     setEditingBlockIdx(null);
     setAddingBlockType(null);
+    setInsertAfterBlockIdx(null);
     setBlockDraftForm({});
   }
 
@@ -1770,10 +1788,10 @@ export function Admin() {
     );
     setEditingBlockIdx(null);
     setAddingBlockType(null);
+    setInsertAfterBlockIdx(null);
   }
 
-  async function handleSaveArticle(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function saveArticle(keepEditing = false) {
     setSaving(true);
     setNotice(null);
     try {
@@ -1798,19 +1816,33 @@ export function Admin() {
         })),
       };
       if (editingArticleId) {
-        await adminApi.updateArticle(editingArticleId, payload);
-        setNotice("Article updated.");
+        const result = await adminApi.updateArticle(editingArticleId, payload);
+        setNotice(keepEditing ? "Article updated. Keep editing below." : "Article updated.");
+        if (keepEditing) {
+          editArticle(result.data);
+        }
       } else {
-        await adminApi.createArticle(payload);
-        setNotice("Article created.");
+        const result = await adminApi.createArticle(payload);
+        setNotice(keepEditing ? "Article created. Keep editing below." : "Article created.");
+        if (keepEditing) {
+          editArticle(result.data);
+        }
       }
-      resetArticleForm();
+
+      if (!keepEditing) {
+        resetArticleForm();
+      }
       await loadAdminData();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to save article.");
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleSaveArticle(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await saveArticle(false);
   }
 
   async function handlePublishArticle(id: string, publish: boolean) {
@@ -1848,9 +1880,10 @@ export function Admin() {
 
   // ─── Block Editor ─────────────────────────────────────────────────────────
 
-  function addBlock(type: string) {
+  function addBlock(type: string, insertAfterIndex: number | null = null) {
     setAddingBlockType(type);
     setEditingBlockIdx(null);
+    setInsertAfterBlockIdx(insertAfterIndex);
     setBlockDraftForm(defaultBlockContent(type));
   }
 
@@ -1861,8 +1894,14 @@ export function Admin() {
       type: addingBlockType,
       contentJson: blockDraftForm,
     };
-    setArticleBlocks((current) => [...current, newBlock]);
+    setArticleBlocks((current) => {
+      if (insertAfterBlockIdx === null) return [...current, newBlock];
+      const next = [...current];
+      next.splice(insertAfterBlockIdx + 1, 0, newBlock);
+      return next;
+    });
     setAddingBlockType(null);
+    setInsertAfterBlockIdx(null);
     setBlockDraftForm({});
   }
 
@@ -1885,10 +1924,55 @@ export function Admin() {
     }
   }
 
+  function moveArticleBlock(index: number, direction: "up" | "down") {
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= articleBlocks.length) return;
+
+    setArticleBlocks((current) => {
+      const next = [...current];
+      const [moved] = next.splice(index, 1);
+      next.splice(targetIndex, 0, moved);
+      return next;
+    });
+
+    if (editingBlockIdx === index) {
+      setEditingBlockIdx(targetIndex);
+      return;
+    }
+
+    if (editingBlockIdx === targetIndex) {
+      setEditingBlockIdx(index);
+    }
+  }
+
+  function duplicateBlock(index: number) {
+    const source = articleBlocks[index];
+    if (!source) return;
+
+    const clonedContent = JSON.parse(JSON.stringify(source.contentJson)) as Record<string, unknown>;
+    setArticleBlocks((current) => {
+      const next = [...current];
+      next.splice(index + 1, 0, {
+        id: `local-${Date.now()}-${Math.random()}`,
+        type: source.type,
+        contentJson: clonedContent,
+      });
+      return next;
+    });
+  }
+
   function startEditBlock(index: number) {
     setEditingBlockIdx(index);
     setAddingBlockType(null);
+    setInsertAfterBlockIdx(null);
     setBlockDraftForm({ ...(articleBlocks[index]?.contentJson ?? {}) });
+  }
+
+  function prepareInsertAfterBlock(index: number) {
+    setInsertAfterBlockIdx(index);
+    setEditingBlockIdx(null);
+    setAddingBlockType(null);
+    setBlockDraftForm({});
   }
 
   // Drag and drop handlers
@@ -3630,33 +3714,85 @@ export function Admin() {
 
                 {/* Block list with DnD */}
                 <div className="article-block-list">
-                  {articleBlocks.map((block, index) => (
-                    <div
-                      key={block.id}
-                      className={`article-block-row${dragOverBlockIdx === index ? " is-drag-over" : ""}${editingBlockIdx === index ? " is-editing" : ""}`}
-                      draggable
-                      onDragStart={(e) => handleBlockDragStart(e, index)}
-                      onDragOver={(e) => handleBlockDragOver(e, index)}
-                      onDrop={(e) => handleBlockDrop(e, index)}
-                      onDragEnd={handleBlockDragEnd}
-                    >
-                      <button className="block-drag-handle" type="button" aria-label="Drag to reorder" tabIndex={-1}>
-                        <GripVertical size={15} />
-                      </button>
-                      <div className="block-row-info">
-                        <span className="admin-badge">{articleBlockLabel(block)}</span>
-                        <span className="block-row-preview">{articleBlockPreview(block)}</span>
+                  {articleBlocks.map((block, index) => {
+                    const thumbnail = articleBlockThumbnail(block);
+
+                    return (
+                      <div key={block.id} className="article-block-row-shell">
+                        <div
+                          className={`article-block-row${dragOverBlockIdx === index ? " is-drag-over" : ""}${editingBlockIdx === index ? " is-editing" : ""}`}
+                          draggable
+                          onDragStart={(e) => handleBlockDragStart(e, index)}
+                          onDragOver={(e) => handleBlockDragOver(e, index)}
+                          onDrop={(e) => handleBlockDrop(e, index)}
+                          onDragEnd={handleBlockDragEnd}
+                        >
+                          <button className="block-drag-handle" type="button" aria-label="Drag to reorder" tabIndex={-1}>
+                            <GripVertical size={15} />
+                          </button>
+                          <div className={`block-row-info${thumbnail ? " has-thumb" : ""}`}>
+                            {thumbnail ? <img className="article-block-thumb" src={thumbnail} alt="" loading="lazy" /> : null}
+                            <div className="block-row-copy">
+                              <span className="admin-badge">{articleBlockLabel(block)}</span>
+                              <span className="block-row-preview">{articleBlockPreview(block)}</span>
+                            </div>
+                          </div>
+                          <div className="admin-row-actions">
+                            <button className="icon-btn" type="button" aria-label="Move block up" onClick={() => moveArticleBlock(index, "up")} disabled={index === 0}>
+                              <ArrowUp size={14} />
+                            </button>
+                            <button className="icon-btn" type="button" aria-label="Move block down" onClick={() => moveArticleBlock(index, "down")} disabled={index === articleBlocks.length - 1}>
+                              <ArrowDown size={14} />
+                            </button>
+                            <button className="icon-btn" type="button" aria-label="Insert block after this block" onClick={() => prepareInsertAfterBlock(index)}>
+                              <Plus size={14} />
+                            </button>
+                            <button className="icon-btn" type="button" aria-label="Duplicate block" onClick={() => duplicateBlock(index)}>
+                              <Copy size={14} />
+                            </button>
+                            <button className="icon-btn" type="button" aria-label="Edit block" onClick={() => startEditBlock(index)}>
+                              <Pencil size={14} />
+                            </button>
+                            <button className="icon-btn danger" type="button" aria-label="Delete block" onClick={() => deleteBlock(index)}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        {insertAfterBlockIdx === index && !addingBlockType ? (
+                          <div className="article-block-type-picker is-inline">
+                            <span style={{ fontSize: 12, color: "var(--muted-2)" }}>Insert after #{index + 1}:</span>
+                            {articleBlockTypes.map((type) => (
+                              <button key={type} className="article-block-type-btn" type="button" onClick={() => addBlock(type, index)}>
+                                <Plus size={12} /> {type}
+                              </button>
+                            ))}
+                            <button className="article-block-type-btn muted" type="button" onClick={() => setInsertAfterBlockIdx(null)}>
+                              <X size={12} /> cancel
+                            </button>
+                          </div>
+                        ) : null}
+                        {insertAfterBlockIdx === index && addingBlockType ? (
+                          <div className="article-block-edit-form is-inline">
+                            <div className="admin-card-head">
+                              <span className="admin-badge">{addingBlockType} · after #{index + 1}</span>
+                              <button className="icon-btn" type="button" aria-label="Cancel add block" onClick={() => { setAddingBlockType(null); setInsertAfterBlockIdx(null); setBlockDraftForm({}); }}>
+                                <X size={14} />
+                              </button>
+                            </div>
+                            <BlockDraftForm
+                              type={addingBlockType}
+                              value={blockDraftForm}
+                              onChange={setBlockDraftForm}
+                              imageAssets={imageMediaAssets}
+                            />
+                            <button className="btn btn-primary" type="button" onClick={saveBlockDraft}>
+                              <Plus size={15} /> Add Block
+                            </button>
+                          </div>
+                        ) : null}
                       </div>
-                      <div className="admin-row-actions">
-                        <button className="icon-btn" type="button" aria-label="Edit block" onClick={() => startEditBlock(index)}>
-                          <Pencil size={14} />
-                        </button>
-                        <button className="icon-btn danger" type="button" aria-label="Delete block" onClick={() => deleteBlock(index)}>
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {articleBlocks.length === 0 && (
                     <p className="admin-empty">No blocks yet. Add content below.</p>
                   )}
@@ -3684,11 +3820,13 @@ export function Admin() {
                 )}
 
                 {/* Add new block */}
-                {addingBlockType ? (
+                {addingBlockType && insertAfterBlockIdx === null ? (
                   <div className="article-block-edit-form">
                     <div className="admin-card-head">
-                      <span className="admin-badge">{addingBlockType}</span>
-                      <button className="icon-btn" type="button" aria-label="Cancel add block" onClick={() => { setAddingBlockType(null); setBlockDraftForm({}); }}>
+                      <span className="admin-badge">
+                        {addingBlockType}{insertAfterBlockIdx !== null ? ` · after #${insertAfterBlockIdx + 1}` : ""}
+                      </span>
+                      <button className="icon-btn" type="button" aria-label="Cancel add block" onClick={() => { setAddingBlockType(null); setInsertAfterBlockIdx(null); setBlockDraftForm({}); }}>
                         <X size={14} />
                       </button>
                     </div>
@@ -3702,21 +3840,28 @@ export function Admin() {
                       <Plus size={15} /> Add Block
                     </button>
                   </div>
-                ) : (
+                ) : insertAfterBlockIdx === null ? (
                   <div className="article-block-type-picker">
-                    <span style={{ fontSize: 12, color: "var(--muted-2)" }}>Add block:</span>
-                    {["paragraph", "heading", "image", "gallery", "quote", "callout", "list", "code", "divider"].map((type) => (
-                      <button key={type} className="article-block-type-btn" type="button" onClick={() => addBlock(type)}>
+                    <span style={{ fontSize: 12, color: "var(--muted-2)" }}>
+                      Add block:
+                    </span>
+                    {articleBlockTypes.map((type) => (
+                      <button key={type} className="article-block-type-btn" type="button" onClick={() => addBlock(type, insertAfterBlockIdx)}>
                         <Plus size={12} /> {type}
                       </button>
                     ))}
                   </div>
-                )}
+                ) : null}
               </div>
 
-              <button className="btn btn-primary" type="submit" disabled={saving} form="article-form">
-                {saving ? "Saving…" : editingArticleId ? "Update Article" : "Create Article"}
-              </button>
+              <div className="admin-form-actions">
+                <button className="btn" type="button" disabled={saving} onClick={() => void saveArticle(true)}>
+                  <Check size={15} /> {saving ? "Saving…" : "Save & keep editing"}
+                </button>
+                <button className="btn btn-primary" type="submit" disabled={saving} form="article-form">
+                  {saving ? "Saving…" : editingArticleId ? "Update Article" : "Create Article"}
+                </button>
+              </div>
             </form>
           </Card>
 
