@@ -648,6 +648,7 @@ export type AdminArticle = {
   coverAlt?: string | null;
   seoTitle?: string | null;
   seoDescription?: string | null;
+  generatorMeta?: unknown;
   language: string;
   author: { name: string; role?: string | null };
   tags: string[];

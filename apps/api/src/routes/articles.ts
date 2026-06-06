@@ -18,6 +18,7 @@ type ArticleBody = {
   coverAssetId?: string;
   seoTitle?: string;
   seoDescription?: string;
+  generatorMeta?: unknown;
   authorName?: string;
   authorRole?: string;
   tags?: string[] | string;
@@ -127,6 +128,7 @@ function serializeArticle(article: ArticleWithRelations, publicOnly = false) {
     coverAlt: article.coverAsset?.altText ?? null,
     seoTitle: article.seoTitle,
     seoDescription: article.seoDescription,
+    ...(!publicOnly ? { generatorMeta: article.generatorMeta } : {}),
     language: article.language,
     author: {
       name: article.authorName,
@@ -160,6 +162,9 @@ function articleBaseData(body: ArticleBody) {
     coverAssetId: pickString(body.coverAssetId) || null,
     seoTitle: pickString(body.seoTitle) || null,
     seoDescription: pickString(body.seoDescription) || null,
+    generatorMeta: body.generatorMeta && typeof body.generatorMeta === "object"
+      ? body.generatorMeta as Prisma.InputJsonValue
+      : undefined,
     authorName: pickString(body.authorName, "Oktavianus Samuel"),
     authorRole: pickString(body.authorRole) || null,
   };
@@ -565,6 +570,25 @@ export async function articleRoutes(app: FastifyInstance) {
         coverAssetId,
         seoTitle: pickString(articleDraft.seoTitle, title),
         seoDescription: pickString(articleDraft.seoDescription, excerpt),
+        generatorMeta: {
+          source: "n8n-article-generator",
+          createdAt: new Date().toISOString(),
+          topic: pickString(request.body.topic),
+          category,
+          tone: pickString(request.body.tone, "reflective, grounded, personal, professional"),
+          language: pickString(request.body.language, "English"),
+          targetLength,
+          rawNotes,
+          sourceContext: pickString(request.body.sourceContext),
+          articleContextOverride: pickString(request.body.articleContext),
+          media: availableMedia.map((media) => ({
+            mediaAssetId: media.mediaAssetId,
+            originalName: media.originalName,
+            altText: media.altText,
+            caption: media.caption,
+            context: media.context,
+          })),
+        },
         authorName: pickString(articleDraft.authorName, "Oktavianus Samuel"),
         authorRole: pickString(articleDraft.authorRole),
         tags: toTagArray(articleDraft.tags).slice(0, 8),
@@ -745,6 +769,7 @@ export async function articleRoutes(app: FastifyInstance) {
             coverAssetId: source.coverAssetId,
             seoTitle: source.seoTitle,
             seoDescription: source.seoDescription,
+            generatorMeta: source.generatorMeta ? source.generatorMeta as Prisma.InputJsonValue : undefined,
             authorName: source.authorName,
             authorRole: source.authorRole,
           },

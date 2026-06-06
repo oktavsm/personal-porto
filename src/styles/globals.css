@@ -2101,6 +2101,21 @@ body.is-embedded .chat-panel {
   line-height: 1;
 }
 
+.admin-overview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin: -2px 0 20px;
+}
+
+.admin-overview-actions p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .admin-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -2147,6 +2162,7 @@ body.is-embedded .chat-panel {
 
 .admin-page[data-admin-tab="overview"] .admin-grid,
 .admin-page:not([data-admin-tab="overview"]) .admin-stats,
+.admin-page:not([data-admin-tab="overview"]) .admin-overview-actions,
 .admin-page[data-admin-tab="projects"] .admin-grid > .card:not(.admin-card-projects),
 .admin-page[data-admin-tab="experiences"] .admin-grid > .card:not(.admin-card-experiences),
 .admin-page[data-admin-tab="music"] .admin-grid > .card:not(.admin-card-music),

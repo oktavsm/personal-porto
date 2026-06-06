@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, Download, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, Upload, X } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -256,6 +256,7 @@ const emptyArticleForm = {
   coverAssetId: "",
   seoTitle: "",
   seoDescription: "",
+  generatorMeta: null as unknown,
   authorName: "Oktavianus Samuel",
   authorRole: "",
   tags: "",
@@ -409,6 +410,15 @@ function articleBlockThumbnail(block: ArticleBlockDraft) {
   }
 
   return "";
+}
+
+function generatorMetaPreview(value: unknown) {
+  if (!value) return "";
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
 }
 
 function DeleteConfirmModal({
@@ -2091,6 +2101,7 @@ export function Admin() {
       coverAssetId: article.coverAssetId ?? "",
       seoTitle: article.seoTitle ?? "",
       seoDescription: article.seoDescription ?? "",
+      generatorMeta: article.generatorMeta ?? null,
       authorName: article.author.name,
       authorRole: article.author.role ?? "",
       tags: article.tags.join(", "),
@@ -2777,6 +2788,13 @@ export function Admin() {
             <span>Articles</span>
             <strong>{articles.length}</strong>
           </div>
+        </div>
+
+        <div className="admin-overview-actions">
+          <a className="btn" href="/api/admin/export" download>
+            <Download size={16} /> Export CMS backup
+          </a>
+          <p>Downloads a JSON snapshot of portfolio CMS data and media references. Uploaded files themselves stay on the server.</p>
         </div>
 
         <div className="admin-grid">
@@ -4089,6 +4107,13 @@ export function Admin() {
                   </label>
                 </div>
               </details>
+
+              {generatorMetaPreview(articleForm.generatorMeta) ? (
+                <details>
+                  <summary className="admin-seo-toggle">Generator source note</summary>
+                  <pre className="admin-context-preview">{generatorMetaPreview(articleForm.generatorMeta)}</pre>
+                </details>
+              ) : null}
 
               <label className="admin-checkbox-label">
                 <input type="checkbox" checked={articleForm.isFeatured} onChange={(e) => setArticleForm({ ...articleForm, isFeatured: e.target.checked })} />

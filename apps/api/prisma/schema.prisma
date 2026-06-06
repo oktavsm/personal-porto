@@ -313,6 +313,7 @@ model Article {
   coverAssetId   String?
   seoTitle       String?
   seoDescription String?
+  generatorMeta  Json?
   language       String        @default("en")
   authorName     String        @default("Oktavianus Samuel")
   authorRole     String?
