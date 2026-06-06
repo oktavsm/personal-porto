@@ -263,6 +263,14 @@ export type AdminAuditLog = {
   createdAt: string;
 };
 
+export type AdminBackupSummary = {
+  schemaVersion: number;
+  exportedAt: string;
+  counts: Record<string, number>;
+  warnings: string[];
+  imported?: Record<string, number>;
+};
+
 type CertificationPayload = {
   title: string;
   issuer: string;
@@ -641,6 +649,22 @@ export const adminApi = {
     if (params?.limit) searchParams.set("limit", String(params.limit));
     const qs = searchParams.toString();
     return request<{ data: AdminAuditLog[] }>(`/api/admin/audit-logs${qs ? `?${qs}` : ""}`);
+  },
+  previewImportBackup: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<{ data: AdminBackupSummary }>("/api/admin/import/preview", {
+      method: "POST",
+      body: formData,
+    });
+  },
+  importBackup: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return request<{ data: AdminBackupSummary }>("/api/admin/import", {
+      method: "POST",
+      body: formData,
+    });
   },
 };
 

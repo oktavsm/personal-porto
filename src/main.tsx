@@ -19,6 +19,12 @@ const themeVarMap: Record<string, string> = {
   accent: "--accent",
   accentSoft: "--accent-soft",
   accentDim: "--accent-dim",
+  fontScale: "--font-scale",
+  articleAlign: "--article-align",
+  articleWidth: "--article-width",
+  sectionSpacing: "--section-space",
+  cardRadius: "--card-radius",
+  buttonRadius: "--button-radius",
 };
 
 async function applyTheme() {

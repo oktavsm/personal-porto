@@ -16,6 +16,7 @@ import { contactRoutes } from "./routes/contact.js";
 import { exportRoutes } from "./routes/export.js";
 import { experienceRoutes } from "./routes/experiences.js";
 import { healthRoutes } from "./routes/health.js";
+import { importRoutes } from "./routes/import.js";
 import { liveSystemRoutes } from "./routes/liveSystems.js";
 import { mediaRoutes } from "./routes/media.js";
 import { musicRoutes } from "./routes/music.js";
@@ -71,6 +72,7 @@ export async function buildApp() {
   await app.register(liveSystemRoutes);
   await app.register(contactRoutes);
   await app.register(exportRoutes);
+  await app.register(importRoutes);
   await app.register(categoryRoutes);
   await app.register(musicRoutes);
   await app.register(pageRoutes);

@@ -6,6 +6,7 @@ import {
   type AdminAuditLog,
   type AdminArticle,
   type AdminArticleBlock,
+  type AdminBackupSummary,
   type AdminCertification,
   type AdminContactLink,
   type AdminContexts,
@@ -247,6 +248,78 @@ const themeColorKeys = [
   { key: "accentDim", label: "Accent Dim" },
 ];
 
+const themeVarMap: Record<string, string> = {
+  background: "--bg",
+  surface: "--surface",
+  surfaceSoft: "--bg-2",
+  card: "--card",
+  cardHover: "--card-2",
+  border: "--border",
+  textPrimary: "--text",
+  textSecondary: "--muted",
+  textMuted: "--muted-2",
+  accent: "--accent",
+  accentSoft: "--accent-soft",
+  accentDim: "--accent-dim",
+  fontScale: "--font-scale",
+  articleAlign: "--article-align",
+  articleWidth: "--article-width",
+  sectionSpacing: "--section-space",
+  cardRadius: "--card-radius",
+  buttonRadius: "--button-radius",
+};
+
+const themeControlKeys = [
+  { key: "fontScale", label: "Font Scale", options: [
+    { value: "0.95", label: "Compact" },
+    { value: "1", label: "Default" },
+    { value: "1.08", label: "Readable" },
+  ] },
+  { key: "articleAlign", label: "Article Text Align", options: textAlignOptions },
+  { key: "articleWidth", label: "Article Width", options: [
+    { value: "680px", label: "Focused" },
+    { value: "720px", label: "Default" },
+    { value: "860px", label: "Wide" },
+  ] },
+  { key: "sectionSpacing", label: "Section Spacing", options: [
+    { value: "64px", label: "Compact" },
+    { value: "96px", label: "Default" },
+    { value: "120px", label: "Spacious" },
+  ] },
+  { key: "cardRadius", label: "Card Radius", options: [
+    { value: "12px", label: "Sharp" },
+    { value: "18px", label: "Default" },
+    { value: "26px", label: "Soft" },
+  ] },
+  { key: "buttonRadius", label: "Button Radius", options: [
+    { value: "12px", label: "Soft Rectangle" },
+    { value: "24px", label: "Rounded" },
+    { value: "999px", label: "Pill" },
+  ] },
+];
+
+const themePresets: { label: string; values: Record<string, string> }[] = [
+  { label: "Default", values: {} },
+  {
+    label: "Tighter Reading",
+    values: {
+      fontScale: "0.95",
+      articleWidth: "680px",
+      sectionSpacing: "64px",
+      cardRadius: "12px",
+    },
+  },
+  {
+    label: "Wide Article",
+    values: {
+      fontScale: "1.08",
+      articleWidth: "860px",
+      sectionSpacing: "96px",
+      cardRadius: "18px",
+    },
+  },
+];
+
 const emptyArticleForm = {
   title: "",
   slug: "",
@@ -356,6 +429,18 @@ function selectedFilesMeta(files: File[], placeholder: string) {
   const totalSize = files.reduce((sum, file) => sum + file.size, 0);
   if (files.length === 1) return formatBytes(files[0]?.size ?? 0);
   return `${formatBytes(totalSize)} total`;
+}
+
+function applyThemeVariables(theme: AdminTheme) {
+  const root = document.documentElement;
+  for (const [key, cssVar] of Object.entries(themeVarMap)) {
+    if (theme[key]) root.style.setProperty(cssVar, theme[key]);
+  }
+}
+
+function clearThemeVariables() {
+  const root = document.documentElement;
+  Object.values(themeVarMap).forEach((cssVar) => root.style.removeProperty(cssVar));
 }
 
 function moveId<T extends { id: string }>(items: T[], id: string, direction: "up" | "down") {
@@ -1386,6 +1471,9 @@ export function Admin() {
   const [themeDefaults, setThemeDefaults] = useState<AdminTheme>({});
   const [themeForm, setThemeForm] = useState<AdminTheme>({});
   const [themeSaving, setThemeSaving] = useState(false);
+  const [backupFile, setBackupFile] = useState<File | null>(null);
+  const [backupPreview, setBackupPreview] = useState<AdminBackupSummary | null>(null);
+  const [backupImporting, setBackupImporting] = useState(false);
   const imageMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("image/")), [mediaAssets]);
   const audioMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("audio/")), [mediaAssets]);
   const filteredImageMediaAssets = useMemo(
@@ -2391,17 +2479,7 @@ export function Admin() {
       const result = await adminApi.saveTheme(themeForm);
       setThemeData(result.data);
       setThemeForm(result.data);
-      // Apply immediately to :root
-      const root = document.documentElement;
-      const varMap: Record<string, string> = {
-        background: "--bg", surface: "--surface", surfaceSoft: "--bg-2",
-        card: "--card", cardHover: "--card-2", border: "--border",
-        textPrimary: "--text", textSecondary: "--muted", textMuted: "--muted-2",
-        accent: "--accent", accentSoft: "--accent-soft", accentDim: "--accent-dim",
-      };
-      for (const [key, cssVar] of Object.entries(varMap)) {
-        if (result.data[key]) root.style.setProperty(cssVar, result.data[key]);
-      }
+      applyThemeVariables(result.data);
       setNotice("Theme saved and applied.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to save theme.");
@@ -2417,14 +2495,60 @@ export function Admin() {
       const result = await adminApi.resetTheme();
       setThemeData(result.data);
       setThemeForm(result.data);
-      // Remove inline vars to let CSS defaults take effect
-      const root = document.documentElement;
-      ["--bg","--surface","--bg-2","--card","--card-2","--border","--text","--muted","--muted-2","--accent","--accent-soft","--accent-dim"].forEach(v => root.style.removeProperty(v));
+      clearThemeVariables();
       setNotice("Theme reset to defaults.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to reset theme.");
     } finally {
       setThemeSaving(false);
+    }
+  }
+
+  function handlePreviewTheme() {
+    applyThemeVariables(themeForm);
+    setNotice("Theme preview applied locally. Save to keep it.");
+  }
+
+  function applyThemePreset(values: Record<string, string>) {
+    const nextTheme = { ...themeDefaults, ...themeForm, ...values };
+    setThemeForm(nextTheme);
+    applyThemeVariables(nextTheme);
+  }
+
+  async function handlePreviewBackupImport() {
+    if (!backupFile) {
+      setNotice("Choose a CMS backup JSON first.");
+      return;
+    }
+    setBackupImporting(true);
+    setNotice(null);
+    try {
+      const result = await adminApi.previewImportBackup(backupFile);
+      setBackupPreview(result.data);
+      setNotice("Backup preview ready.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to preview backup.");
+    } finally {
+      setBackupImporting(false);
+    }
+  }
+
+  async function handleImportBackup() {
+    if (!backupFile) {
+      setNotice("Choose a CMS backup JSON first.");
+      return;
+    }
+    setBackupImporting(true);
+    setNotice(null);
+    try {
+      const result = await adminApi.importBackup(backupFile);
+      setBackupPreview(result.data);
+      await loadAdminData();
+      setNotice("Backup imported in merge mode.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to import backup.");
+    } finally {
+      setBackupImporting(false);
     }
   }
 
@@ -2816,6 +2940,57 @@ export function Admin() {
           </a>
           <p>Downloads a JSON snapshot of portfolio CMS data and media references. Uploaded files themselves stay on the server.</p>
         </div>
+
+        <Card className="admin-card-backup admin-overview-backup">
+          <div className="admin-card-head">
+            <h3><Upload size={18} /> Restore CMS backup</h3>
+          </div>
+          <p className="admin-muted">
+            Import runs in merge mode: matching records are updated, missing records are created, and extra existing records stay untouched.
+          </p>
+          <div className="admin-upload-control">
+            <label className="admin-file-button">
+              Choose backup JSON
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setBackupFile(file);
+                  setBackupPreview(null);
+                }}
+              />
+            </label>
+            <span>
+              <strong>{backupFile?.name ?? "No backup selected"}</strong>
+              {backupFile ? ` · ${formatBytes(backupFile.size)}` : ""}
+            </span>
+          </div>
+          <div className="actions">
+            <button className="btn compact" type="button" disabled={!backupFile || backupImporting} onClick={() => void handlePreviewBackupImport()}>
+              <FileText size={15} /> Preview backup
+            </button>
+            <button className="btn btn-primary compact" type="button" disabled={!backupFile || backupImporting} onClick={() => void handleImportBackup()}>
+              <Upload size={15} /> Import merge
+            </button>
+          </div>
+          {backupPreview ? (
+            <div className="admin-backup-preview">
+              <div>
+                <strong>Schema v{backupPreview.schemaVersion}</strong>
+                <span>Exported {backupPreview.exportedAt}</span>
+              </div>
+              <div className="admin-backup-counts">
+                {Object.entries(backupPreview.imported ?? backupPreview.counts).map(([key, value]) => (
+                  <span key={key}>{key}: {value}</span>
+                ))}
+              </div>
+              {backupPreview.warnings.map((warning) => (
+                <p className="admin-help" key={warning}>{warning}</p>
+              ))}
+            </div>
+          ) : null}
+        </Card>
 
         <div className="admin-grid">
           <Card className="admin-card-projects">
@@ -4522,9 +4697,22 @@ export function Admin() {
               <h3><Palette size={18} /> Theme Studio</h3>
             </div>
             <p style={{ color: "var(--muted)", fontSize: 14, marginBottom: 20 }}>
-              Customize the site color palette. Changes are applied live to the site. Reset returns to default dark theme.
+              Customize color, reading width, spacing, and typography tokens. Preview applies locally; save keeps it for visitors.
             </p>
             <form className="admin-form theme-form" onSubmit={handleSaveTheme} id="theme-form">
+              <div className="theme-preset-row">
+                {themePresets.map((preset) => (
+                  <button
+                    key={preset.label}
+                    className="btn compact"
+                    type="button"
+                    onClick={() => applyThemePreset(preset.label === "Default" ? themeDefaults : preset.values)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
               <div className="theme-color-grid">
                 {themeColorKeys.map(({ key, label }) => (
                   <div key={key} className="theme-color-row">
@@ -4560,7 +4748,22 @@ export function Admin() {
                 ))}
               </div>
 
+              <div className="theme-control-grid">
+                {themeControlKeys.map((control) => (
+                  <AdminSelect
+                    key={control.key}
+                    label={control.label}
+                    value={themeForm[control.key] ?? themeDefaults[control.key] ?? ""}
+                    options={control.options}
+                    onChange={(value) => setThemeForm({ ...themeForm, [control.key]: value })}
+                  />
+                ))}
+              </div>
+
               <div className="actions" style={{ marginTop: 20 }}>
+                <button className="btn" type="button" onClick={handlePreviewTheme} disabled={themeSaving}>
+                  Preview
+                </button>
                 <button className="btn btn-primary" type="submit" disabled={themeSaving}>
                   {themeSaving ? "Saving…" : "Save Theme"}
                 </button>

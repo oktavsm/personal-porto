@@ -17,12 +17,72 @@ const DEFAULT_THEME: Record<string, string> = {
   accent: "#D8D3C8",
   accentSoft: "#9A968E",
   accentDim: "#3A3936",
+  fontScale: "1",
+  articleAlign: "left",
+  articleWidth: "720px",
+  sectionSpacing: "96px",
+  cardRadius: "18px",
+  buttonRadius: "999px",
 };
 
 const ALLOWED_KEYS = new Set(Object.keys(DEFAULT_THEME));
+const COLOR_KEYS = new Set([
+  "background",
+  "surface",
+  "surfaceSoft",
+  "card",
+  "cardHover",
+  "border",
+  "textPrimary",
+  "textSecondary",
+  "textMuted",
+  "accent",
+  "accentSoft",
+  "accentDim",
+]);
+const ENUM_KEYS: Record<string, string[]> = {
+  articleAlign: ["left", "center", "right", "justify"],
+};
+const NUMBER_KEYS: Record<string, { min: number; max: number }> = {
+  fontScale: { min: 0.9, max: 1.15 },
+};
+const LENGTH_KEYS: Record<string, { min: number; max: number; unit: "px" }> = {
+  articleWidth: { min: 620, max: 980, unit: "px" },
+  sectionSpacing: { min: 48, max: 128, unit: "px" },
+  cardRadius: { min: 8, max: 28, unit: "px" },
+  buttonRadius: { min: 8, max: 999, unit: "px" },
+};
 
 function isValidHex(value: string): boolean {
   return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value.trim());
+}
+
+function normalizeThemeValue(key: string, value: unknown): string | null {
+  const cleanValue = pickString(value);
+
+  if (COLOR_KEYS.has(key)) {
+    return isValidHex(cleanValue) ? cleanValue : null;
+  }
+
+  if (ENUM_KEYS[key]) {
+    return ENUM_KEYS[key].includes(cleanValue) ? cleanValue : null;
+  }
+
+  if (NUMBER_KEYS[key]) {
+    const parsed = Number(cleanValue);
+    const rule = NUMBER_KEYS[key];
+    if (!Number.isFinite(parsed) || parsed < rule.min || parsed > rule.max) return null;
+    return parsed.toString();
+  }
+
+  if (LENGTH_KEYS[key]) {
+    const rule = LENGTH_KEYS[key];
+    const parsed = Number(cleanValue.replace(rule.unit, ""));
+    if (!Number.isFinite(parsed) || parsed < rule.min || parsed > rule.max) return null;
+    return `${Math.round(parsed)}${rule.unit}`;
+  }
+
+  return null;
 }
 
 async function getCurrentTheme(): Promise<Record<string, string>> {
@@ -50,7 +110,7 @@ export async function themeRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const body = request.body;
 
-      // Validate: only allow known keys and valid hex colors
+      // Validate: only allow known keys and valid token values
       const errors: string[] = [];
       const updates: { key: string; value: string }[] = [];
 
@@ -59,9 +119,9 @@ export async function themeRoutes(app: FastifyInstance) {
           errors.push(`Unknown theme key: ${key}`);
           continue;
         }
-        const cleanValue = pickString(value);
-        if (!isValidHex(cleanValue)) {
-          errors.push(`Invalid hex color for "${key}": ${value}`);
+        const cleanValue = normalizeThemeValue(key, value);
+        if (!cleanValue) {
+          errors.push(`Invalid theme value for "${key}": ${value}`);
           continue;
         }
         updates.push({ key, value: cleanValue });

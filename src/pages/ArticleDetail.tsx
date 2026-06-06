@@ -1,4 +1,4 @@
-import { ArrowLeft, BookOpen, Calendar, Tag } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Calendar, Link as LinkIcon, Tag } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { publicApi, type PublicArticle, type PublicArticleBlock } from "../lib/publicApi";
@@ -90,6 +90,21 @@ function ArticleGalleryBlock({
   );
 }
 
+function slugifyHeading(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 64);
+}
+
+function headingAnchor(block: PublicArticleBlock) {
+  const content = getBlockContent<Record<string, unknown>>(block);
+  const text = String(content["text"] ?? "");
+  return `heading-${slugifyHeading(text) || block.id}`;
+}
+
 function BlockRenderer({ block }: { block: PublicArticleBlock }) {
   const c = getBlockContent<Record<string, unknown>>(block);
   const align = ["left", "center", "right", "justify"].includes(String(c["align"]))
@@ -104,9 +119,10 @@ function BlockRenderer({ block }: { block: PublicArticleBlock }) {
     case "heading": {
       const level = typeof c["level"] === "number" ? c["level"] : 2;
       const text = String(c["text"] ?? "");
-      if (level === 2) return <h2 className="article-block-heading-2" style={alignStyle}>{text}</h2>;
-      if (level === 4) return <h4 className="article-block-heading-4" style={alignStyle}>{text}</h4>;
-      return <h3 className="article-block-heading-3" style={alignStyle}>{text}</h3>;
+      const id = headingAnchor(block);
+      if (level === 2) return <h2 className="article-block-heading-2" id={id} style={alignStyle}>{text}</h2>;
+      if (level === 4) return <h4 className="article-block-heading-4" id={id} style={alignStyle}>{text}</h4>;
+      return <h3 className="article-block-heading-3" id={id} style={alignStyle}>{text}</h3>;
     }
 
     case "image": {
@@ -216,6 +232,8 @@ export function ArticleDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [article, setArticle] = useState<PublicArticle | null>(null);
   const [related, setRelated] = useState<PublicArticle[]>([]);
+  const [articleIndex, setArticleIndex] = useState<{ previous: PublicArticle | null; next: PublicArticle | null }>({ previous: null, next: null });
+  const [linkCopied, setLinkCopied] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -225,6 +243,8 @@ export function ArticleDetail() {
     setNotFound(false);
     setArticle(null);
     setRelated([]);
+    setArticleIndex({ previous: null, next: null });
+    setLinkCopied(false);
 
     publicApi
       .article(slug)
@@ -239,9 +259,17 @@ export function ArticleDetail() {
         }
         metaDesc.setAttribute("content", data.seoDescription || data.excerpt);
 
-        // Load related articles from same category
-        return publicApi.articles({ category: data.category, limit: "4" }).then(({ data: all }) => {
-          setRelated(all.filter((a) => a.slug !== slug).slice(0, 3));
+        // Load related and article navigation from the public article index.
+        return Promise.all([
+          publicApi.articles({ category: data.category, limit: "4" }),
+          publicApi.articles(),
+        ]).then(([sameCategory, allArticles]) => {
+          setRelated(sameCategory.data.filter((a) => a.slug !== slug).slice(0, 3));
+          const currentIndex = allArticles.data.findIndex((item) => item.slug === slug);
+          setArticleIndex({
+            previous: currentIndex > 0 ? allArticles.data[currentIndex - 1] : null,
+            next: currentIndex >= 0 && currentIndex < allArticles.data.length - 1 ? allArticles.data[currentIndex + 1] : null,
+          });
         });
       })
       .catch(() => {
@@ -273,6 +301,28 @@ export function ArticleDetail() {
         </div>
       </section>
     );
+  }
+
+  const tableOfContents = article?.blocks
+    .filter((block) => block.type === "heading")
+    .map((block) => {
+      const content = getBlockContent<Record<string, unknown>>(block);
+      return {
+        id: headingAnchor(block),
+        text: String(content["text"] ?? ""),
+        level: typeof content["level"] === "number" ? content["level"] : 2,
+      };
+    })
+    .filter((item) => item.text.trim().length > 0) ?? [];
+
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setLinkCopied(true);
+      window.setTimeout(() => setLinkCopied(false), 1600);
+    } catch {
+      setLinkCopied(false);
+    }
   }
 
   if (notFound || !article) {
@@ -331,6 +381,12 @@ export function ArticleDetail() {
             By <strong style={{ color: "var(--text)" }}>{article.author.name}</strong>
             {article.author.role && <span> · {article.author.role}</span>}
           </p>
+
+          <div className="article-header-actions" data-reveal>
+            <button className="btn compact" type="button" onClick={() => void handleCopyLink()}>
+              <LinkIcon size={15} /> {linkCopied ? "Copied" : "Copy Link"}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -344,6 +400,19 @@ export function ArticleDetail() {
       )}
 
       {/* Body */}
+      {tableOfContents.length > 1 && (
+        <nav className="article-toc" aria-label="Article table of contents" data-reveal>
+          <span>In this note</span>
+          <div>
+            {tableOfContents.map((item) => (
+              <a key={item.id} className={`level-${item.level}`} href={`#${item.id}`}>
+                {item.text}
+              </a>
+            ))}
+          </div>
+        </nav>
+      )}
+
       <div className="article-content" data-reveal>
         {article.blocks.map((block) => (
           <BlockRenderer key={block.id} block={block} />
@@ -371,6 +440,23 @@ export function ArticleDetail() {
             ))}
           </div>
         </footer>
+      )}
+
+      {(articleIndex.previous || articleIndex.next) && (
+        <nav className="article-next-prev" aria-label="Article navigation" data-reveal>
+          {articleIndex.previous ? (
+            <Link to={`/articles/${articleIndex.previous.slug}`} className="article-nav-card">
+              <span><ArrowLeft size={14} /> Previous</span>
+              <strong>{articleIndex.previous.title}</strong>
+            </Link>
+          ) : <span />}
+          {articleIndex.next ? (
+            <Link to={`/articles/${articleIndex.next.slug}`} className="article-nav-card align-right">
+              <span>Next <ArrowRight size={14} /></span>
+              <strong>{articleIndex.next.title}</strong>
+            </Link>
+          ) : <span />}
+        </nav>
       )}
 
       {/* Related */}

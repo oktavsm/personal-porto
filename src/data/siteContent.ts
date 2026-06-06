@@ -32,7 +32,7 @@ export const siteContentPages: SiteContentPage[] = [
       {
         key: "hero",
         title: "Winner?\nSpeaker?\nLeader?\nNo, I'm not.",
-        subtitle: "Personal Portfolio · Systems, Stories, and Useful Work",
+        subtitle: "Oktavianus Samuel Minarto · Systems That Help",
         body:
           "I've been there. But those are not who I am.\n\nI'm Oktavianus Samuel Minarto — an Informatics student who learns by building, thinks in systems, and tries to make scattered things work better.\n\nI let things flow, but I stand my ground.",
         settingsJson: {

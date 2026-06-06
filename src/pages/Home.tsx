@@ -201,9 +201,6 @@ export function Home() {
       <section className="hero-section">
         <div className="container hero-grid">
           <div className="hero-copy-wrap">
-            <div className="eyebrow">
-              <span className="pulse" /> {hero.subtitle}
-            </div>
             <h1>
               {(hero.title ?? "").split("\n").slice(0, -1).map((line) => (
                 <Fragment key={line}>
@@ -238,14 +235,15 @@ export function Home() {
             </div>
           </div>
           <div className="hero-visual-stack">
-            <ServerVisual />
-            <div className="profile-strip">
+            <div className="profile-strip hero-profile-card">
               <img src={heroProfileImage} alt="Oktavianus Samuel Minarto" />
               <div>
-                <strong>A steady mind who builds systems that help</strong>
+                <strong>Oktavianus Samuel Minarto</strong>
+                <span>A steady mind who builds systems that help</span>
                 <span>Informatics Engineering · Universitas Brawijaya</span>
               </div>
             </div>
+            <ServerVisual />
           </div>
         </div>
       </section>
