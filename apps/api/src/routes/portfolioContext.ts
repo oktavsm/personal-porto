@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../lib/prisma.js";
+import { pickString } from "../lib/strings.js";
 
-export const articleWritingContextMarkdown = `# Article Writing Context for Oktavianus Samuel Minarto
+export const defaultArticleWritingContextMarkdown = `# Article Writing Context for Oktavianus Samuel Minarto
 
 Use this context to generate article drafts for Okta's personal portfolio. This is a writing-style guide, not a complete fact database. Use the provided raw notes, source context, and available media as the source of truth.
 
@@ -114,6 +115,19 @@ Use captions that describe the real moment calmly. If a photo is central, place 
 ## Output Reminder
 
 Return structured article JSON only. Do not include markdown fences. Do not publish automatically.`;
+
+const contextKinds = ["portfolio", "article"] as const;
+type ContextKind = (typeof contextKinds)[number];
+
+const contextLabels: Record<ContextKind, string> = {
+  portfolio: "portfolio-chatbot",
+  article: "article-generator",
+};
+const fullOverridePrefix = "__FULL_CONTEXT_OVERRIDE__\n";
+
+function isContextKind(value: string): value is ContextKind {
+  return contextKinds.includes(value as ContextKind);
+}
 
 function line(value?: string | null) {
   return value?.trim() || "";
@@ -285,13 +299,126 @@ async function generatePortfolioContextMarkdown() {
   ].join("\n");
 }
 
+async function activeContextVersion(kind: ContextKind) {
+  return prisma.portfolioContextVersion.findFirst({
+    where: {
+      label: contextLabels[kind],
+      isActive: true,
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
+function mergeManualContext(generatedMarkdown: string, manualMarkdown?: string | null) {
+  const manual = manualMarkdown?.trim();
+  if (!manual) return generatedMarkdown;
+  if (manual.startsWith(fullOverridePrefix.trim())) {
+    return manual.slice(fullOverridePrefix.trim().length).trim();
+  }
+  return `${generatedMarkdown}\n\n# Manual Admin Notes\n${manual}`;
+}
+
+function cleanContextMarkdown(manualMarkdown?: string | null) {
+  const manual = manualMarkdown?.trim() ?? "";
+  if (!manual.startsWith(fullOverridePrefix.trim())) {
+    return {
+      mode: "append" as const,
+      editableMarkdown: manual,
+    };
+  }
+
+  return {
+    mode: "override" as const,
+    editableMarkdown: manual.slice(fullOverridePrefix.trim().length).trim(),
+  };
+}
+
+function storedContextMarkdown(mode: string | undefined, markdown: string) {
+  const cleanMarkdown = markdown.trim();
+  if (!cleanMarkdown) return "";
+  return mode === "override" ? `${fullOverridePrefix}${cleanMarkdown}` : cleanMarkdown;
+}
+
+async function generatedContext(kind: ContextKind) {
+  return kind === "portfolio"
+    ? generatePortfolioContextMarkdown()
+    : Promise.resolve(defaultArticleWritingContextMarkdown);
+}
+
+async function resolveContext(kind: ContextKind) {
+  const [generatedMarkdown, activeVersion] = await Promise.all([
+    generatedContext(kind),
+    activeContextVersion(kind),
+  ]);
+  const finalMarkdown = mergeManualContext(generatedMarkdown, activeVersion?.manualMarkdown);
+  const editable = cleanContextMarkdown(activeVersion?.manualMarkdown);
+
+  return {
+    kind,
+    label: contextLabels[kind],
+    generatedMarkdown,
+    manualMarkdown: editable.editableMarkdown,
+    mode: editable.mode,
+    finalMarkdown,
+    updatedAt: activeVersion?.updatedAt ?? null,
+  };
+}
+
+export async function getArticleWritingContextMarkdown() {
+  return (await resolveContext("article")).finalMarkdown;
+}
+
 export async function portfolioContextRoutes(app: FastifyInstance) {
   app.get("/api/public/portfolio-context.md", async (_request, reply) => {
-    const markdown = await generatePortfolioContextMarkdown();
-    return reply.header("Content-Type", "text/markdown; charset=utf-8").send(markdown);
+    const context = await resolveContext("portfolio");
+    return reply.header("Content-Type", "text/markdown; charset=utf-8").send(context.finalMarkdown);
   });
 
   app.get("/api/public/article-context.md", async (_request, reply) => {
-    return reply.header("Content-Type", "text/markdown; charset=utf-8").send(articleWritingContextMarkdown);
+    const context = await resolveContext("article");
+    return reply.header("Content-Type", "text/markdown; charset=utf-8").send(context.finalMarkdown);
   });
+
+  app.get("/api/admin/contexts", { preHandler: app.requireAdmin }, async () => {
+    const [portfolio, article] = await Promise.all([
+      resolveContext("portfolio"),
+      resolveContext("article"),
+    ]);
+
+    return { data: { portfolio, article } };
+  });
+
+  app.patch<{ Params: { kind: string }; Body: { manualMarkdown?: string; mode?: string } }>(
+    "/api/admin/contexts/:kind",
+    { preHandler: app.requireAdmin },
+    async (request, reply) => {
+      if (!isContextKind(request.params.kind)) {
+        return reply.code(404).send({ message: "Context not found" });
+      }
+
+      const kind = request.params.kind;
+      const generatedMarkdown = await generatedContext(kind);
+      const manualMarkdown = storedContextMarkdown(request.body.mode, pickString(request.body.manualMarkdown));
+      const finalMarkdown = mergeManualContext(generatedMarkdown, manualMarkdown);
+      const label = contextLabels[kind];
+
+      await prisma.$transaction(async (tx) => {
+        await tx.portfolioContextVersion.updateMany({
+          where: { label, isActive: true },
+          data: { isActive: false },
+        });
+        await tx.portfolioContextVersion.create({
+          data: {
+            label,
+            generatedMarkdown,
+            manualMarkdown,
+            finalMarkdown,
+            isActive: true,
+          },
+        });
+      });
+
+      return { data: await resolveContext(kind) };
+    },
+  );
 }

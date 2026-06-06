@@ -21,6 +21,8 @@ export type CardBlock = {
   mediaAssetId?: string;
 };
 
+export type TextAlign = "left" | "center" | "right" | "justify";
+
 export function resolveSections(slug: string, page?: PublicSitePage | null) {
   const fallback = siteContentPages.find((item) => item.slug === slug);
   const sections = new Map<string, EditableSection>();
@@ -47,6 +49,11 @@ export function sectionSettings(sections: Map<string, EditableSection>, key: str
 export function settingString(settings: Record<string, unknown>, key: string, fallback = "") {
   const value = settings[key];
   return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+export function settingTextAlign(settings: Record<string, unknown>, key: string, fallback: TextAlign = "left"): TextAlign {
+  const value = settingString(settings, key, fallback);
+  return ["left", "center", "right", "justify"].includes(value) ? value as TextAlign : fallback;
 }
 
 export function settingImage(settings: Record<string, unknown>, imageMap: Record<string, string>, fallback: string) {

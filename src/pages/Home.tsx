@@ -1,6 +1,7 @@
 import { ArrowRight, Compass, Download, Mail } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { ExperienceCard } from "../components/ExperienceCard";
+import { FormattedText } from "../components/FormattedText";
 import { HomeMusicSection } from "../components/MusicPlayer";
 import { ProjectCard } from "../components/ProjectCard";
 import { SectionHeader } from "../components/SectionHeader";
@@ -13,7 +14,7 @@ import { media } from "../data/media";
 import { experiences, featuredExperiences, type Experience } from "../data/experiences";
 import { featuredProjects, projects, type Project } from "../data/projects";
 import { publicApi, type PublicExperience, type PublicProject, type PublicSitePage } from "../lib/publicApi";
-import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy, sectionSettings, settingImage, settingString } from "../lib/siteContent";
+import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy, sectionSettings, settingImage, settingString, settingTextAlign } from "../lib/siteContent";
 
 const earlyCards = [
   { title: "Silat", imageKey: "earlySilat", image: media.earlySilat, text: "Discipline, physical control, consistency, and courage to train through repetition." },
@@ -168,6 +169,12 @@ export function Home() {
         .slice(0, 3) ?? featuredExperiences.slice(0, 3),
     [apiExperiences, staticExperienceBySlug],
   );
+  const sectionTitleStyle = (key: string) => ({ textAlign: settingTextAlign(sectionSettings(homeSections, key), "titleAlign") });
+  const sectionBodyStyle = (key: string) => ({ textAlign: settingTextAlign(sectionSettings(homeSections, key), "bodyAlign") });
+  const sectionHeaderAlign = (key: string) => ({
+    titleAlign: settingTextAlign(sectionSettings(homeSections, key), "titleAlign"),
+    descriptionAlign: settingTextAlign(sectionSettings(homeSections, key), "bodyAlign"),
+  });
 
   useEffect(() => {
     let active = true;
@@ -215,11 +222,11 @@ export function Home() {
                       <br />
                     </>
                   ) : null}
-                  {paragraph}
+                  <FormattedText text={paragraph} />
                 </span>
               ))}
             </p>
-            <div className="tagline">{heroTagline}</div>
+            <div className="tagline"><FormattedText text={heroTagline} /></div>
             <div className="actions">
               <Button {...ctaTarget(heroPrimaryHref)} variant="primary">
                 {settingString(heroSettings, "primaryCtaLabel", "Explore My Story")} <ArrowRight size={16} />
@@ -249,6 +256,7 @@ export function Home() {
             kicker={sectionCopy(homeSections, "early-story").subtitle ?? ""}
             title={sectionCopy(homeSections, "early-story").title ?? ""}
             description={sectionCopy(homeSections, "early-story").body ?? ""}
+            {...sectionHeaderAlign("early-story")}
           />
           <div className="memory-grid">
             {homeEarlyCards.map((card) => (
@@ -256,7 +264,7 @@ export function Home() {
                 <img src={card.image} alt={card.title} loading="lazy" />
                 <div>
                   <h3>{card.title}</h3>
-                  <p>{card.text}</p>
+                  <p><FormattedText text={card.text} /></p>
                 </div>
               </Card>
             ))}
@@ -268,11 +276,11 @@ export function Home() {
         <div className="container split">
           <div>
             <div className="section-kicker">{sectionCopy(homeSections, "chosen-path").subtitle}</div>
-            <h2>{sectionCopy(homeSections, "chosen-path").title}</h2>
-            {bodyParagraphs(sectionCopy(homeSections, "chosen-path").body).slice(0, -1).map((paragraph) => (
-              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            <h2 style={sectionTitleStyle("chosen-path")}>{sectionCopy(homeSections, "chosen-path").title}</h2>
+            {bodyParagraphs(sectionCopy(homeSections, "chosen-path").body).slice(0, -1).map((paragraph, index) => (
+              <p className="section-desc with-space" style={sectionBodyStyle("chosen-path")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
             ))}
-            <div className="highlight-line">{bodyParagraphs(sectionCopy(homeSections, "chosen-path").body).at(-1)}</div>
+            <div className="highlight-line" style={sectionBodyStyle("chosen-path")}><FormattedText text={bodyParagraphs(sectionCopy(homeSections, "chosen-path").body).at(-1) ?? ""} /></div>
           </div>
           <div className="photo-collage">
             <img src={media.highSchoolWinner} alt="High school technology competition" loading="lazy" />
@@ -287,6 +295,7 @@ export function Home() {
             kicker={sectionCopy(homeSections, "ssn-route").subtitle ?? ""}
             title={sectionCopy(homeSections, "ssn-route").title ?? ""}
             description={sectionCopy(homeSections, "ssn-route").body ?? ""}
+            {...sectionHeaderAlign("ssn-route")}
           />
           <div className="selection-layout">
             <div className="grid grid-3">
@@ -295,7 +304,7 @@ export function Home() {
                   <img src={card.image} alt={card.title} loading="lazy" />
                   <div>
                     <h3>{card.title}</h3>
-                    <p>{card.text}</p>
+                    <p><FormattedText text={card.text} /></p>
                   </div>
                 </Card>
               ))}
@@ -314,12 +323,12 @@ export function Home() {
       <section>
         <div className="container split">
           <Card className="big-quote">
-            <p>{routeChanged.title}</p>
+            <p style={sectionTitleStyle("route-changed")}>{routeChanged.title}</p>
           </Card>
           <div>
             <div className="section-kicker">{routeChanged.subtitle}</div>
-            {bodyParagraphs(routeChanged.body).map((paragraph) => (
-              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            {bodyParagraphs(routeChanged.body).map((paragraph, index) => (
+              <p className="section-desc with-space" style={sectionBodyStyle("route-changed")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
             ))}
           </div>
         </div>
@@ -328,7 +337,7 @@ export function Home() {
       <section>
         <div className="container">
           <Card className="big-quote">
-            <p>
+            <p style={sectionTitleStyle("route-mission")}>
               {(routeMission.title ?? "").split("\n").map((line, index, lines) => (
                 <Fragment key={line}>
                   {line}
@@ -338,8 +347,8 @@ export function Home() {
             </p>
           </Card>
           <div className="thin-divider" />
-          {bodyParagraphs(routeMission.body).map((paragraph) => (
-            <p className="section-desc wide with-space" key={paragraph}>{paragraph}</p>
+          {bodyParagraphs(routeMission.body).map((paragraph, index) => (
+            <p className="section-desc wide with-space" style={sectionBodyStyle("route-mission")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
           ))}
         </div>
       </section>
@@ -348,9 +357,9 @@ export function Home() {
         <div className="container split">
           <div>
             <div className="section-kicker">{rebuildingDirection.subtitle}</div>
-            <h2>{rebuildingDirection.title}</h2>
-            {bodyParagraphs(rebuildingDirection.body).map((paragraph) => (
-              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            <h2 style={sectionTitleStyle("rebuilding-direction")}>{rebuildingDirection.title}</h2>
+            {bodyParagraphs(rebuildingDirection.body).map((paragraph, index) => (
+              <p className="section-desc with-space" style={sectionBodyStyle("rebuilding-direction")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
             ))}
           </div>
           <Card className="image-card tall">
@@ -363,9 +372,9 @@ export function Home() {
         <div className="container split">
           <div>
             <div className="section-kicker">{manyThings.subtitle}</div>
-            <h2>{manyThings.title}</h2>
-            {bodyParagraphs(manyThings.body).map((paragraph) => (
-              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            <h2 style={sectionTitleStyle("many-things")}>{manyThings.title}</h2>
+            {bodyParagraphs(manyThings.body).map((paragraph, index) => (
+              <p className="section-desc with-space" style={sectionBodyStyle("many-things")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
             ))}
           </div>
           <div className="stacked-photos">
@@ -379,7 +388,7 @@ export function Home() {
       <section>
         <div className="container narrative">
           {bodyParagraphs(quietPattern.body).map((paragraph, index) => (
-            <p className={index % 2 === 1 ? "muted" : undefined} key={paragraph}>{paragraph}</p>
+            <p className={index % 2 === 1 ? "muted" : undefined} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
           ))}
         </div>
       </section>
@@ -388,9 +397,9 @@ export function Home() {
         <div className="container">
           <Card className="identity-card">
             <div className="section-kicker">{sectionCopy(homeSections, "identity").subtitle}</div>
-            <h2>{sectionCopy(homeSections, "identity").title}</h2>
-            {bodyParagraphs(sectionCopy(homeSections, "identity").body).map((paragraph) => (
-              <p key={paragraph}>{paragraph}</p>
+            <h2 style={sectionTitleStyle("identity")}>{sectionCopy(homeSections, "identity").title}</h2>
+            {bodyParagraphs(sectionCopy(homeSections, "identity").body).map((paragraph, index) => (
+              <p style={sectionBodyStyle("identity")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
             ))}
           </Card>
         </div>
@@ -400,9 +409,9 @@ export function Home() {
         <div className="container split">
           <div>
             <div className="section-kicker">{sectionCopy(homeSections, "empathy").subtitle}</div>
-            <h2>{sectionCopy(homeSections, "empathy").title}</h2>
-            {bodyParagraphs(sectionCopy(homeSections, "empathy").body).map((paragraph) => (
-              <p className="section-desc with-space" key={paragraph}>{paragraph}</p>
+            <h2 style={sectionTitleStyle("empathy")}>{sectionCopy(homeSections, "empathy").title}</h2>
+            {bodyParagraphs(sectionCopy(homeSections, "empathy").body).map((paragraph, index) => (
+              <p className="section-desc with-space" style={sectionBodyStyle("empathy")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
             ))}
           </div>
           <Card className="image-card tall pld-photo-card">
@@ -417,12 +426,13 @@ export function Home() {
             kicker={sectionCopy(homeSections, "values").subtitle ?? ""}
             title={sectionCopy(homeSections, "values").title ?? ""}
             description={sectionCopy(homeSections, "values").body ?? ""}
+            {...sectionHeaderAlign("values")}
           />
           <div className="grid grid-4">
             {homeValues.map((value) => (
               <Card key={value.title}>
                 <h3>{value.title}</h3>
-                <p>{value.text}</p>
+                <p><FormattedText text={value.text} /></p>
               </Card>
             ))}
           </div>
@@ -432,9 +442,9 @@ export function Home() {
       <section className="mission-section" id="mission">
         <div className="container">
           <div className="section-kicker">{sectionCopy(homeSections, "mission").subtitle}</div>
-          <h2>{sectionCopy(homeSections, "mission").title}</h2>
-          {bodyParagraphs(sectionCopy(homeSections, "mission").body).map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+          <h2 style={sectionTitleStyle("mission")}>{sectionCopy(homeSections, "mission").title}</h2>
+          {bodyParagraphs(sectionCopy(homeSections, "mission").body).map((paragraph, index) => (
+            <p style={sectionBodyStyle("mission")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
           ))}
         </div>
       </section>
@@ -445,6 +455,7 @@ export function Home() {
             kicker={sectionCopy(homeSections, "featured-projects").subtitle ?? ""}
             title={sectionCopy(homeSections, "featured-projects").title ?? ""}
             description={sectionCopy(homeSections, "featured-projects").body ?? ""}
+            {...sectionHeaderAlign("featured-projects")}
           />
           <div className="grid grid-3">
             {homeProjects.map((project) => (
@@ -465,6 +476,7 @@ export function Home() {
             kicker={sectionCopy(homeSections, "featured-experiences").subtitle ?? ""}
             title={sectionCopy(homeSections, "featured-experiences").title ?? ""}
             description={sectionCopy(homeSections, "featured-experiences").body ?? ""}
+            {...sectionHeaderAlign("featured-experiences")}
           />
           <div className="grid grid-3">
             {homeExperiences.map((experience) => (
@@ -488,11 +500,11 @@ export function Home() {
       <section className="closing-section">
         <div className="container">
           <div className="section-kicker">{sectionCopy(homeSections, "closing").subtitle}</div>
-          <h2>{sectionCopy(homeSections, "closing").title}</h2>
-          {bodyParagraphs(sectionCopy(homeSections, "closing").body).slice(0, -1).map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
+          <h2 style={sectionTitleStyle("closing")}>{sectionCopy(homeSections, "closing").title}</h2>
+          {bodyParagraphs(sectionCopy(homeSections, "closing").body).slice(0, -1).map((paragraph, index) => (
+            <p style={sectionBodyStyle("closing")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
           ))}
-          <h2 className="closing-line">{bodyParagraphs(sectionCopy(homeSections, "closing").body).at(-1)}</h2>
+          <h2 className="closing-line" style={sectionBodyStyle("closing")}><FormattedText text={bodyParagraphs(sectionCopy(homeSections, "closing").body).at(-1) ?? ""} /></h2>
           <div className="actions centered">
             <Button {...ctaTarget(closingPrimaryHref)} variant="primary">
               {settingString(closingSettings, "primaryCtaLabel", "View Projects")}

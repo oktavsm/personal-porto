@@ -7,6 +7,8 @@ import {
   type AdminArticleBlock,
   type AdminCertification,
   type AdminContactLink,
+  type AdminContexts,
+  type AdminContextKind,
   type AdminContentCategory,
   type AdminExperience,
   type AdminLiveSystem,
@@ -42,7 +44,7 @@ type DeleteTarget =
   | { type: "category"; id: string; label: string }
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
-type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "theme";
+type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme";
 type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage" | "articleCover";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
@@ -57,6 +59,7 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "categories", label: "Categories" },
   { id: "pages", label: "Pages" },
   { id: "articles", label: "Articles" },
+  { id: "contexts", label: "Contexts" },
   { id: "theme", label: "Theme" },
 ];
 
@@ -162,6 +165,8 @@ const emptyPageSection = {
   title: "",
   subtitle: "",
   body: "",
+  titleAlign: "left",
+  bodyAlign: "left",
   imageKey: "",
   mediaAssetId: "",
   imageUrl: "",
@@ -218,6 +223,13 @@ const articleStatusOptions = [
   { value: "archived", label: "Archived" },
 ];
 
+const textAlignOptions = [
+  { value: "left", label: "Left" },
+  { value: "center", label: "Center" },
+  { value: "right", label: "Right" },
+  { value: "justify", label: "Justify" },
+];
+
 const themeColorKeys = [
   { key: "background", label: "Background" },
   { key: "surface", label: "Surface" },
@@ -260,6 +272,16 @@ const emptyArticleGeneratorForm = {
   articleContext: "",
   mediaAssetIds: [] as string[],
   mediaContext: {} as Record<string, string>,
+};
+
+const emptyContextForm: Record<AdminContextKind, string> = {
+  portfolio: "",
+  article: "",
+};
+
+const emptyContextMode: Record<AdminContextKind, "append" | "override"> = {
+  portfolio: "append",
+  article: "append",
 };
 
 type ArticleBlockDraft = {
@@ -791,6 +813,9 @@ function ArticleGeneratorModal({
               ]}
             />
           </div>
+          <p className="admin-help">
+            Length is sent to the n8n/Gemini prompt as guidance: short creates fewer blocks, medium balances story and detail, long asks for a fuller reflection.
+          </p>
 
           <label>
             Tone
@@ -983,6 +1008,8 @@ function settingsField(settingsJson: unknown, field: keyof typeof emptyPageSecti
 
 function pageSectionSettings(form: typeof emptyPageSection) {
   return {
+    titleAlign: form.titleAlign || undefined,
+    bodyAlign: form.bodyAlign || undefined,
     imageKey: form.imageKey || undefined,
     mediaAssetId: form.mediaAssetId || undefined,
     imageUrl: form.imageUrl || undefined,
@@ -999,8 +1026,8 @@ function pageSectionSettings(form: typeof emptyPageSection) {
 
 function defaultBlockContent(type: string): Record<string, unknown> {
   switch (type) {
-    case "paragraph": return { text: "" };
-    case "heading": return { text: "", level: 2 };
+    case "paragraph": return { text: "", align: "left" };
+    case "heading": return { text: "", level: 2, align: "left" };
     case "image": return { src: "", alt: "", caption: "", layout: "inline" };
     case "gallery": return { images: [], layout: "grid" };
     case "quote": return { text: "", source: "" };
@@ -1010,6 +1037,25 @@ function defaultBlockContent(type: string): Record<string, unknown> {
     case "divider": return {};
     default: return { text: "" };
   }
+}
+
+function AlignmentSelect({
+  label = "Alignment",
+  value,
+  onChange,
+}: {
+  label?: string;
+  value?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <AdminSelect
+      label={label}
+      value={value || "left"}
+      onChange={onChange}
+      options={textAlignOptions}
+    />
+  );
 }
 
 function publicPagePath(slug: string) {
@@ -1059,14 +1105,18 @@ function BlockDraftForm({
               { value: "4", label: "H4" },
             ]}
           />
+          <AlignmentSelect value={(value.align as string) || "left"} onChange={(v) => update("align", v)} />
         </>
       );
     case "paragraph":
       return (
-        <label>
-          Text (Markdown supported)
-          <textarea value={(value.text as string) || ""} onChange={(e) => update("text", e.target.value)} rows={4} />
-        </label>
+        <>
+          <label>
+            Text (Markdown supported)
+            <textarea value={(value.text as string) || ""} onChange={(e) => update("text", e.target.value)} rows={4} />
+          </label>
+          <AlignmentSelect value={(value.align as string) || "left"} onChange={(v) => update("align", v)} />
+        </>
       );
     case "image":
       return (
@@ -1253,6 +1303,7 @@ export function Admin() {
   const [musicTracks, setMusicTracks] = useState<AdminMusicTrack[]>([]);
   const [sitePages, setSitePages] = useState<AdminSitePage[]>([]);
   const [categories, setCategories] = useState<AdminContentCategory[]>([]);
+  const [contexts, setContexts] = useState<AdminContexts | null>(null);
   const [certForm, setCertForm] = useState(emptyCertification);
   const [systemForm, setSystemForm] = useState(emptySystem);
   const [contactForm, setContactForm] = useState(emptyContact);
@@ -1292,6 +1343,8 @@ export function Admin() {
   const [contactSearch, setContactSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [categoryScopeFilter, setCategoryScopeFilter] = useState<ContentCategoryScope | "">("");
+  const [contextForm, setContextForm] = useState<Record<AdminContextKind, string>>(emptyContextForm);
+  const [contextMode, setContextMode] = useState<Record<AdminContextKind, "append" | "override">>(emptyContextMode);
   const [articleSearch, setArticleSearch] = useState("");
   const [articleStatusFilter, setArticleStatusFilter] = useState("");
   const [articles, setArticles] = useState<AdminArticle[]>([]);
@@ -1438,7 +1491,7 @@ export function Admin() {
   }
 
   async function loadAdminData() {
-    const [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse] = await Promise.allSettled([
+    const [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse, contextResponse] = await Promise.allSettled([
       adminApi.certifications(),
       adminApi.systems(),
       adminApi.contact(),
@@ -1451,6 +1504,7 @@ export function Admin() {
       adminApi.pages(),
       adminApi.articles(),
       adminApi.getTheme(),
+      adminApi.contexts(),
     ]);
 
     if (certificationResponse.status === "fulfilled") setCertifications(certificationResponse.value.data);
@@ -1472,8 +1526,19 @@ export function Admin() {
       setThemeDefaults(themeResponse.value.defaults);
       setThemeForm(themeResponse.value.data);
     }
+    if (contextResponse.status === "fulfilled") {
+      setContexts(contextResponse.value.data);
+      setContextForm({
+        portfolio: contextResponse.value.data.portfolio.manualMarkdown,
+        article: contextResponse.value.data.article.manualMarkdown,
+      });
+      setContextMode({
+        portfolio: contextResponse.value.data.portfolio.mode,
+        article: contextResponse.value.data.article.mode,
+      });
+    }
 
-    const failures = [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse].filter(
+    const failures = [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, contextResponse].filter(
       (response) => response.status === "rejected",
     );
     if (failures.length > 0) {
@@ -2336,6 +2401,38 @@ export function Admin() {
     }
   }
 
+  async function handleSaveContext(kind: AdminContextKind) {
+    setSaving(true);
+    setNotice(null);
+    try {
+      const result = await adminApi.updateContext(kind, { manualMarkdown: contextForm[kind], mode: contextMode[kind] });
+      setContextForm((current) => ({ ...current, [kind]: result.data.manualMarkdown }));
+      setContextMode((current) => ({ ...current, [kind]: result.data.mode }));
+      await loadAdminData();
+      setNotice(`${kind === "portfolio" ? "Chatbot" : "Article generator"} context updated.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to save context.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function setContextEditMode(kind: AdminContextKind, mode: "append" | "override") {
+    setContextMode((current) => ({ ...current, [kind]: mode }));
+    setContextForm((current) => {
+      if (mode === "override") {
+        return { ...current, [kind]: contexts?.[kind].finalMarkdown ?? current[kind] };
+      }
+
+      return { ...current, [kind]: contextMode[kind] === "override" ? "" : current[kind] };
+    });
+  }
+
+  function loadFinalContextIntoEditor(kind: AdminContextKind) {
+    setContextMode((current) => ({ ...current, [kind]: "override" }));
+    setContextForm((current) => ({ ...current, [kind]: contexts?.[kind].finalMarkdown ?? current[kind] }));
+  }
+
   function resetCertificationForm() {
     setCertForm(emptyCertification);
     setEditingCertificationId(null);
@@ -2508,6 +2605,8 @@ export function Admin() {
       title: section.title ?? "",
       subtitle: section.subtitle ?? "",
       body: section.body ?? "",
+      titleAlign: settingsField(section.settingsJson, "titleAlign") || "left",
+      bodyAlign: settingsField(section.settingsJson, "bodyAlign") || "left",
       imageKey: settingsField(section.settingsJson, "imageKey"),
       mediaAssetId: settingsField(section.settingsJson, "mediaAssetId"),
       imageUrl: settingsField(section.settingsJson, "imageUrl"),
@@ -3638,6 +3737,18 @@ export function Admin() {
                 <textarea className="admin-copy-textarea" value={pageSectionForm.body} onChange={(event) => setPageSectionForm({ ...pageSectionForm, body: event.target.value })} />
                 <span className="admin-help">Use blank lines to separate paragraphs. Frontend keeps static fallback if this section is unavailable.</span>
               </label>
+              <div className="admin-form-row">
+                <AlignmentSelect
+                  label="Title Alignment"
+                  value={pageSectionForm.titleAlign}
+                  onChange={(titleAlign) => setPageSectionForm({ ...pageSectionForm, titleAlign })}
+                />
+                <AlignmentSelect
+                  label="Body Alignment"
+                  value={pageSectionForm.bodyAlign}
+                  onChange={(bodyAlign) => setPageSectionForm({ ...pageSectionForm, bodyAlign })}
+                />
+              </div>
               <div className="admin-field-group">
                 <div className="admin-field-group-head">
                   <strong>Section Media</strong>
@@ -4225,6 +4336,137 @@ export function Admin() {
                 ))}
               {articles.length === 0 && <p className="admin-empty">No articles yet. Create your first one!</p>}
             </div>
+          </Card>
+        </div>
+
+        {/* ─── Contexts Tab ─────────────────────────────────────────────────── */}
+        <div className={`admin-grid${activeTab === "contexts" ? "" : " admin-hidden"}`}>
+          <Card className="admin-card-contexts">
+            <div className="admin-card-head">
+              <div>
+                <h3>Chatbot Context</h3>
+                <p className="admin-help">Live portfolio context is generated from CMS, projects, experiences, resume, and contacts. Add manual notes only for extra nuance.</p>
+              </div>
+              <a className="icon-btn" href="/api/public/portfolio-context.md" target="_blank" rel="noreferrer" aria-label="Open public chatbot context">
+                <ExternalLink size={15} />
+              </a>
+            </div>
+            <form
+              className="admin-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleSaveContext("portfolio");
+              }}
+            >
+              <AdminSelect
+                label="Edit Mode"
+                value={contextMode.portfolio}
+                options={[
+                  { value: "append", label: "Dynamic + Manual Notes" },
+                  { value: "override", label: "Full Inline Override" },
+                ]}
+                onChange={(mode) => setContextEditMode("portfolio", mode as "append" | "override")}
+              />
+              {contextMode.portfolio === "override" ? (
+                <p className="admin-help">
+                  Override mode uses this editor as the full chatbot context. It will not automatically include future CMS changes until you load/regenerate the context again.
+                </p>
+              ) : (
+                <p className="admin-help">
+                  Dynamic mode keeps CMS data live and appends your notes after the generated portfolio context.
+                </p>
+              )}
+              <label>
+                {contextMode.portfolio === "override" ? "Full Chatbot Context" : "Manual Notes"}
+                <textarea
+                  className="admin-copy-textarea admin-context-textarea"
+                  value={contextForm.portfolio}
+                  onChange={(event) => setContextForm((current) => ({ ...current, portfolio: event.target.value }))}
+                  placeholder={contextMode.portfolio === "override" ? "Edit the complete chatbot context inline." : "Extra chatbot context that should be appended to generated portfolio data."}
+                  rows={10}
+                />
+              </label>
+              <div className="actions">
+                <button className="btn compact" type="button" onClick={() => loadFinalContextIntoEditor("portfolio")}>
+                  Load Current Final Context
+                </button>
+              </div>
+              <details open>
+                <summary className="admin-seo-toggle">Preview current chatbot context</summary>
+                <pre className="admin-context-preview">{contexts?.portfolio.finalMarkdown ?? "Context has not loaded yet."}</pre>
+              </details>
+              <details>
+                <summary className="admin-seo-toggle">Generated web context only</summary>
+                <pre className="admin-context-preview">{contexts?.portfolio.generatedMarkdown ?? "Context has not loaded yet."}</pre>
+              </details>
+              <button className="btn btn-primary" type="submit" disabled={saving}>
+                <Check size={15} /> Save Chatbot Context
+              </button>
+            </form>
+          </Card>
+
+          <Card className="admin-card-contexts">
+            <div className="admin-card-head">
+              <div>
+                <h3>Article Generator Context</h3>
+                <p className="admin-help">This context guides Gemini's writing style. It is automatically sent by the backend when generating drafts.</p>
+              </div>
+              <a className="icon-btn" href="/api/public/article-context.md" target="_blank" rel="noreferrer" aria-label="Open public article context">
+                <ExternalLink size={15} />
+              </a>
+            </div>
+            <form
+              className="admin-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleSaveContext("article");
+              }}
+            >
+              <AdminSelect
+                label="Edit Mode"
+                value={contextMode.article}
+                options={[
+                  { value: "append", label: "Default Guide + Manual Notes" },
+                  { value: "override", label: "Full Inline Override" },
+                ]}
+                onChange={(mode) => setContextEditMode("article", mode as "append" | "override")}
+              />
+              {contextMode.article === "override" ? (
+                <p className="admin-help">
+                  Override mode uses this editor as the full article generator context. Default writing guide changes will not be included automatically.
+                </p>
+              ) : (
+                <p className="admin-help">
+                  Dynamic mode keeps the default writing guide and appends your extra style rules.
+                </p>
+              )}
+              <label>
+                {contextMode.article === "override" ? "Full Article Generator Context" : "Manual Writing Notes"}
+                <textarea
+                  className="admin-copy-textarea admin-context-textarea"
+                  value={contextForm.article}
+                  onChange={(event) => setContextForm((current) => ({ ...current, article: event.target.value }))}
+                  placeholder={contextMode.article === "override" ? "Edit the complete article generator context inline." : "Extra writing style rules, preferred phrases, article examples, or constraints."}
+                  rows={10}
+                />
+              </label>
+              <div className="actions">
+                <button className="btn compact" type="button" onClick={() => loadFinalContextIntoEditor("article")}>
+                  Load Current Final Context
+                </button>
+              </div>
+              <details open>
+                <summary className="admin-seo-toggle">Preview current article generator context</summary>
+                <pre className="admin-context-preview">{contexts?.article.finalMarkdown ?? "Context has not loaded yet."}</pre>
+              </details>
+              <details>
+                <summary className="admin-seo-toggle">Default writing guide only</summary>
+                <pre className="admin-context-preview">{contexts?.article.generatedMarkdown ?? "Context has not loaded yet."}</pre>
+              </details>
+              <button className="btn btn-primary" type="submit" disabled={saving}>
+                <Check size={15} /> Save Article Context
+              </button>
+            </form>
           </Card>
         </div>
 

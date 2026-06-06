@@ -327,6 +327,26 @@ p {
   white-space: pre-wrap;
 }
 
+.formatted-inline strong {
+  color: var(--text);
+  font-weight: 850;
+}
+
+.formatted-inline em {
+  color: var(--text);
+  font-style: italic;
+}
+
+.formatted-inline code {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 5px;
+  background: rgba(242, 238, 232, 0.055);
+  color: var(--text);
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.92em;
+}
+
 .hero-copy {
   margin-top: 28px;
   max-width: 650px;
@@ -573,6 +593,7 @@ p {
 .section-desc {
   color: var(--muted);
   font-size: 18px;
+  line-height: 1.55;
   margin: 0;
   max-width: 620px;
 }
@@ -619,6 +640,24 @@ p {
 .card h3,
 .card h4 {
   margin-bottom: 12px;
+}
+
+.card .section-kicker + h2,
+.card .section-kicker + h3,
+.card .section-kicker + h4 {
+  margin-top: 0;
+}
+
+.card h2 + p,
+.card h3 + p,
+.card h4 + p,
+.detail-hero h1 + p,
+.detail-hero .organization + p,
+.containerless-split h2 + p,
+.section-kicker + h1 + p,
+.section-kicker + h2 + p,
+.section-kicker + h3 + p {
+  margin-top: 18px;
 }
 
 .card p {
@@ -945,6 +984,7 @@ p {
 
 .detail-hero p {
   font-size: 19px;
+  line-height: 1.58;
   max-width: 680px;
 }
 
@@ -995,6 +1035,21 @@ li + li {
   line-height: 0.98;
 }
 
+.experience-reflection-card {
+  min-height: 0;
+  padding: clamp(24px, 4vw, 40px);
+}
+
+.experience-reflection-copy {
+  max-width: 900px;
+  margin: 14px 0 0;
+  color: var(--text);
+  font-size: clamp(22px, 2.8vw, 38px);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+
 .leadself-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -1043,6 +1098,20 @@ li + li {
 }
 
 .reflection-card {
+  margin-top: 18px;
+}
+
+.reflection-card h2 {
+  max-width: 940px;
+  margin-bottom: 20px;
+  font-size: clamp(34px, 4.6vw, 66px);
+  line-height: 1;
+}
+
+.identity-card h2 + p,
+.reflection-card h2 + p,
+.mission-card h2 + p,
+.closing-reflection-card h2 + p {
   margin-top: 18px;
 }
 
@@ -2088,6 +2157,7 @@ body.is-embedded .chat-panel {
 .admin-page[data-admin-tab="categories"] .admin-grid > .card:not(.admin-card-categories),
 .admin-page[data-admin-tab="pages"] .admin-grid > .card:not(.admin-card-pages),
 .admin-page[data-admin-tab="articles"] .admin-grid > .card:not(.admin-card-articles):not(.admin-card-articles-list),
+.admin-page[data-admin-tab="contexts"] .admin-grid > .card:not(.admin-card-contexts),
 .admin-page[data-admin-tab="theme"] .admin-grid > .card:not(.admin-card-theme) {
   display: none;
 }
@@ -2835,6 +2905,22 @@ body.is-embedded .chat-panel {
 .admin-generator-context-item textarea {
   min-height: 64px;
   resize: vertical;
+}
+
+.admin-context-textarea {
+  min-height: 220px;
+}
+
+.admin-context-preview {
+  max-height: 360px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid rgba(242, 238, 232, 0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(5, 6, 8, 0.72);
+  color: var(--muted);
+  font: 0.78rem/1.6 var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace);
+  white-space: pre-wrap;
 }
 
 .admin-modal h3 {

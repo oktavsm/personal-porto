@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { config } from "../config.js";
 import { prisma } from "../lib/prisma.js";
 import { pickBoolean, pickNumber, pickString, slugify } from "../lib/strings.js";
-import { articleWritingContextMarkdown } from "./portfolioContext.js";
+import { getArticleWritingContextMarkdown } from "./portfolioContext.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,6 +61,38 @@ type AvailableArticleMedia = {
   altText: string;
   caption: string;
   context: string;
+};
+
+type TargetLength = "short" | "medium" | "long";
+
+const articleLengthProfiles: Record<TargetLength, {
+  label: string;
+  wordRange: string;
+  minBlocks: number;
+  maxBlocks: number;
+  guidance: string;
+}> = {
+  short: {
+    label: "Short",
+    wordRange: "450-700 words",
+    minBlocks: 4,
+    maxBlocks: 7,
+    guidance: "Write a concise article with one main arc, minimal repetition, and only the strongest supporting detail.",
+  },
+  medium: {
+    label: "Medium",
+    wordRange: "800-1200 words",
+    minBlocks: 7,
+    maxBlocks: 11,
+    guidance: "Write a balanced article with context, reflection, concrete learning, and a closing insight.",
+  },
+  long: {
+    label: "Long",
+    wordRange: "1300-1900 words",
+    minBlocks: 11,
+    maxBlocks: 17,
+    guidance: "Write a more complete article with richer chronology, multiple reflections, examples, and a stronger ending.",
+  },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -159,6 +191,38 @@ function toTagArray(tags: string[] | string | undefined): string[] {
 function pickAlign(value: unknown, fallback = "left") {
   const align = pickString(value, fallback);
   return ["left", "center", "right", "justify"].includes(align) ? align : fallback;
+}
+
+function normalizeTargetLength(value?: string): TargetLength {
+  const target = pickString(value, "medium").toLowerCase();
+  return ["short", "medium", "long"].includes(target) ? target as TargetLength : "medium";
+}
+
+function articleLengthGuidance(targetLength: TargetLength) {
+  const profile = articleLengthProfiles[targetLength];
+  return [
+    "TARGET LENGTH CONTRACT:",
+    `- Selected length: ${profile.label}.`,
+    `- Aim for ${profile.wordRange}.`,
+    `- Return around ${profile.minBlocks}-${profile.maxBlocks} content blocks.`,
+    `- ${profile.guidance}`,
+    "- Use only supported block types: paragraph, heading, image, gallery, quote, callout, list, code, divider.",
+    "- Keep headings useful and avoid creating a heading after every paragraph.",
+  ].join("\n");
+}
+
+function trimGeneratedBlocks(blocks: BlockInput[], targetLength: TargetLength) {
+  const maxBlocks = articleLengthProfiles[targetLength].maxBlocks;
+  if (blocks.length <= maxBlocks) return blocks;
+
+  const trimmed = blocks.slice(0, maxBlocks);
+  while (trimmed.length > 1) {
+    const last = trimmed[trimmed.length - 1];
+    if (last.type !== "heading" && last.type !== "divider") break;
+    trimmed.pop();
+  }
+
+  return trimmed;
 }
 
 function pickArticleMedia(
@@ -386,6 +450,7 @@ export async function articleRoutes(app: FastifyInstance) {
 
       const rawNotes = pickString(request.body.rawNotes);
       const category = pickString(request.body.category, "Reflection");
+      const targetLength = normalizeTargetLength(request.body.targetLength);
       if (!rawNotes || !category) {
         return reply.code(400).send({ message: "Raw notes and category are required." });
       }
@@ -416,6 +481,7 @@ export async function articleRoutes(app: FastifyInstance) {
           caption: asset.caption ?? "",
           context: pickString(mediaContext[asset.id]),
         }));
+      const defaultArticleContext = await getArticleWritingContextMarkdown();
 
       let generated: ArticleBody & { error?: string; data?: ArticleBody };
       try {
@@ -431,9 +497,12 @@ export async function articleRoutes(app: FastifyInstance) {
             category,
             tone: pickString(request.body.tone, "reflective, grounded, personal, professional"),
             language: pickString(request.body.language, "English"),
-            targetLength: pickString(request.body.targetLength, "medium"),
+            targetLength,
             sourceContext: pickString(request.body.sourceContext),
-            articleContext: pickString(request.body.articleContext, articleWritingContextMarkdown),
+            articleContext: [
+              pickString(request.body.articleContext, defaultArticleContext),
+              articleLengthGuidance(targetLength),
+            ].filter(Boolean).join("\n\n"),
             availableMedia,
           }),
         });
@@ -456,15 +525,35 @@ export async function articleRoutes(app: FastifyInstance) {
       const mediaById = new Map(availableMedia.map((media) => [media.mediaAssetId, media]));
       const mediaByUrl = new Map(availableMedia.map((media) => [media.publicUrl, media]));
       const blocks = Array.isArray(articleDraft.blocks)
-        ? articleDraft.blocks
+        ? trimGeneratedBlocks(articleDraft.blocks
           .map((block) => normalizeGeneratedBlock(block, mediaById, mediaByUrl))
           .filter((block): block is BlockInput => Boolean(block))
+          .map((block, sortOrder) => ({ ...block, sortOrder })), targetLength)
           .map((block, sortOrder) => ({ ...block, sortOrder }))
         : [];
 
       const fallbackParagraph = pickString(articleDraft.excerpt, "Draft generated from notes.");
       const title = pickString(articleDraft.title, pickString(request.body.topic, "Generated Article"));
       const excerpt = pickString(articleDraft.excerpt, fallbackParagraph);
+      const generatedCoverAssetId = pickString(articleDraft.coverAssetId);
+      const firstBlockMediaAssetId = blocks
+        .map((block) => {
+          const content = block.contentJson && typeof block.contentJson === "object" && !Array.isArray(block.contentJson)
+            ? (block.contentJson as Record<string, unknown>)
+            : {};
+          if (block.type === "image") return pickString(content.mediaAssetId);
+          if (block.type === "gallery" && Array.isArray(content.images)) {
+            const firstImage = content.images.find((image) => image && typeof image === "object" && !Array.isArray(image));
+            return firstImage ? pickString((firstImage as Record<string, unknown>).mediaAssetId) : "";
+          }
+          return "";
+        })
+        .find(Boolean);
+      const coverAssetId = mediaAssetIds.includes(generatedCoverAssetId)
+        ? generatedCoverAssetId
+        : firstBlockMediaAssetId && mediaAssetIds.includes(firstBlockMediaAssetId)
+          ? firstBlockMediaAssetId
+          : availableMedia[0]?.mediaAssetId;
       const normalizedArticle: ArticleBody = {
         title,
         slug: await uniqueArticleSlug(pickString(articleDraft.slug) || title),
@@ -473,7 +562,7 @@ export async function articleRoutes(app: FastifyInstance) {
         category: pickString(articleDraft.category, category),
         status: "generated",
         isFeatured: false,
-        coverAssetId: mediaAssetIds.includes(pickString(articleDraft.coverAssetId)) ? pickString(articleDraft.coverAssetId) : undefined,
+        coverAssetId,
         seoTitle: pickString(articleDraft.seoTitle, title),
         seoDescription: pickString(articleDraft.seoDescription, excerpt),
         authorName: pickString(articleDraft.authorName, "Oktavianus Samuel"),

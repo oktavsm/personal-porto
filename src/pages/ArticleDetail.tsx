@@ -92,17 +92,21 @@ function ArticleGalleryBlock({
 
 function BlockRenderer({ block }: { block: PublicArticleBlock }) {
   const c = getBlockContent<Record<string, unknown>>(block);
+  const align = ["left", "center", "right", "justify"].includes(String(c["align"]))
+    ? String(c["align"])
+    : undefined;
+  const alignStyle = align ? { textAlign: align as "left" | "center" | "right" | "justify" } : undefined;
 
   switch (block.type) {
     case "paragraph":
-      return <p className="article-block-paragraph" dangerouslySetInnerHTML={parseMarkdown(String(c["text"] ?? ""))} />;
+      return <p className="article-block-paragraph" style={alignStyle} dangerouslySetInnerHTML={parseMarkdown(String(c["text"] ?? ""))} />;
 
     case "heading": {
       const level = typeof c["level"] === "number" ? c["level"] : 2;
       const text = String(c["text"] ?? "");
-      if (level === 2) return <h2 className="article-block-heading-2">{text}</h2>;
-      if (level === 4) return <h4 className="article-block-heading-4">{text}</h4>;
-      return <h3 className="article-block-heading-3">{text}</h3>;
+      if (level === 2) return <h2 className="article-block-heading-2" style={alignStyle}>{text}</h2>;
+      if (level === 4) return <h4 className="article-block-heading-4" style={alignStyle}>{text}</h4>;
+      return <h3 className="article-block-heading-3" style={alignStyle}>{text}</h3>;
     }
 
     case "image": {

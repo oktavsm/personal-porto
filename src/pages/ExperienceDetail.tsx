@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "../components/ui/Button";
+import { FormattedText } from "../components/FormattedText";
 import { Card } from "../components/ui/Card";
 import { experiences, type Experience } from "../data/experiences";
 import { publicApi, type PublicExperience } from "../lib/publicApi";
@@ -95,8 +96,8 @@ export function ExperienceDetail() {
           <div>
             <div className="section-kicker">{experience.category} · {experience.period}</div>
             <h1>{experience.title}</h1>
-            <p className="organization">{experience.organization}</p>
-            <p>{experience.summary}</p>
+            <p className="organization"><FormattedText text={experience.organization} /></p>
+            <p><FormattedText text={experience.summary} /></p>
           </div>
           <Card className="image-card">
             {experience.image ? <img src={experience.image} alt={`${experience.title} documentation`} /> : <div className="project-detail-placeholder">{experience.category}</div>}
@@ -105,7 +106,7 @@ export function ExperienceDetail() {
 
         <Card className="experience-reflection-card">
           <div className="section-kicker">Reflection</div>
-          <h2>{experience.reflection}</h2>
+          <p className="experience-reflection-copy"><FormattedText text={experience.reflection} /></p>
         </Card>
 
         <div className="detail-grid">

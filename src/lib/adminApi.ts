@@ -234,6 +234,23 @@ export type AdminSitePage = {
   sections: AdminSiteSection[];
 };
 
+export type AdminContextKind = "portfolio" | "article";
+
+export type AdminContextDocument = {
+  kind: AdminContextKind;
+  label: string;
+  generatedMarkdown: string;
+  manualMarkdown: string;
+  mode: "append" | "override";
+  finalMarkdown: string;
+  updatedAt?: string | null;
+};
+
+export type AdminContexts = {
+  portfolio: AdminContextDocument;
+  article: AdminContextDocument;
+};
+
 type CertificationPayload = {
   title: string;
   issuer: string;
@@ -600,6 +617,12 @@ export const adminApi = {
       body: JSON.stringify(payload),
     }),
   resetTheme: () => request<{ data: AdminTheme }>("/api/admin/theme/reset", { method: "POST" }),
+  contexts: () => request<{ data: AdminContexts }>("/api/admin/contexts"),
+  updateContext: (kind: AdminContextKind, payload: { manualMarkdown: string; mode: "append" | "override" }) =>
+    request<{ data: AdminContextDocument }>(`/api/admin/contexts/${kind}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
 };
 
 // ─── Article Studio Types ─────────────────────────────────────────────────────
