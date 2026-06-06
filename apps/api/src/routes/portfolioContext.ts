@@ -145,8 +145,75 @@ function contentBlockSummary(contentJson: unknown) {
   return [title, text].filter(Boolean).join(": ");
 }
 
+function shortText(value: string, limit = 1200) {
+  const clean = value.replace(/\s+/g, " ").trim();
+  return clean.length > limit ? `${clean.slice(0, limit).trim()}...` : clean;
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value) ? value.map((item) => pickString(item)).filter(Boolean) : [];
+}
+
+function articleBlockSummary(type: string, contentJson: unknown) {
+  if (!contentJson || typeof contentJson !== "object" || Array.isArray(contentJson)) return "";
+  const content = contentJson as Record<string, unknown>;
+
+  if (type === "heading") {
+    const text = pickString(content.text);
+    const level = typeof content.level === "number" ? content.level : 2;
+    return text ? `Heading H${level}: ${text}` : "";
+  }
+
+  if (type === "paragraph") {
+    return shortText(pickString(content.text));
+  }
+
+  if (type === "quote") {
+    const text = pickString(content.text);
+    const source = pickString(content.source);
+    return text ? `Quote: ${text}${source ? ` — ${source}` : ""}` : "";
+  }
+
+  if (type === "callout") {
+    const title = pickString(content.title);
+    const text = pickString(content.text);
+    return text ? `Callout${title ? ` (${title})` : ""}: ${text}` : "";
+  }
+
+  if (type === "list") {
+    const items = stringArray(content.items);
+    return items.length > 0 ? `List:\n${list(items.map((item) => shortText(item, 300)))}` : "";
+  }
+
+  if (type === "image") {
+    const caption = pickString(content.caption);
+    const alt = pickString(content.alt);
+    return caption || alt ? `Image: ${caption || alt}` : "";
+  }
+
+  if (type === "gallery") {
+    const images = Array.isArray(content.images) ? content.images : [];
+    const descriptions = images
+      .map((image) => {
+        if (!image || typeof image !== "object" || Array.isArray(image)) return "";
+        const item = image as Record<string, unknown>;
+        return pickString(item.caption) || pickString(item.alt);
+      })
+      .filter(Boolean);
+    return descriptions.length > 0 ? `Gallery images:\n${list(descriptions)}` : "";
+  }
+
+  if (type === "code") {
+    const language = pickString(content.language);
+    const code = pickString(content.code);
+    return code ? `Code${language ? ` (${language})` : ""}: ${shortText(code, 500)}` : "";
+  }
+
+  return "";
+}
+
 async function generatePortfolioContextMarkdown() {
-  const [pages, projects, experiences, certifications, systems, contacts, resume] = await Promise.all([
+  const [pages, projects, experiences, articles, certifications, systems, contacts, resume] = await Promise.all([
     prisma.sitePage.findMany({
       include: {
         sections: {
@@ -180,6 +247,15 @@ async function generatePortfolioContextMarkdown() {
         values: { orderBy: { sortOrder: "asc" } },
       },
       orderBy: [{ sortOrder: "asc" }, { updatedAt: "desc" }],
+    }),
+    prisma.article.findMany({
+      where: { status: "published" },
+      include: {
+        blocks: { orderBy: { sortOrder: "asc" } },
+        tags: { orderBy: { sortOrder: "asc" } },
+        coverAsset: true,
+      },
+      orderBy: [{ isFeatured: "desc" }, { publishedAt: "desc" }, { updatedAt: "desc" }],
     }),
     prisma.certification.findMany({
       include: { skills: { orderBy: { sortOrder: "asc" } } },
@@ -257,6 +333,31 @@ async function generatePortfolioContextMarkdown() {
     )
     .join("\n\n");
 
+  const articleContext = articles
+    .map((article) => {
+      const blockSummaries = article.blocks
+        .map((block) => articleBlockSummary(block.type, block.contentJson))
+        .filter(Boolean);
+      const tags = article.tags.map((tag) => tag.label).filter(Boolean).join(", ");
+
+      return [
+        `## ${article.title}`,
+        `Route: /articles/${article.slug}`,
+        `Category: ${article.category}`,
+        `Status: ${article.status}`,
+        article.isFeatured ? "Featured: yes" : "",
+        article.publishedAt ? `Published: ${article.publishedAt.toISOString()}` : "",
+        article.subtitle ? `Subtitle: ${article.subtitle}` : "",
+        `Excerpt: ${article.excerpt}`,
+        tags ? `Tags: ${tags}` : "",
+        article.coverAsset ? `Cover: ${article.coverAsset.altText || article.coverAsset.originalName}` : "",
+        blockSummaries.length > 0 ? `Content:\n${blockSummaries.map((summary) => `- ${summary}`).join("\n")}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+    })
+    .join("\n\n");
+
   const certificationContext = certifications
     .map((certification) => {
       const skills = certification.skills.map((skill) => skill.label).filter(Boolean).join(", ");
@@ -274,7 +375,7 @@ async function generatePortfolioContextMarkdown() {
     "## Identity",
     "Name: Oktavianus Samuel Minarto",
     "Profile: Informatics Engineering student at Universitas Brawijaya.",
-    "Routes: /, /projects, /experiences, /lead-self, /resume, /systems, /contact",
+    "Routes: /, /projects, /experiences, /lead-self, /articles, /resume, /systems, /contact",
     "",
     "# CMS Page Copy",
     pageContext,
@@ -284,6 +385,9 @@ async function generatePortfolioContextMarkdown() {
     "",
     "# Experiences",
     experienceContext,
+    "",
+    "# Articles",
+    articleContext || "No published articles available.",
     "",
     "# Certifications",
     certificationContext || "No certifications available.",
