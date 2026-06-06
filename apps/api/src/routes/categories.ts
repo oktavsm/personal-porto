@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { pickBoolean, pickNumber, pickString, slugify } from "../lib/strings.js";
 
@@ -115,6 +116,16 @@ export async function categoryRoutes(app: FastifyInstance) {
       },
     });
 
+    await writeAuditLog(request, {
+      action: "create",
+      entityType: "category",
+      entityId: category.id,
+      entityLabel: category.label,
+      metadata: {
+        scope: category.scope,
+      },
+    });
+
     return reply.code(201).send({ data: await serializeCategory(category) });
   });
 
@@ -145,6 +156,18 @@ export async function categoryRoutes(app: FastifyInstance) {
       });
     });
 
+    await writeAuditLog(request, {
+      action: "update",
+      entityType: "category",
+      entityId: category.id,
+      entityLabel: category.label,
+      metadata: {
+        scope: category.scope,
+        previousLabel: existing.label,
+        previousScope: existing.scope,
+      },
+    });
+
     return { data: await serializeCategory(category) };
   });
 
@@ -153,6 +176,15 @@ export async function categoryRoutes(app: FastifyInstance) {
     if (!existing) return reply.code(404).send({ message: "Category not found" });
 
     await prisma.contentCategory.delete({ where: { id: request.params.id } });
+    await writeAuditLog(request, {
+      action: "delete",
+      entityType: "category",
+      entityId: existing.id,
+      entityLabel: existing.label,
+      metadata: {
+        scope: existing.scope,
+      },
+    });
     return { ok: true };
   });
 
@@ -166,6 +198,13 @@ export async function categoryRoutes(app: FastifyInstance) {
         }),
       ),
     );
+    await writeAuditLog(request, {
+      action: "reorder",
+      entityType: "category",
+      metadata: {
+        count: ids.length,
+      },
+    });
     return { ok: true };
   });
 }

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { pickString } from "../lib/strings.js";
 
@@ -522,7 +523,20 @@ export async function portfolioContextRoutes(app: FastifyInstance) {
         });
       });
 
-      return { data: await resolveContext(kind) };
+      const context = await resolveContext(kind);
+      await writeAuditLog(request, {
+        action: "update",
+        entityType: "context",
+        entityLabel: label,
+        metadata: {
+          kind,
+          mode: context.mode,
+          manualLength: context.manualMarkdown.length,
+          finalLength: context.finalMarkdown.length,
+        },
+      });
+
+      return { data: context };
     },
   );
 }

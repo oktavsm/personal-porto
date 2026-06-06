@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { applyReorder, pickReorderIds, type ReorderBody } from "../lib/reorder.js";
 import { pickBoolean, pickNumber, pickString, slugify, toStringArray } from "../lib/strings.js";
@@ -137,6 +138,14 @@ export async function experienceRoutes(app: FastifyInstance) {
       return tx.experience.findUniqueOrThrow({ where: { id: created.id }, include: includeExperienceRelations });
     });
 
+    await writeAuditLog(request, {
+      action: "create",
+      entityType: "experience",
+      entityId: experience.id,
+      entityLabel: experience.title,
+      metadata: { category: experience.category, period: experience.period },
+    });
+
     return reply.code(201).send({ data: serializeExperience(experience) });
   });
 
@@ -144,6 +153,11 @@ export async function experienceRoutes(app: FastifyInstance) {
     const ids = pickReorderIds(request.body);
     if (ids.length === 0) return reply.code(400).send({ message: "ids are required" });
     await prisma.$transaction((tx) => applyReorder(tx, "experience", ids));
+    await writeAuditLog(request, {
+      action: "reorder",
+      entityType: "experience",
+      metadata: { count: ids.length },
+    });
     return { ok: true };
   });
 
@@ -162,6 +176,14 @@ export async function experienceRoutes(app: FastifyInstance) {
       return tx.experience.findUniqueOrThrow({ where: { id: request.params.id }, include: includeExperienceRelations });
     });
 
+    await writeAuditLog(request, {
+      action: "update",
+      entityType: "experience",
+      entityId: experience.id,
+      entityLabel: experience.title,
+      metadata: { previousTitle: exists.title, category: experience.category, period: experience.period },
+    });
+
     return { data: serializeExperience(experience) };
   });
 
@@ -169,6 +191,13 @@ export async function experienceRoutes(app: FastifyInstance) {
     const exists = await prisma.experience.findUnique({ where: { id: request.params.id } });
     if (!exists) return reply.code(404).send({ message: "Experience not found" });
     await prisma.experience.delete({ where: { id: request.params.id } });
+    await writeAuditLog(request, {
+      action: "delete",
+      entityType: "experience",
+      entityId: exists.id,
+      entityLabel: exists.title,
+      metadata: { category: exists.category, period: exists.period },
+    });
     return { ok: true };
   });
 }

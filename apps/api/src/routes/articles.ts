@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { config } from "../config.js";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { pickBoolean, pickNumber, pickString, slugify } from "../lib/strings.js";
 import { getArticleWritingContextMarkdown } from "./portfolioContext.js";
@@ -620,6 +621,18 @@ export async function articleRoutes(app: FastifyInstance) {
         });
       });
 
+      await writeAuditLog(request, {
+        action: "generate",
+        entityType: "article",
+        entityId: article.id,
+        entityLabel: article.title,
+        metadata: {
+          category: normalizedArticle.category,
+          targetLength,
+          mediaCount: availableMedia.length,
+        },
+      });
+
       return reply.code(201).send({ data: serializeArticle(article) });
     },
   );
@@ -660,6 +673,17 @@ export async function articleRoutes(app: FastifyInstance) {
         });
       });
 
+      await writeAuditLog(request, {
+        action: "create",
+        entityType: "article",
+        entityId: article.id,
+        entityLabel: article.title,
+        metadata: {
+          status: article.status,
+          category: article.category,
+        },
+      });
+
       return reply.code(201).send({ data: serializeArticle(article) });
     },
   );
@@ -691,6 +715,18 @@ export async function articleRoutes(app: FastifyInstance) {
         });
       });
 
+      await writeAuditLog(request, {
+        action: "update",
+        entityType: "article",
+        entityId: article.id,
+        entityLabel: article.title,
+        metadata: {
+          previousTitle: exists.title,
+          status: article.status,
+          category: article.category,
+        },
+      });
+
       return { data: serializeArticle(article) };
     },
   );
@@ -702,6 +738,16 @@ export async function articleRoutes(app: FastifyInstance) {
       const exists = await prisma.article.findUnique({ where: { id: request.params.id } });
       if (!exists) return reply.code(404).send({ message: "Article not found" });
       await prisma.article.delete({ where: { id: request.params.id } });
+      await writeAuditLog(request, {
+        action: "delete",
+        entityType: "article",
+        entityId: exists.id,
+        entityLabel: exists.title,
+        metadata: {
+          status: exists.status,
+          category: exists.category,
+        },
+      });
       return { ok: true };
     },
   );
@@ -718,6 +764,12 @@ export async function articleRoutes(app: FastifyInstance) {
         data: { status: "published", publishedAt: exists.publishedAt ?? new Date() },
         include: includeArticleRelations,
       });
+      await writeAuditLog(request, {
+        action: "publish",
+        entityType: "article",
+        entityId: article.id,
+        entityLabel: article.title,
+      });
       return { data: serializeArticle(article) };
     },
   );
@@ -733,6 +785,12 @@ export async function articleRoutes(app: FastifyInstance) {
         where: { id: request.params.id },
         data: { status: "draft" },
         include: includeArticleRelations,
+      });
+      await writeAuditLog(request, {
+        action: "unpublish",
+        entityType: "article",
+        entityId: article.id,
+        entityLabel: article.title,
       });
       return { data: serializeArticle(article) };
     },
@@ -796,6 +854,17 @@ export async function articleRoutes(app: FastifyInstance) {
           where: { id: created.id },
           include: includeArticleRelations,
         });
+      });
+
+      await writeAuditLog(request, {
+        action: "duplicate",
+        entityType: "article",
+        entityId: article.id,
+        entityLabel: article.title,
+        metadata: {
+          sourceId: source.id,
+          sourceTitle: source.title,
+        },
       });
 
       return reply.code(201).send({ data: serializeArticle(article) });

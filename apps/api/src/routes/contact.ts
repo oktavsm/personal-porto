@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { applyReorder, pickReorderIds, type ReorderBody } from "../lib/reorder.js";
 import { pickBoolean, pickNumber, pickString } from "../lib/strings.js";
@@ -38,6 +39,13 @@ export async function contactRoutes(app: FastifyInstance) {
       return reply.code(400).send({ message: "Type, label, and URL are required" });
     }
     const link = await prisma.contactLink.create({ data });
+    await writeAuditLog(request, {
+      action: "create",
+      entityType: "contact",
+      entityId: link.id,
+      entityLabel: link.label,
+      metadata: { type: link.type, isPrimary: link.isPrimary },
+    });
     return reply.code(201).send({ data: link });
   });
 
@@ -45,6 +53,11 @@ export async function contactRoutes(app: FastifyInstance) {
     const ids = pickReorderIds(request.body);
     if (ids.length === 0) return reply.code(400).send({ message: "ids are required" });
     await prisma.$transaction((tx) => applyReorder(tx, "contactLink", ids));
+    await writeAuditLog(request, {
+      action: "reorder",
+      entityType: "contact",
+      metadata: { count: ids.length },
+    });
     return { ok: true };
   });
 
@@ -52,6 +65,13 @@ export async function contactRoutes(app: FastifyInstance) {
     const exists = await prisma.contactLink.findUnique({ where: { id: request.params.id } });
     if (!exists) return reply.code(404).send({ message: "Contact link not found" });
     const link = await prisma.contactLink.update({ where: { id: request.params.id }, data: contactData(request.body) });
+    await writeAuditLog(request, {
+      action: "update",
+      entityType: "contact",
+      entityId: link.id,
+      entityLabel: link.label,
+      metadata: { previousLabel: exists.label, type: link.type, isPrimary: link.isPrimary },
+    });
     return { data: link };
   });
 
@@ -59,6 +79,13 @@ export async function contactRoutes(app: FastifyInstance) {
     const exists = await prisma.contactLink.findUnique({ where: { id: request.params.id } });
     if (!exists) return reply.code(404).send({ message: "Contact link not found" });
     await prisma.contactLink.delete({ where: { id: request.params.id } });
+    await writeAuditLog(request, {
+      action: "delete",
+      entityType: "contact",
+      entityId: exists.id,
+      entityLabel: exists.label,
+      metadata: { type: exists.type, isPrimary: exists.isPrimary },
+    });
     return { ok: true };
   });
 }

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { pickString } from "../lib/strings.js";
 
@@ -49,6 +50,14 @@ export async function resumeRoutes(app: FastifyInstance) {
       include: includeMedia,
     });
 
+    await writeAuditLog(request, {
+      action: "create",
+      entityType: "resume",
+      entityId: resume.id,
+      entityLabel: resume.label,
+      metadata: { mediaAssetId: resume.mediaAssetId, isActive: resume.isActive },
+    });
+
     return reply.code(201).send({ data: resume });
   });
 
@@ -63,6 +72,14 @@ export async function resumeRoutes(app: FastifyInstance) {
         data: { isActive: true },
         include: includeMedia,
       });
+    });
+
+    await writeAuditLog(request, {
+      action: "activate",
+      entityType: "resume",
+      entityId: resume.id,
+      entityLabel: resume.label,
+      metadata: { mediaAssetId: resume.mediaAssetId },
     });
 
     return { data: resume };

@@ -251,6 +251,18 @@ export type AdminContexts = {
   article: AdminContextDocument;
 };
 
+export type AdminAuditLog = {
+  id: string;
+  actorId?: string | null;
+  actorEmail?: string | null;
+  action: string;
+  entityType: string;
+  entityId?: string | null;
+  entityLabel?: string | null;
+  metadata?: unknown;
+  createdAt: string;
+};
+
 type CertificationPayload = {
   title: string;
   issuer: string;
@@ -623,6 +635,13 @@ export const adminApi = {
       method: "PATCH",
       body: JSON.stringify(payload),
     }),
+  auditLogs: (params?: { entityType?: string; limit?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.entityType) searchParams.set("entityType", params.entityType);
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    const qs = searchParams.toString();
+    return request<{ data: AdminAuditLog[] }>(`/api/admin/audit-logs${qs ? `?${qs}` : ""}`);
+  },
 };
 
 // ─── Article Studio Types ─────────────────────────────────────────────────────

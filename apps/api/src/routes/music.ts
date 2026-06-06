@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { applyReorder, pickReorderIds, type ReorderBody } from "../lib/reorder.js";
 import { pickBoolean, pickNumber, pickString } from "../lib/strings.js";
@@ -75,6 +76,13 @@ export async function musicRoutes(app: FastifyInstance) {
       data,
       include: includeMusicAssets,
     });
+    await writeAuditLog(request, {
+      action: "create",
+      entityType: "music",
+      entityId: track.id,
+      entityLabel: track.title,
+      metadata: { artist: track.artist, isActive: track.isActive },
+    });
     return reply.code(201).send({ data: serializeTrack(track) });
   });
 
@@ -82,6 +90,11 @@ export async function musicRoutes(app: FastifyInstance) {
     const ids = pickReorderIds(request.body);
     if (ids.length === 0) return reply.code(400).send({ message: "ids are required" });
     await prisma.$transaction((tx) => applyReorder(tx, "musicTrack", ids));
+    await writeAuditLog(request, {
+      action: "reorder",
+      entityType: "music",
+      metadata: { count: ids.length },
+    });
     return { ok: true };
   });
 
@@ -99,6 +112,13 @@ export async function musicRoutes(app: FastifyInstance) {
       data,
       include: includeMusicAssets,
     });
+    await writeAuditLog(request, {
+      action: "update",
+      entityType: "music",
+      entityId: track.id,
+      entityLabel: track.title,
+      metadata: { previousTitle: exists.title, artist: track.artist, isActive: track.isActive },
+    });
     return { data: serializeTrack(track) };
   });
 
@@ -106,6 +126,13 @@ export async function musicRoutes(app: FastifyInstance) {
     const exists = await prisma.musicTrack.findUnique({ where: { id: request.params.id } });
     if (!exists) return reply.code(404).send({ message: "Music track not found" });
     await prisma.musicTrack.delete({ where: { id: request.params.id } });
+    await writeAuditLog(request, {
+      action: "delete",
+      entityType: "music",
+      entityId: exists.id,
+      entityLabel: exists.title,
+      metadata: { artist: exists.artist, isActive: exists.isActive },
+    });
     return { ok: true };
   });
 }

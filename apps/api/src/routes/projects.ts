@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { applyReorder, pickReorderIds, type ReorderBody } from "../lib/reorder.js";
 import { pickBoolean, pickNumber, pickString, slugify, toStringArray } from "../lib/strings.js";
@@ -166,6 +167,14 @@ export async function projectRoutes(app: FastifyInstance) {
       return tx.project.findUniqueOrThrow({ where: { id: created.id }, include: includeProjectRelations });
     });
 
+    await writeAuditLog(request, {
+      action: "create",
+      entityType: "project",
+      entityId: project.id,
+      entityLabel: project.title,
+      metadata: { category: project.category, status: project.status },
+    });
+
     return reply.code(201).send({ data: serializeProject(project) });
   });
 
@@ -173,6 +182,11 @@ export async function projectRoutes(app: FastifyInstance) {
     const ids = pickReorderIds(request.body);
     if (ids.length === 0) return reply.code(400).send({ message: "ids are required" });
     await prisma.$transaction((tx) => applyReorder(tx, "project", ids));
+    await writeAuditLog(request, {
+      action: "reorder",
+      entityType: "project",
+      metadata: { count: ids.length },
+    });
     return { ok: true };
   });
 
@@ -191,6 +205,14 @@ export async function projectRoutes(app: FastifyInstance) {
       return tx.project.findUniqueOrThrow({ where: { id: request.params.id }, include: includeProjectRelations });
     });
 
+    await writeAuditLog(request, {
+      action: "update",
+      entityType: "project",
+      entityId: project.id,
+      entityLabel: project.title,
+      metadata: { previousTitle: exists.title, category: project.category, status: project.status },
+    });
+
     return { data: serializeProject(project) };
   });
 
@@ -198,6 +220,13 @@ export async function projectRoutes(app: FastifyInstance) {
     const exists = await prisma.project.findUnique({ where: { id: request.params.id } });
     if (!exists) return reply.code(404).send({ message: "Project not found" });
     await prisma.project.delete({ where: { id: request.params.id } });
+    await writeAuditLog(request, {
+      action: "delete",
+      entityType: "project",
+      entityId: exists.id,
+      entityLabel: exists.title,
+      metadata: { category: exists.category, status: exists.status },
+    });
     return { ok: true };
   });
 }

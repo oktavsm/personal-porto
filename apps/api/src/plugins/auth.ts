@@ -91,6 +91,7 @@ export async function requireAdmin(request: FastifyRequest, reply: FastifyReply)
 }
 
 export async function authPlugin(app: FastifyInstance) {
+  app.decorateRequest("adminUser", null);
   app.decorate("requireAdmin", requireAdmin);
 }
 

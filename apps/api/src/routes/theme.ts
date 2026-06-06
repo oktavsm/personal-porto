@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { pickString } from "../lib/strings.js";
 
@@ -82,6 +83,14 @@ export async function themeRoutes(app: FastifyInstance) {
       );
 
       const theme = await getCurrentTheme();
+      await writeAuditLog(request, {
+        action: "update",
+        entityType: "theme",
+        entityLabel: "Theme Studio",
+        metadata: {
+          updatedKeys: updates.map((update) => update.key),
+        },
+      });
       return { data: theme };
     },
   );
@@ -90,8 +99,13 @@ export async function themeRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/theme/reset",
     { preHandler: app.requireAdmin },
-    async () => {
+    async (request) => {
       await prisma.themeSetting.deleteMany();
+      await writeAuditLog(request, {
+        action: "reset",
+        entityType: "theme",
+        entityLabel: "Theme Studio",
+      });
       return { data: DEFAULT_THEME };
     },
   );

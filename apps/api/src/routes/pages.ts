@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { pickBoolean, pickNumber, pickString } from "../lib/strings.js";
 
@@ -145,6 +146,13 @@ export async function pageRoutes(app: FastifyInstance) {
       data,
       include: includePageRelations,
     });
+    await writeAuditLog(request, {
+      action: "update",
+      entityType: "page",
+      entityId: page.id,
+      entityLabel: page.title,
+      metadata: { slug: page.slug },
+    });
     return { data: serializePage(page) };
   });
 
@@ -162,6 +170,18 @@ export async function pageRoutes(app: FastifyInstance) {
       },
     });
 
+    await writeAuditLog(request, {
+      action: "update",
+      entityType: "page-section",
+      entityId: section.id,
+      entityLabel: section.title ?? section.key,
+      metadata: {
+        pageSlug: page.slug,
+        sectionKey: section.key,
+        isPublished: section.isPublished,
+      },
+    });
+
     return { data: section };
   });
 
@@ -173,6 +193,18 @@ export async function pageRoutes(app: FastifyInstance) {
       data: {
         sectionId: section.id,
         ...blockData(request.body),
+      },
+    });
+    await writeAuditLog(request, {
+      action: "create",
+      entityType: "page-block",
+      entityId: block.id,
+      entityLabel: `${request.params.slug}/${request.params.key}/${block.type}`,
+      metadata: {
+        pageSlug: request.params.slug,
+        sectionKey: request.params.key,
+        type: block.type,
+        isPublished: block.isPublished,
       },
     });
     return reply.code(201).send({ data: block });
@@ -194,6 +226,19 @@ export async function pageRoutes(app: FastifyInstance) {
         where: { id: request.params.blockId },
         data: blockData(request.body),
       });
+      await writeAuditLog(request, {
+        action: "update",
+        entityType: "page-block",
+        entityId: block.id,
+        entityLabel: `${request.params.slug}/${request.params.key}/${block.type}`,
+        metadata: {
+          pageSlug: request.params.slug,
+          sectionKey: request.params.key,
+          previousType: exists.type,
+          type: block.type,
+          isPublished: block.isPublished,
+        },
+      });
       return { data: block };
     },
   );
@@ -208,6 +253,17 @@ export async function pageRoutes(app: FastifyInstance) {
     if (!exists) return reply.code(404).send({ message: "Block not found" });
 
     await prisma.contentBlock.delete({ where: { id: request.params.blockId } });
+    await writeAuditLog(request, {
+      action: "delete",
+      entityType: "page-block",
+      entityId: exists.id,
+      entityLabel: `${request.params.slug}/${request.params.key}/${exists.type}`,
+      metadata: {
+        pageSlug: request.params.slug,
+        sectionKey: request.params.key,
+        type: exists.type,
+      },
+    });
     return { ok: true };
   });
 
@@ -234,6 +290,16 @@ export async function pageRoutes(app: FastifyInstance) {
         }),
       ),
     );
+    await writeAuditLog(request, {
+      action: "reorder",
+      entityType: "page-block",
+      entityLabel: `${request.params.slug}/${request.params.key}`,
+      metadata: {
+        pageSlug: request.params.slug,
+        sectionKey: request.params.key,
+        count: ids.length,
+      },
+    });
     return { ok: true };
   });
 }

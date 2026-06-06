@@ -1,8 +1,9 @@
-import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, Download, ExternalLink, FileText, GripVertical, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, Download, ExternalLink, FileText, GripVertical, History, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, Upload, X } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   adminApi,
+  type AdminAuditLog,
   type AdminArticle,
   type AdminArticleBlock,
   type AdminCertification,
@@ -44,7 +45,7 @@ type DeleteTarget =
   | { type: "category"; id: string; label: string }
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
-type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme";
+type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme" | "audit";
 type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage" | "articleCover";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
@@ -61,6 +62,7 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "articles", label: "Articles" },
   { id: "contexts", label: "Contexts" },
   { id: "theme", label: "Theme" },
+  { id: "audit", label: "Audit" },
 ];
 
 const articleBlockTypes = ["paragraph", "heading", "image", "gallery", "quote", "callout", "list", "code", "divider"];
@@ -330,6 +332,17 @@ function formatBytes(value: number) {
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
   return `${(value / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function formatAuditDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function selectedFilesLabel(files: File[]) {
@@ -1314,6 +1327,7 @@ export function Admin() {
   const [sitePages, setSitePages] = useState<AdminSitePage[]>([]);
   const [categories, setCategories] = useState<AdminContentCategory[]>([]);
   const [contexts, setContexts] = useState<AdminContexts | null>(null);
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [certForm, setCertForm] = useState(emptyCertification);
   const [systemForm, setSystemForm] = useState(emptySystem);
   const [contactForm, setContactForm] = useState(emptyContact);
@@ -1501,7 +1515,7 @@ export function Admin() {
   }
 
   async function loadAdminData() {
-    const [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse, contextResponse] = await Promise.allSettled([
+    const [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse, contextResponse, auditResponse] = await Promise.allSettled([
       adminApi.certifications(),
       adminApi.systems(),
       adminApi.contact(),
@@ -1515,6 +1529,7 @@ export function Admin() {
       adminApi.articles(),
       adminApi.getTheme(),
       adminApi.contexts(),
+      adminApi.auditLogs({ limit: 50 }),
     ]);
 
     if (certificationResponse.status === "fulfilled") setCertifications(certificationResponse.value.data);
@@ -1547,8 +1562,9 @@ export function Admin() {
         article: contextResponse.value.data.article.mode,
       });
     }
+    if (auditResponse.status === "fulfilled") setAuditLogs(auditResponse.value.data);
 
-    const failures = [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, contextResponse].filter(
+    const failures = [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, contextResponse, auditResponse].filter(
       (response) => response.status === "rejected",
     );
     if (failures.length > 0) {
@@ -2787,6 +2803,10 @@ export function Admin() {
           <div className="admin-stat">
             <span>Articles</span>
             <strong>{articles.length}</strong>
+          </div>
+          <div className="admin-stat">
+            <span>Audit Logs</span>
+            <strong>{auditLogs.length}</strong>
           </div>
         </div>
 
@@ -4549,6 +4569,42 @@ export function Admin() {
                 </button>
               </div>
             </form>
+          </Card>
+        </div>
+
+        <div className={`admin-grid${activeTab === "audit" ? "" : " admin-hidden"}`}>
+          <Card className="admin-card-audit">
+            <div className="admin-card-head">
+              <h3><History size={18} /> Recent Admin Activity</h3>
+              <button className="btn btn-compact" type="button" onClick={() => void loadAdminData()}>
+                <RefreshCw size={14} /> Refresh
+              </button>
+            </div>
+            <p className="admin-muted">
+              Shows the last 50 tracked CMS actions. This is a lightweight safety trail, not a full version history.
+            </p>
+            <div className="admin-list">
+              {auditLogs.length === 0 ? <p className="admin-empty">No tracked admin activity yet.</p> : null}
+              {auditLogs.map((log) => (
+                <div className="admin-list-item admin-audit-item" key={log.id}>
+                  <div>
+                    <strong>{log.entityLabel || log.entityType}</strong>
+                    <span>{log.action} {log.entityType} by {log.actorEmail || "system"} · {formatAuditDate(log.createdAt)}</span>
+                    <div className="admin-badges">
+                      <span>{log.entityType}</span>
+                      <span>{log.action}</span>
+                      {log.entityId ? <span>{log.entityId.slice(0, 8)}</span> : null}
+                    </div>
+                    {log.metadata ? (
+                      <details className="admin-audit-details">
+                        <summary>Metadata</summary>
+                        <pre className="admin-context-preview">{JSON.stringify(log.metadata, null, 2)}</pre>
+                      </details>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
           </Card>
         </div>
 

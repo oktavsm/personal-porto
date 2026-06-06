@@ -8,6 +8,7 @@ import { resolve } from "node:path";
 import { config } from "./config.js";
 import { authPlugin } from "./plugins/auth.js";
 import { articleRoutes } from "./routes/articles.js";
+import { auditRoutes } from "./routes/audit.js";
 import { authRoutes } from "./routes/auth.js";
 import { categoryRoutes } from "./routes/categories.js";
 import { certificationRoutes } from "./routes/certifications.js";
@@ -61,6 +62,7 @@ export async function buildApp() {
 
   await app.register(healthRoutes);
   await app.register(authRoutes);
+  await app.register(auditRoutes);
   await app.register(mediaRoutes);
   await app.register(resumeRoutes);
   await app.register(projectRoutes);

@@ -2174,7 +2174,8 @@ body.is-embedded .chat-panel {
 .admin-page[data-admin-tab="pages"] .admin-grid > .card:not(.admin-card-pages),
 .admin-page[data-admin-tab="articles"] .admin-grid > .card:not(.admin-card-articles):not(.admin-card-articles-list),
 .admin-page[data-admin-tab="contexts"] .admin-grid > .card:not(.admin-card-contexts),
-.admin-page[data-admin-tab="theme"] .admin-grid > .card:not(.admin-card-theme) {
+.admin-page[data-admin-tab="theme"] .admin-grid > .card:not(.admin-card-theme),
+.admin-page[data-admin-tab="audit"] .admin-grid > .card:not(.admin-card-audit) {
   display: none;
 }
 
@@ -2740,6 +2741,30 @@ body.is-embedded .chat-panel {
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 4px;
+}
+
+.admin-card-audit {
+  grid-column: 1 / -1;
+}
+
+.admin-audit-item {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-audit-details {
+  margin-top: 8px;
+}
+
+.admin-audit-details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-audit-details .admin-context-preview {
+  max-height: 220px;
+  margin-top: 8px;
 }
 
 .admin-badge {

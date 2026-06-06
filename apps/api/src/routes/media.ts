@@ -6,6 +6,7 @@ import { extname, join } from "node:path";
 import { pipeline } from "node:stream/promises";
 import { randomUUID } from "node:crypto";
 import { config } from "../config.js";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 
 const allowedMimeTypes = new Set([
@@ -76,6 +77,22 @@ export async function mediaRoutes(app: FastifyInstance) {
       return reply.code(400).send({ message: "At least one file is required" });
     }
 
+    await writeAuditLog(request, {
+      action: "upload",
+      entityType: "media",
+      entityLabel: createdMedia.length === 1 ? createdMedia[0]?.originalName : `${createdMedia.length} media files`,
+      metadata: {
+        count: createdMedia.length,
+        totalSizeBytes: createdMedia.reduce((sum, media) => sum + media.sizeBytes, 0),
+        files: createdMedia.map((media) => ({
+          id: media.id,
+          originalName: media.originalName,
+          mimeType: media.mimeType,
+          sizeBytes: media.sizeBytes,
+        })),
+      },
+    });
+
     return reply.code(201).send({ data: createdMedia });
   });
 
@@ -87,6 +104,14 @@ export async function mediaRoutes(app: FastifyInstance) {
 
     await prisma.mediaAsset.delete({ where: { id: media.id } });
     await unlink(media.storagePath).catch(() => undefined);
+
+    await writeAuditLog(request, {
+      action: "delete",
+      entityType: "media",
+      entityId: media.id,
+      entityLabel: media.originalName,
+      metadata: { mimeType: media.mimeType, sizeBytes: media.sizeBytes },
+    });
 
     return { ok: true };
   });
@@ -105,6 +130,18 @@ export async function mediaRoutes(app: FastifyInstance) {
         data: {
           altText: request.body.altText,
           caption: request.body.caption,
+        },
+      });
+
+      await writeAuditLog(request, {
+        action: "update",
+        entityType: "media",
+        entityId: updatedMedia.id,
+        entityLabel: updatedMedia.originalName,
+        metadata: {
+          mimeType: updatedMedia.mimeType,
+          hasAltText: Boolean(updatedMedia.altText),
+          hasCaption: Boolean(updatedMedia.caption),
         },
       });
 

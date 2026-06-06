@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
+import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 
 export async function exportRoutes(app: FastifyInstance) {
-  app.get("/api/admin/export", { preHandler: app.requireAdmin }, async (_request, reply) => {
+  app.get("/api/admin/export", { preHandler: app.requireAdmin }, async (request, reply) => {
     const [
       projects,
       experiences,
@@ -79,6 +80,28 @@ export async function exportRoutes(app: FastifyInstance) {
 
     const exportedAt = new Date().toISOString();
     const filename = `portfolio-cms-backup-${exportedAt.slice(0, 10)}.json`;
+    const counts = {
+      projects: projects.length,
+      experiences: experiences.length,
+      articles: articles.length,
+      categories: categories.length,
+      pages: pages.length,
+      certifications: certifications.length,
+      systems: systems.length,
+      contacts: contacts.length,
+      music: music.length,
+      resumes: resumes.length,
+      media: media.length,
+      theme: theme.length,
+      contexts: contexts.length,
+    };
+
+    await writeAuditLog(request, {
+      action: "export",
+      entityType: "cms-backup",
+      entityLabel: filename,
+      metadata: counts,
+    });
 
     return reply
       .header("Content-Type", "application/json; charset=utf-8")
@@ -87,6 +110,7 @@ export async function exportRoutes(app: FastifyInstance) {
         schemaVersion: 1,
         exportedAt,
         note: "Admin CMS backup. This export stores database metadata and media references, not binary upload files.",
+        counts,
         data: {
           projects,
           experiences,
