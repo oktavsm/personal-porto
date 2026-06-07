@@ -519,6 +519,78 @@ function generatorMetaPreview(value: unknown) {
   }
 }
 
+function generatorMetaObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function generatorMetaText(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function generatorMetaMedia(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !Array.isArray(item))
+    : [];
+}
+
+function GeneratorMetaPanel({ value }: { value: unknown }) {
+  const meta = generatorMetaObject(value);
+  if (!meta) return null;
+
+  const media = generatorMetaMedia(meta.media);
+  const rawNotes = generatorMetaText(meta.rawNotes);
+  const sourceContext = generatorMetaText(meta.sourceContext);
+  const articleContextOverride = generatorMetaText(meta.articleContextOverride);
+
+  return (
+    <details className="admin-generator-trace">
+      <summary className="admin-seo-toggle">Generator source note</summary>
+      <div className="admin-generator-trace-grid">
+        <span><strong>Topic</strong>{generatorMetaText(meta.topic) || "Not provided"}</span>
+        <span><strong>Length</strong>{generatorMetaText(meta.targetLength) || "medium"}</span>
+        <span><strong>Language</strong>{generatorMetaText(meta.language) || "English"}</span>
+        <span><strong>Tone</strong>{generatorMetaText(meta.tone) || "Default reflective tone"}</span>
+      </div>
+      {media.length > 0 ? (
+        <div className="admin-generator-trace-section">
+          <strong>Selected media</strong>
+          <div className="admin-badge-list">
+            {media.map((item, index) => (
+              <span className="admin-badge is-muted" key={`${generatorMetaText(item.mediaAssetId) || index}`}>
+                {generatorMetaText(item.originalName) || generatorMetaText(item.altText) || `Media ${index + 1}`}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {sourceContext ? (
+        <div className="admin-generator-trace-section">
+          <strong>Extra source context</strong>
+          <p>{sourceContext}</p>
+        </div>
+      ) : null}
+      {articleContextOverride ? (
+        <div className="admin-generator-trace-section">
+          <strong>Writing style override</strong>
+          <p>{articleContextOverride}</p>
+        </div>
+      ) : null}
+      {rawNotes ? (
+        <div className="admin-generator-trace-section">
+          <strong>Raw notes</strong>
+          <p>{rawNotes}</p>
+        </div>
+      ) : null}
+      <details className="admin-audit-details">
+        <summary>Raw metadata</summary>
+        <pre className="admin-context-preview">{generatorMetaPreview(value)}</pre>
+      </details>
+    </details>
+  );
+}
+
 function DeleteConfirmModal({
   target,
   saving,
@@ -871,6 +943,16 @@ function ArticleGeneratorModal({
             onSubmit();
           }}
         >
+          {saving ? (
+            <div className="admin-generator-status">
+              <RefreshCw size={15} />
+              <span>
+                <strong>Generating draft</strong>
+                Sending your notes, length target, and selected media context to the article workflow.
+              </span>
+            </div>
+          ) : null}
+
           <div className="admin-form-pair">
             <label>
               Topic
@@ -2326,7 +2408,9 @@ export function Admin() {
       editArticle(result.data);
       setArticleGeneratorOpen(false);
       setArticleGeneratorForm(emptyArticleGeneratorForm);
-      setNotice("Generated draft created. Review the blocks before publishing.");
+      setNotice(result.data.coverAssetId
+        ? "Generated draft created with an auto-assigned cover. Review the blocks before publishing."
+        : "Generated draft created. No cover was assigned, so choose one before publishing if needed.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to generate article draft.");
     } finally {
@@ -4303,12 +4387,7 @@ export function Admin() {
                 </div>
               </details>
 
-              {generatorMetaPreview(articleForm.generatorMeta) ? (
-                <details>
-                  <summary className="admin-seo-toggle">Generator source note</summary>
-                  <pre className="admin-context-preview">{generatorMetaPreview(articleForm.generatorMeta)}</pre>
-                </details>
-              ) : null}
+              <GeneratorMetaPanel value={articleForm.generatorMeta} />
 
               <label className="admin-checkbox-label">
                 <input type="checkbox" checked={articleForm.isFeatured} onChange={(e) => setArticleForm({ ...articleForm, isFeatured: e.target.checked })} />
@@ -4734,7 +4813,7 @@ export function Admin() {
                         className="theme-hex-input"
                       />
                     </label>
-                    {themeData[key] !== themeDefaults[key] && themeData[key] ? (
+                    {themeForm[key] !== themeDefaults[key] && themeForm[key] ? (
                       <button
                         type="button"
                         className="icon-btn"
@@ -4750,13 +4829,24 @@ export function Admin() {
 
               <div className="theme-control-grid">
                 {themeControlKeys.map((control) => (
-                  <AdminSelect
-                    key={control.key}
-                    label={control.label}
-                    value={themeForm[control.key] ?? themeDefaults[control.key] ?? ""}
-                    options={control.options}
-                    onChange={(value) => setThemeForm({ ...themeForm, [control.key]: value })}
-                  />
+                  <div className="theme-control-row" key={control.key}>
+                    <AdminSelect
+                      label={control.label}
+                      value={themeForm[control.key] ?? themeDefaults[control.key] ?? ""}
+                      options={control.options}
+                      onChange={(value) => setThemeForm({ ...themeForm, [control.key]: value })}
+                    />
+                    {themeForm[control.key] !== themeDefaults[control.key] && themeForm[control.key] ? (
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        aria-label={`Reset ${control.label} to default`}
+                        onClick={() => setThemeForm({ ...themeForm, [control.key]: themeDefaults[control.key] ?? "" })}
+                      >
+                        <X size={12} />
+                      </button>
+                    ) : null}
+                  </div>
                 ))}
               </div>
 
