@@ -1,6 +1,7 @@
 import { ArrowLeft, ExternalLink, Github } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { FormattedText } from "../components/FormattedText";
 import { Button } from "../components/ui/Button";
 import { Card } from "../components/ui/Card";
 import { projects, type Project } from "../data/projects";
@@ -85,7 +86,7 @@ export function ProjectDetail() {
           <div>
             <div className="section-kicker">{project.category} · {project.status}</div>
             <h1>{project.title}</h1>
-            <p>{project.summary}</p>
+            <p><FormattedText text={project.summary} /></p>
             <div className="actions">
               {project.links.demo ? (
                 <Button href={project.links.demo} variant="primary">
@@ -107,17 +108,17 @@ export function ProjectDetail() {
         <div className="detail-grid">
           <Card>
             <h3>Problem</h3>
-            <p>{project.problem}</p>
+            <p><FormattedText text={project.problem} /></p>
           </Card>
           <Card>
             <h3>Solution</h3>
-            <p>{project.solution}</p>
+            <p><FormattedText text={project.solution} /></p>
           </Card>
           <Card>
             <h3>My Role</h3>
             <ul>
               {project.role.map((role) => (
-                <li key={role}>{role}</li>
+                <li key={role}><FormattedText text={role} /></li>
               ))}
             </ul>
           </Card>
@@ -125,7 +126,7 @@ export function ProjectDetail() {
             <h3>What I Learned</h3>
             <ul>
               {project.learnings.map((learning) => (
-                <li key={learning}>{learning}</li>
+                <li key={learning}><FormattedText text={learning} /></li>
               ))}
             </ul>
           </Card>

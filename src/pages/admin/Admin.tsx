@@ -25,8 +25,10 @@ import {
   type AdminUser,
   type ContentCategoryScope,
 } from "../../lib/adminApi";
+import { ArticleContent } from "../../components/articles/ArticleContent";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import type { PublicArticleBlock } from "../../lib/publicApi";
 
 type AdminState = {
   user: AdminUser | null;
@@ -48,6 +50,7 @@ type DeleteTarget =
 
 type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme" | "security" | "audit";
 type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage" | "articleCover";
+type ArticlePreviewMode = "reader" | "desktop" | "mobile";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "overview", label: "Overview" },
@@ -397,8 +400,72 @@ type ArticleBlockDraft = {
 };
 
 type ArticleGeneratorForm = typeof emptyArticleGeneratorForm;
+type ArticleEditorForm = typeof emptyArticleForm;
 
+type ArticleLocalDraft = {
+  editingArticleId: string | null;
+  articleForm: ArticleEditorForm;
+  articleBlocks: ArticleBlockDraft[];
+  savedAt: string;
+};
 
+const articleAutosaveKey = "teladan_article_editor_autosave";
+
+function hasArticleDraftContent(form: ArticleEditorForm, blocks: ArticleBlockDraft[]) {
+  return Boolean(
+    form.title.trim()
+    || form.slug.trim()
+    || form.subtitle.trim()
+    || form.excerpt.trim()
+    || form.tags.trim()
+    || blocks.length > 0,
+  );
+}
+
+function articleDraftTags(value: string) {
+  return value.split(",").map((tag) => tag.trim()).filter(Boolean);
+}
+
+function articleDraftPlainText(block: ArticleBlockDraft) {
+  const content = block.contentJson && typeof block.contentJson === "object" && !Array.isArray(block.contentJson)
+    ? block.contentJson as Record<string, unknown>
+    : {};
+
+  if (block.type === "list" && Array.isArray(content.items)) {
+    return content.items.filter((item): item is string => typeof item === "string").join(" ");
+  }
+
+  if (block.type === "code") return String(content.code ?? "");
+  if (block.type === "heading" || block.type === "paragraph" || block.type === "quote" || block.type === "callout") {
+    return [content.title, content.text, content.source].filter((item) => typeof item === "string").join(" ");
+  }
+
+  return "";
+}
+
+function estimateArticleReadingTime(form: ArticleEditorForm, blocks: ArticleBlockDraft[]) {
+  const text = [
+    form.title,
+    form.subtitle,
+    form.excerpt,
+    ...blocks.map(articleDraftPlainText),
+  ].join(" ");
+  const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(wordCount / 220));
+}
+
+function publicArticleBlocksFromDraft(blocks: ArticleBlockDraft[]): PublicArticleBlock[] {
+  return blocks.map((block, index) => ({
+    id: block.id || `preview-block-${index}`,
+    type: block.type,
+    contentJson: block.contentJson,
+    sortOrder: index,
+  }));
+}
+
+function serializeArticleDraftPayload(draft: Omit<ArticleLocalDraft, "savedAt">) {
+  return JSON.stringify(draft);
+}
 
 type AdminSelectOption = {
   value: string;
@@ -1575,6 +1642,9 @@ export function Admin() {
   const [articleGeneratorOpen, setArticleGeneratorOpen] = useState(false);
   const [articleGeneratorForm, setArticleGeneratorForm] = useState<ArticleGeneratorForm>(emptyArticleGeneratorForm);
   const [articleBlocks, setArticleBlocks] = useState<ArticleBlockDraft[]>([]);
+  const [articleLocalDraft, setArticleLocalDraft] = useState<ArticleLocalDraft | null>(null);
+  const [articleAutosaveNotice, setArticleAutosaveNotice] = useState<string | null>(null);
+  const [articlePreviewMode, setArticlePreviewMode] = useState<ArticlePreviewMode>("reader");
   const [editingBlockIdx, setEditingBlockIdx] = useState<number | null>(null);
   const [addingBlockType, setAddingBlockType] = useState<string | null>(null);
   const [insertAfterBlockIdx, setInsertAfterBlockIdx] = useState<number | null>(null);
@@ -1587,6 +1657,11 @@ export function Admin() {
   const [backupFile, setBackupFile] = useState<File | null>(null);
   const [backupPreview, setBackupPreview] = useState<AdminBackupSummary | null>(null);
   const [backupImporting, setBackupImporting] = useState(false);
+  const articleEditorBaselineRef = useRef(serializeArticleDraftPayload({
+    editingArticleId: null,
+    articleForm: emptyArticleForm,
+    articleBlocks: [],
+  }));
   const imageMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("image/")), [mediaAssets]);
   const audioMediaAssets = useMemo(() => mediaAssets.filter((asset) => asset.mimeType.startsWith("audio/")), [mediaAssets]);
   const filteredImageMediaAssets = useMemo(
@@ -1611,6 +1686,10 @@ export function Admin() {
     [filteredAudioMediaAssets],
   );
   const mediaById = useMemo(() => new Map(mediaAssets.map((asset) => [asset.id, asset])), [mediaAssets]);
+  const articlePreviewBlocks = useMemo(() => publicArticleBlocksFromDraft(articleBlocks), [articleBlocks]);
+  const articlePreviewTags = useMemo(() => articleDraftTags(articleForm.tags), [articleForm.tags]);
+  const articlePreviewCover = articleForm.coverAssetId ? mediaById.get(articleForm.coverAssetId) : undefined;
+  const articlePreviewReadingTime = useMemo(() => estimateArticleReadingTime(articleForm, articleBlocks), [articleBlocks, articleForm]);
   const projectCategoryOptions = useMemo(
     () => categoryOptionsFor(categories, "project", fallbackProjectCategories, projectForm.category),
     [categories, projectForm.category],
@@ -1675,6 +1754,45 @@ export function Admin() {
       resetPageBlockForm();
     }
   }, [editingPageBlockId, selectedSectionSupportsCards]);
+
+  useEffect(() => {
+    const rawDraft = window.localStorage.getItem(articleAutosaveKey);
+    if (!rawDraft) return;
+
+    try {
+      const draft = JSON.parse(rawDraft) as ArticleLocalDraft;
+      if (draft?.articleForm && Array.isArray(draft.articleBlocks) && draft.savedAt) {
+        setArticleLocalDraft(draft);
+      }
+    } catch {
+      window.localStorage.removeItem(articleAutosaveKey);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "articles") return;
+    if (!hasArticleDraftContent(articleForm, articleBlocks)) return;
+
+    const payload = {
+      editingArticleId,
+      articleForm,
+      articleBlocks,
+    };
+    const serializedPayload = serializeArticleDraftPayload(payload);
+    if (serializedPayload === articleEditorBaselineRef.current) return;
+
+    const timeout = window.setTimeout(() => {
+      const draft: ArticleLocalDraft = {
+        ...payload,
+        savedAt: new Date().toISOString(),
+      };
+      window.localStorage.setItem(articleAutosaveKey, JSON.stringify(draft));
+      setArticleLocalDraft(draft);
+      setArticleAutosaveNotice(`Local draft saved ${formatAuditDate(draft.savedAt)}`);
+    }, 800);
+
+    return () => window.clearTimeout(timeout);
+  }, [activeTab, articleBlocks, articleForm, editingArticleId]);
 
   function handleSaveGallerySelection(selectedIds: string[]) {
     if (mediaPickerTarget === "projectGallery") {
@@ -2326,6 +2444,34 @@ export function Admin() {
 
   // ─── Article Handlers ──────────────────────────────────────────────────────
 
+  function setArticleEditorBaseline(editingId: string | null, form: ArticleEditorForm, blocks: ArticleBlockDraft[]) {
+    articleEditorBaselineRef.current = serializeArticleDraftPayload({
+      editingArticleId: editingId,
+      articleForm: form,
+      articleBlocks: blocks,
+    });
+  }
+
+  function clearArticleLocalDraft() {
+    window.localStorage.removeItem(articleAutosaveKey);
+    setArticleLocalDraft(null);
+    setArticleAutosaveNotice(null);
+  }
+
+  function restoreArticleLocalDraft() {
+    if (!articleLocalDraft) return;
+    setActiveTab("articles");
+    setEditingArticleId(articleLocalDraft.editingArticleId);
+    setArticleForm(articleLocalDraft.articleForm);
+    setArticleBlocks(articleLocalDraft.articleBlocks);
+    setEditingBlockIdx(null);
+    setAddingBlockType(null);
+    setInsertAfterBlockIdx(null);
+    setBlockDraftForm({});
+    setArticleAutosaveNotice(`Local draft restored from ${formatAuditDate(articleLocalDraft.savedAt)}`);
+    setArticleEditorBaseline(articleLocalDraft.editingArticleId, articleLocalDraft.articleForm, articleLocalDraft.articleBlocks);
+  }
+
   function resetArticleForm() {
     setArticleForm(emptyArticleForm);
     setArticleBlocks([]);
@@ -2334,12 +2480,11 @@ export function Admin() {
     setAddingBlockType(null);
     setInsertAfterBlockIdx(null);
     setBlockDraftForm({});
+    setArticleEditorBaseline(null, emptyArticleForm, []);
   }
 
   function editArticle(article: AdminArticle) {
-    setActiveTab("articles");
-    setEditingArticleId(article.id);
-    setArticleForm({
+    const nextForm = {
       title: article.title,
       slug: article.slug,
       subtitle: article.subtitle ?? "",
@@ -2354,19 +2499,23 @@ export function Admin() {
       authorName: article.author.name,
       authorRole: article.author.role ?? "",
       tags: article.tags.join(", "),
-    });
-    setArticleBlocks(
-      article.blocks.map((b) => ({
-        id: b.id || `local-${Math.random()}`,
-        type: b.type,
-        contentJson: (b.contentJson && typeof b.contentJson === "object" && !Array.isArray(b.contentJson))
-          ? (b.contentJson as Record<string, unknown>)
-          : {},
-      })),
-    );
+    };
+    const nextBlocks = article.blocks.map((b) => ({
+      id: b.id || `local-${Math.random()}`,
+      type: b.type,
+      contentJson: (b.contentJson && typeof b.contentJson === "object" && !Array.isArray(b.contentJson))
+        ? (b.contentJson as Record<string, unknown>)
+        : {},
+    }));
+
+    setActiveTab("articles");
+    setEditingArticleId(article.id);
+    setArticleForm(nextForm);
+    setArticleBlocks(nextBlocks);
     setEditingBlockIdx(null);
     setAddingBlockType(null);
     setInsertAfterBlockIdx(null);
+    setArticleEditorBaseline(article.id, nextForm, nextBlocks);
   }
 
   async function saveArticle(keepEditing = false) {
@@ -2410,6 +2559,7 @@ export function Admin() {
       if (!keepEditing) {
         resetArticleForm();
       }
+      clearArticleLocalDraft();
       await loadAdminData();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to save article.");
@@ -4355,6 +4505,29 @@ export function Admin() {
               </div>
             </div>
 
+            {articleLocalDraft ? (
+              <div className="article-local-draft">
+                <div>
+                  <strong>Local draft available</strong>
+                  <span>
+                    Saved {formatAuditDate(articleLocalDraft.savedAt)}
+                    {articleLocalDraft.articleForm.title ? ` · ${articleLocalDraft.articleForm.title}` : ""}
+                  </span>
+                  {articleAutosaveNotice ? <span>{articleAutosaveNotice}</span> : null}
+                </div>
+                <div className="admin-row-actions">
+                  <button className="btn compact" type="button" onClick={restoreArticleLocalDraft}>
+                    <History size={14} /> Restore
+                  </button>
+                  <button className="icon-btn" type="button" aria-label="Discard local article draft" onClick={clearArticleLocalDraft}>
+                    <X size={14} />
+                  </button>
+                </div>
+              </div>
+            ) : articleAutosaveNotice ? (
+              <p className="admin-help">{articleAutosaveNotice}</p>
+            ) : null}
+
             <form className="admin-form" onSubmit={handleSaveArticle} id="article-form">
               <label>
                 Title
@@ -4615,6 +4788,63 @@ export function Admin() {
                 </button>
               </div>
             </form>
+          </Card>
+
+          <Card className="admin-card-article-preview">
+            <div className="admin-card-head">
+              <div>
+                <h3>Article Sandbox</h3>
+                <p className="admin-help">Live preview from the current editor draft. Save only when it feels right.</p>
+              </div>
+              <div className="admin-row-actions">
+                {(["reader", "desktop", "mobile"] as ArticlePreviewMode[]).map((mode) => (
+                  <button
+                    key={mode}
+                    className={`btn compact${articlePreviewMode === mode ? " is-active" : ""}`}
+                    type="button"
+                    onClick={() => setArticlePreviewMode(mode)}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className={`article-preview-frame mode-${articlePreviewMode}`}>
+              <article className="article-preview-document">
+                <header className="article-preview-header">
+                  <div className="article-meta">
+                    <span className="article-badge article-badge-category">{articleForm.category || "Category"}</span>
+                    <span>{articleForm.status || "draft"}</span>
+                    <span>{articlePreviewReadingTime} min read</span>
+                  </div>
+                  <h1 className="article-title">{articleForm.title || "Untitled article"}</h1>
+                  {articleForm.subtitle ? <p className="article-subtitle">{articleForm.subtitle}</p> : null}
+                  <p className="article-preview-author">
+                    By <strong>{articleForm.authorName || "Oktavianus Samuel"}</strong>
+                    {articleForm.authorRole ? <span> · {articleForm.authorRole}</span> : null}
+                  </p>
+                </header>
+
+                {articlePreviewCover ? (
+                  <figure className="article-preview-cover">
+                    <img src={articlePreviewCover.publicUrl} alt={articlePreviewCover.altText || articleForm.title || "Article cover"} />
+                  </figure>
+                ) : null}
+
+                <ArticleContent blocks={articlePreviewBlocks} emptyCopy="Add content blocks to preview the article body." />
+
+                {articlePreviewTags.length > 0 ? (
+                  <footer className="article-footer">
+                    <div className="article-footer-tags">
+                      {articlePreviewTags.map((tag) => (
+                        <span key={tag} className="article-card-tag">{tag}</span>
+                      ))}
+                    </div>
+                  </footer>
+                ) : null}
+              </article>
+            </div>
           </Card>
 
           <Card className="admin-card-articles-list">

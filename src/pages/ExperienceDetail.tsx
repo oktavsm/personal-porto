@@ -114,7 +114,7 @@ export function ExperienceDetail() {
             <h3>What I did</h3>
             <ul>
               {experience.responsibilities.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}><FormattedText text={item} /></li>
               ))}
             </ul>
           </Card>
@@ -122,7 +122,7 @@ export function ExperienceDetail() {
             <h3>Impact</h3>
             <ul>
               {experience.impact.map((item) => (
-                <li key={item}>{item}</li>
+                <li key={item}><FormattedText text={item} /></li>
               ))}
             </ul>
           </Card>
