@@ -287,7 +287,7 @@ export function Home() {
         </div>
       </section>
 
-      <section id="who-am-i">
+      <section id="identity">
         <div className="container">
           <SectionHeader
             kicker={sectionCopy(homeSections, "ssn-route").subtitle ?? ""}
@@ -351,7 +351,7 @@ export function Home() {
         </div>
       </section>
 
-      <section id="core-values">
+      <section id="values">
         <div className="container split">
           <div>
             <div className="section-kicker">{rebuildingDirection.subtitle}</div>
