@@ -14,7 +14,7 @@ export function reorderUpdates(ids: string[]) {
 
 export async function applyReorder(
   tx: Prisma.TransactionClient,
-  model: "project" | "experience" | "certification" | "liveSystem" | "contactLink" | "musicTrack",
+  model: "project" | "experience" | "certification" | "liveSystem" | "contactLink" | "musicTrack" | "coreServerNode",
   ids: string[],
 ) {
   await Promise.all(
@@ -24,6 +24,7 @@ export async function applyReorder(
       if (model === "certification") return tx.certification.update({ where: { id }, data: { sortOrder } });
       if (model === "liveSystem") return tx.liveSystem.update({ where: { id }, data: { sortOrder } });
       if (model === "contactLink") return tx.contactLink.update({ where: { id }, data: { sortOrder } });
+      if (model === "coreServerNode") return tx.coreServerNode.update({ where: { id }, data: { sortOrder } });
       return tx.musicTrack.update({ where: { id }, data: { sortOrder } });
     }),
   );
