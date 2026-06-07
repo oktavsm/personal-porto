@@ -18,6 +18,9 @@ const DEFAULT_THEME: Record<string, string> = {
   accentSoft: "#9A968E",
   accentDim: "#3A3936",
   fontScale: "1",
+  bodyFont: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+  headingFont: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+  monoFont: "\"JetBrains Mono\", \"SFMono-Regular\", Consolas, monospace",
   articleAlign: "left",
   articleWidth: "720px",
   sectionSpacing: "96px",
@@ -42,6 +45,23 @@ const COLOR_KEYS = new Set([
 ]);
 const ENUM_KEYS: Record<string, string[]> = {
   articleAlign: ["left", "center", "right", "justify"],
+  bodyFont: [
+    "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "Georgia, \"Times New Roman\", serif",
+    "\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace",
+  ],
+  headingFont: [
+    "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+    "Georgia, \"Times New Roman\", serif",
+    "\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace",
+  ],
+  monoFont: [
+    "\"JetBrains Mono\", \"SFMono-Regular\", Consolas, monospace",
+    "\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace",
+    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace",
+  ],
 };
 const NUMBER_KEYS: Record<string, { min: number; max: number }> = {
   fontScale: { min: 0.9, max: 1.15 },

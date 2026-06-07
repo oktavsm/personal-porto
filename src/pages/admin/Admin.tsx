@@ -240,6 +240,19 @@ const textAlignOptions = [
   { value: "justify", label: "Justify" },
 ];
 
+const fontStackOptions = [
+  { value: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", label: "Inter / Clean System" },
+  { value: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif", label: "Native System" },
+  { value: "Georgia, \"Times New Roman\", serif", label: "Editorial Serif" },
+  { value: "\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace", label: "Technical Mono" },
+];
+
+const monoFontStackOptions = [
+  { value: "\"JetBrains Mono\", \"SFMono-Regular\", Consolas, monospace", label: "JetBrains Mono" },
+  { value: "\"SFMono-Regular\", Consolas, \"Liberation Mono\", monospace", label: "System Mono" },
+  { value: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", monospace", label: "UI Monospace" },
+];
+
 const themeColorKeys = [
   { key: "background", label: "Background" },
   { key: "surface", label: "Surface" },
@@ -269,6 +282,9 @@ const themeVarMap: Record<string, string> = {
   accentSoft: "--accent-soft",
   accentDim: "--accent-dim",
   fontScale: "--font-scale",
+  bodyFont: "--font-body",
+  headingFont: "--font-heading",
+  monoFont: "--font-mono",
   articleAlign: "--article-align",
   articleWidth: "--article-width",
   sectionSpacing: "--section-space",
@@ -282,6 +298,9 @@ const themeControlKeys = [
     { value: "1", label: "Default" },
     { value: "1.08", label: "Readable" },
   ] },
+  { key: "bodyFont", label: "Body Font", options: fontStackOptions },
+  { key: "headingFont", label: "Heading Font", options: fontStackOptions },
+  { key: "monoFont", label: "Code Font", options: monoFontStackOptions },
   { key: "articleAlign", label: "Article Text Align", options: textAlignOptions },
   { key: "articleWidth", label: "Article Width", options: [
     { value: "680px", label: "Focused" },
@@ -311,6 +330,8 @@ const themePresets: { label: string; values: Record<string, string> }[] = [
     label: "Tighter Reading",
     values: {
       fontScale: "0.95",
+      bodyFont: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+      headingFont: "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
       articleWidth: "680px",
       sectionSpacing: "64px",
       cardRadius: "12px",
@@ -320,6 +341,8 @@ const themePresets: { label: string; values: Record<string, string> }[] = [
     label: "Wide Article",
     values: {
       fontScale: "1.08",
+      bodyFont: "Georgia, \"Times New Roman\", serif",
+      headingFont: "Georgia, \"Times New Roman\", serif",
       articleWidth: "860px",
       sectionSpacing: "96px",
       cardRadius: "18px",
