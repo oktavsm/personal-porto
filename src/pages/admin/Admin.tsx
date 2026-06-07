@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, Download, ExternalLink, FileText, GripVertical, History, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUp, BookOpen, Check, CheckCircle, ChevronDown, Copy, Download, ExternalLink, FileText, GripVertical, History, KeyRound, LogOut, Palette, Pencil, Plus, RefreshCw, ShieldCheck, Sparkles, Star, Trash2, Upload, X } from "lucide-react";
 import { DragEvent, FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -46,7 +46,7 @@ type DeleteTarget =
   | { type: "category"; id: string; label: string }
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
-type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme" | "audit";
+type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme" | "security" | "audit";
 type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage" | "articleCover";
 
 const adminTabs: { id: AdminTab; label: string }[] = [
@@ -63,6 +63,7 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "articles", label: "Articles" },
   { id: "contexts", label: "Contexts" },
   { id: "theme", label: "Theme" },
+  { id: "security", label: "Security" },
   { id: "audit", label: "Audit" },
 ];
 
@@ -105,6 +106,12 @@ const emptyCategory = {
   description: "",
   isActive: true,
   sortOrder: 0,
+};
+
+const emptySecurityForm = {
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
 };
 
 const emptyResumeForm = {
@@ -1536,6 +1543,7 @@ export function Admin() {
   const [categoryScopeFilter, setCategoryScopeFilter] = useState<ContentCategoryScope | "">("");
   const [contextForm, setContextForm] = useState<Record<AdminContextKind, string>>(emptyContextForm);
   const [contextMode, setContextMode] = useState<Record<AdminContextKind, "append" | "override">>(emptyContextMode);
+  const [securityForm, setSecurityForm] = useState(emptySecurityForm);
   const [articleSearch, setArticleSearch] = useState("");
   const [articleStatusFilter, setArticleStatusFilter] = useState("");
   const [articles, setArticles] = useState<AdminArticle[]>([]);
@@ -1781,6 +1789,38 @@ export function Admin() {
     setArticles([]);
     setThemeData({});
     setThemeForm({});
+  }
+
+  async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (securityForm.newPassword !== securityForm.confirmPassword) {
+      setNotice("New password confirmation does not match.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      setNotice(null);
+      const activeEmail = state.user?.email;
+      if (!activeEmail) {
+        throw new Error("Authentication required");
+      }
+
+      const { user } = await adminApi.changePassword(activeEmail, securityForm.currentPassword, securityForm.newPassword);
+      setState({ user, loading: false, error: null });
+      setSecurityForm(emptySecurityForm);
+      await loadAdminData();
+      setNotice("Password updated and active admin sessions were rotated.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update password.";
+      if (message === "Authentication required" || message === "Session expired") {
+        setState({ user: null, loading: false, error: null });
+      }
+      setNotice(message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleCreateCertification(event: FormEvent<HTMLFormElement>) {
@@ -4862,6 +4902,64 @@ export function Admin() {
                 </button>
               </div>
             </form>
+          </Card>
+        </div>
+
+        <div className={`admin-grid${activeTab === "security" ? "" : " admin-hidden"}`}>
+          <Card className="admin-card-security">
+            <div className="admin-card-head">
+              <h3><KeyRound size={18} /> Admin Security</h3>
+            </div>
+            <p className="admin-muted">
+              Change the admin password from the control room. Saving rotates active sessions so old tokens stop working.
+            </p>
+            <form className="admin-form" onSubmit={handleChangePassword}>
+              <label>
+                Current Password
+                <input
+                  autoComplete="current-password"
+                  value={securityForm.currentPassword}
+                  onChange={(event) => setSecurityForm({ ...securityForm, currentPassword: event.target.value })}
+                  required
+                  type="password"
+                />
+              </label>
+              <label>
+                New Password
+                <input
+                  autoComplete="new-password"
+                  minLength={10}
+                  value={securityForm.newPassword}
+                  onChange={(event) => setSecurityForm({ ...securityForm, newPassword: event.target.value })}
+                  required
+                  type="password"
+                />
+              </label>
+              <label>
+                Confirm New Password
+                <input
+                  autoComplete="new-password"
+                  minLength={10}
+                  value={securityForm.confirmPassword}
+                  onChange={(event) => setSecurityForm({ ...securityForm, confirmPassword: event.target.value })}
+                  required
+                  type="password"
+                />
+              </label>
+              <button className="btn btn-primary" type="submit" disabled={saving}>
+                <ShieldCheck size={15} /> Update Password
+              </button>
+            </form>
+          </Card>
+          <Card className="admin-card-security">
+            <div className="admin-card-head">
+              <h3><ShieldCheck size={18} /> Session Safety</h3>
+            </div>
+            <div className="admin-security-notes">
+              <p><strong>Current account</strong>{state.user.email}</p>
+              <p><strong>Session rotation</strong>Password updates create a fresh session and revoke previous admin sessions.</p>
+              <p><strong>Audit trail</strong>Password changes are recorded in Recent Admin Activity without storing secret values.</p>
+            </div>
           </Card>
         </div>
 

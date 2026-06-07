@@ -38,16 +38,32 @@ export async function revokeSession(token?: string) {
   await prisma.session.deleteMany({ where: { tokenHash: hashToken(token) } });
 }
 
+export async function revokeSessions(tokens: string[]) {
+  const tokenHashes = [...new Set(tokens.filter(Boolean).map((token) => hashToken(token)))];
+  if (tokenHashes.length === 0) return;
+  await prisma.session.deleteMany({ where: { tokenHash: { in: tokenHashes } } });
+}
+
 export function getSessionToken(request: FastifyRequest) {
-  const cookieToken = request.cookies[cookieName];
-  if (cookieToken) return cookieToken;
+  return getSessionTokens(request)[0];
+}
 
+export function getSessionTokens(request: FastifyRequest) {
+  const tokens: string[] = [];
   const authorization = request.headers.authorization;
-  if (!authorization) return undefined;
+  if (authorization) {
+    const [scheme, token] = authorization.split(" ");
+    if (scheme?.toLowerCase() === "bearer" && token) {
+      tokens.push(token);
+    }
+  }
 
-  const [scheme, token] = authorization.split(" ");
-  if (scheme?.toLowerCase() !== "bearer" || !token) return undefined;
-  return token;
+  const cookieToken = request.cookies[cookieName];
+  if (cookieToken) {
+    tokens.push(cookieToken);
+  }
+
+  return [...new Set(tokens)];
 }
 
 export function setSessionCookie(reply: FastifyReply, token: string, expiresAt: Date) {
@@ -68,26 +84,31 @@ export function clearSessionCookie(reply: FastifyReply) {
 }
 
 export async function requireAdmin(request: FastifyRequest, reply: FastifyReply) {
-  const token = getSessionToken(request);
+  const tokens = getSessionTokens(request);
 
-  if (!token) {
+  if (tokens.length === 0) {
     return reply.code(401).send({ message: "Authentication required" });
   }
 
-  const session = await prisma.session.findUnique({
-    where: { tokenHash: hashToken(token) },
-    include: { user: true },
-  });
+  for (const token of tokens) {
+    const session = await prisma.session.findUnique({
+      where: { tokenHash: hashToken(token) },
+      include: { user: true },
+    });
 
-  if (!session || session.expiresAt < new Date()) {
-    if (session) {
+    if (!session) continue;
+
+    if (session.expiresAt < new Date()) {
       await prisma.session.delete({ where: { id: session.id } });
+      continue;
     }
-    clearSessionCookie(reply);
-    return reply.code(401).send({ message: "Session expired" });
+
+    request.adminUser = session.user;
+    return;
   }
 
-  request.adminUser = session.user;
+  clearSessionCookie(reply);
+  return reply.code(401).send({ message: "Session expired" });
 }
 
 export async function authPlugin(app: FastifyInstance) {

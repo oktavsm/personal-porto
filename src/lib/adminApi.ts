@@ -6,6 +6,12 @@ type StoredSession = {
   expiresAt: string;
 };
 
+type AuthSessionResponse = {
+  sessionToken: string;
+  sessionExpiresAt: string;
+  user: AdminUser;
+};
+
 function readStoredSession() {
   const raw = window.localStorage.getItem(sessionStorageKey);
   if (!raw) return null;
@@ -410,9 +416,17 @@ export const adminApi = {
   health: () => request<{ ok: boolean; service: string; time: string }>("/api/health"),
   me: () => request<{ user: AdminUser }>("/api/admin/me"),
   login: async (email: string, password: string) => {
-    const response = await request<{ sessionToken: string; sessionExpiresAt: string; user: AdminUser }>("/api/admin/auth/login", {
+    const response = await request<AuthSessionResponse>("/api/admin/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+    storeSession(response.sessionToken, response.sessionExpiresAt);
+    return { user: response.user };
+  },
+  changePassword: async (email: string, currentPassword: string, newPassword: string) => {
+    const response = await request<AuthSessionResponse>("/api/admin/auth/password", {
+      method: "PATCH",
+      body: JSON.stringify({ email, currentPassword, newPassword }),
     });
     storeSession(response.sessionToken, response.sessionExpiresAt);
     return { user: response.user };
