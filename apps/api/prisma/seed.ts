@@ -164,15 +164,17 @@ async function main() {
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (adminEmail && adminPassword) {
-    await prisma.user.upsert({
-      where: { email: adminEmail.toLowerCase() },
-      update: {},
-      create: {
-        email: adminEmail.toLowerCase(),
-        passwordHash: await hashPassword(adminPassword),
-        name: "Oktavianus Samuel",
-      },
-    });
+    const adminCount = await prisma.user.count({ where: { role: "admin" } });
+    if (adminCount === 0) {
+      await prisma.user.create({
+        data: {
+          email: adminEmail.toLowerCase(),
+          passwordHash: await hashPassword(adminPassword),
+          name: "Oktavianus Samuel",
+          role: "admin",
+        },
+      });
+    }
   }
 
   await seedContentCategories();
