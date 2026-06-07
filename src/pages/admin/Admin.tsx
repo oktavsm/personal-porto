@@ -293,6 +293,8 @@ const themeVarMap: Record<string, string> = {
   sectionSpacing: "--section-space",
   cardRadius: "--card-radius",
   buttonRadius: "--button-radius",
+  heroGlowOpacity: "--hero-glow-opacity",
+  heroGlowPosition: "--hero-glow-pos",
 };
 
 const themeControlKeys = [
@@ -324,6 +326,20 @@ const themeControlKeys = [
     { value: "12px", label: "Soft Rectangle" },
     { value: "24px", label: "Rounded" },
     { value: "999px", label: "Pill" },
+  ] },
+  { key: "heroGlowOpacity", label: "Hero Glow Intensity", options: [
+    { value: "0", label: "Off (Dark — default)" },
+    { value: "0.18", label: "Subtle" },
+    { value: "0.42", label: "Moderate" },
+    { value: "0.72", label: "Strong" },
+    { value: "1", label: "Full" },
+  ] },
+  { key: "heroGlowPosition", label: "Hero Glow Position", options: [
+    { value: "-20%", label: "Above viewport" },
+    { value: "-12%", label: "Near top (default)" },
+    { value: "0%", label: "Top edge" },
+    { value: "15%", label: "Upper quarter" },
+    { value: "30%", label: "Mid-upper" },
   ] },
 ];
 

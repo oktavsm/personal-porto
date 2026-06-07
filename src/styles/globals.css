@@ -35,6 +35,9 @@
   --article-width: 720px;
   --section-space: 96px;
   --max: 1120px;
+  /* Hero background glow: 0 = off (dark), 1 = full glow */
+  --hero-glow-opacity: 0;
+  --hero-glow-pos: -12%;
 }
 
 * {
@@ -68,8 +71,6 @@ body {
   font-family: var(--font-body);
   font-size: calc(16px * var(--font-scale));
   background:
-    radial-gradient(circle at 82% -12%, var(--accent-wash), transparent 34%),
-    radial-gradient(circle at 7% 8%, color-mix(in srgb, var(--accent-soft) 8%, transparent), transparent 28%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 42%, var(--bg) 100%),
     var(--bg);
   color: var(--text);
@@ -77,6 +78,20 @@ body {
   overflow-x: hidden;
   overscroll-behavior-y: contain;
   cursor: none;
+}
+
+/* Hero glow layer — opacity controlled by --hero-glow-opacity (0 = off, 1 = full) */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+  opacity: var(--hero-glow-opacity);
+  background:
+    radial-gradient(circle at 82% var(--hero-glow-pos), var(--accent-wash), transparent 34%),
+    radial-gradient(circle at 7% 8%, color-mix(in srgb, var(--accent-soft) 8%, transparent), transparent 28%);
+  transition: opacity 0.4s ease;
 }
 
 body.is-embedded {

@@ -25,6 +25,8 @@ const themeVarMap: Record<string, string> = {
   sectionSpacing: "--section-space",
   cardRadius: "--card-radius",
   buttonRadius: "--button-radius",
+  heroGlowOpacity: "--hero-glow-opacity",
+  heroGlowPosition: "--hero-glow-pos",
 };
 
 async function applyTheme() {

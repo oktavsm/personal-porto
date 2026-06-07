@@ -26,6 +26,9 @@ const DEFAULT_THEME: Record<string, string> = {
   sectionSpacing: "96px",
   cardRadius: "18px",
   buttonRadius: "999px",
+  // Hero background glow effect tokens
+  heroGlowOpacity: "0",    // 0 = off (dark default), 1 = full glow
+  heroGlowPosition: "-12%", // vertical position of the radial glow
 };
 
 const ALLOWED_KEYS = new Set(Object.keys(DEFAULT_THEME));
@@ -65,12 +68,16 @@ const ENUM_KEYS: Record<string, string[]> = {
 };
 const NUMBER_KEYS: Record<string, { min: number; max: number }> = {
   fontScale: { min: 0.9, max: 1.15 },
+  heroGlowOpacity: { min: 0, max: 1 },
 };
 const LENGTH_KEYS: Record<string, { min: number; max: number; unit: "px" }> = {
   articleWidth: { min: 620, max: 980, unit: "px" },
   sectionSpacing: { min: 48, max: 128, unit: "px" },
   cardRadius: { min: 8, max: 28, unit: "px" },
   buttonRadius: { min: 8, max: 999, unit: "px" },
+};
+const PERCENT_ENUM_KEYS: Record<string, string[]> = {
+  heroGlowPosition: ["-20%", "-12%", "0%", "15%", "30%"],
 };
 
 function isValidHex(value: string): boolean {
@@ -88,11 +95,16 @@ function normalizeThemeValue(key: string, value: unknown): string | null {
     return ENUM_KEYS[key].includes(cleanValue) ? cleanValue : null;
   }
 
+  if (PERCENT_ENUM_KEYS[key]) {
+    return PERCENT_ENUM_KEYS[key].includes(cleanValue) ? cleanValue : null;
+  }
+
   if (NUMBER_KEYS[key]) {
     const parsed = Number(cleanValue);
     const rule = NUMBER_KEYS[key];
     if (!Number.isFinite(parsed) || parsed < rule.min || parsed > rule.max) return null;
-    return parsed.toString();
+    // Preserve up to 2 decimal places for opacity values
+    return parseFloat(parsed.toFixed(2)).toString();
   }
 
   if (LENGTH_KEYS[key]) {
