@@ -1680,7 +1680,7 @@ li + li {
   padding: 168px 0 120px;
   margin-top: -72px;
   background:
-    radial-gradient(circle at 20% 18%, rgba(216, 211, 200, 0.055), transparent 34%),
+    radial-gradient(circle at 20% 18%, rgba(216, 211, 200, 0.015), transparent 75%),
     linear-gradient(180deg, transparent 0%, rgba(242, 238, 232, 0.012) 22%, rgba(242, 238, 232, 0.018) 52%, transparent 100%);
   overflow: hidden;
 }
@@ -1691,7 +1691,7 @@ li + li {
   inset: 0 0 auto;
   height: 150px;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 3%, transparent), transparent);
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 1.5%, transparent), transparent);
 }
 
 .music-grid {

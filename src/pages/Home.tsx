@@ -491,9 +491,9 @@ export function Home() {
 
       <CoreServerMap />
 
-      <PortfolioExplorer />
-
       <HomeMusicSection />
+
+      <PortfolioExplorer />
 
       <section className="closing-section">
         <div className="container">
