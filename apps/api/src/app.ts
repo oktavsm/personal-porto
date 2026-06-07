@@ -13,6 +13,7 @@ import { authRoutes } from "./routes/auth.js";
 import { categoryRoutes } from "./routes/categories.js";
 import { certificationRoutes } from "./routes/certifications.js";
 import { contactRoutes } from "./routes/contact.js";
+import { coreServerNodeRoutes } from "./routes/coreServerNodes.js";
 import { exportRoutes } from "./routes/export.js";
 import { experienceRoutes } from "./routes/experiences.js";
 import { healthRoutes } from "./routes/health.js";
@@ -76,6 +77,7 @@ export async function buildApp() {
   await app.register(categoryRoutes);
   await app.register(musicRoutes);
   await app.register(pageRoutes);
+  await app.register(coreServerNodeRoutes);
   await app.register(portfolioContextRoutes);
   await app.register(articleRoutes);
   await app.register(themeRoutes);

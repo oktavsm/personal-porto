@@ -2333,6 +2333,7 @@ body.is-embedded .chat-panel {
 .admin-page[data-admin-tab="resume-media"] .admin-grid > .card:not(.admin-card-resume-media),
 .admin-page[data-admin-tab="certifications"] .admin-grid > .card:not(.admin-card-certifications),
 .admin-page[data-admin-tab="systems"] .admin-grid > .card:not(.admin-card-systems),
+.admin-page[data-admin-tab="core-nodes"] .admin-grid > .card:not(.admin-card-core-nodes),
 .admin-page[data-admin-tab="contacts"] .admin-grid > .card:not(.admin-card-contacts),
 .admin-page[data-admin-tab="categories"] .admin-grid > .card:not(.admin-card-categories),
 .admin-page[data-admin-tab="pages"] .admin-grid > .card:not(.admin-card-pages),

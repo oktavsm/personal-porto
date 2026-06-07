@@ -12,6 +12,7 @@ import {
   type AdminContexts,
   type AdminContextKind,
   type AdminContentCategory,
+  type AdminCoreServerNode,
   type AdminExperience,
   type AdminLiveSystem,
   type AdminMediaAsset,
@@ -46,9 +47,10 @@ type DeleteTarget =
   | { type: "music"; id: string; label: string }
   | { type: "article"; id: string; label: string }
   | { type: "category"; id: string; label: string }
+  | { type: "coreNode"; id: string; label: string }
   | { type: "pageBlock"; id: string; label: string; pageSlug: string; sectionKey: string };
 
-type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme" | "security" | "audit";
+type AdminTab = "overview" | "projects" | "experiences" | "music" | "resume-media" | "certifications" | "systems" | "core-nodes" | "contacts" | "categories" | "pages" | "articles" | "contexts" | "theme" | "security" | "audit";
 type MediaPickerTarget = "projectGallery" | "experienceGallery" | "pageBlockImage" | "pageSectionImage" | "articleCover";
 type ArticlePreviewMode = "reader" | "desktop" | "mobile";
 
@@ -60,6 +62,7 @@ const adminTabs: { id: AdminTab; label: string }[] = [
   { id: "resume-media", label: "Resume & Media" },
   { id: "certifications", label: "Certifications" },
   { id: "systems", label: "Systems" },
+  { id: "core-nodes", label: "Core Nodes" },
   { id: "contacts", label: "Contacts" },
   { id: "categories", label: "Categories" },
   { id: "pages", label: "Pages" },
@@ -91,6 +94,16 @@ const emptySystem = {
   isEmbeddable: true,
   isPublished: true,
   sortOrder: 0,
+};
+
+const emptyCoreNode = {
+  label: "",
+  description: "",
+  href: "",
+  positionX: 50,
+  positionY: 50,
+  sortOrder: 0,
+  isPublished: true,
 };
 
 const emptyContact = {
@@ -1598,6 +1611,7 @@ export function Admin() {
   const [password, setPassword] = useState("");
   const [certifications, setCertifications] = useState<AdminCertification[]>([]);
   const [systems, setSystems] = useState<AdminLiveSystem[]>([]);
+  const [coreNodes, setCoreNodes] = useState<AdminCoreServerNode[]>([]);
   const [contacts, setContacts] = useState<AdminContactLink[]>([]);
   const [mediaAssets, setMediaAssets] = useState<AdminMediaAsset[]>([]);
   const [resumeVersions, setResumeVersions] = useState<AdminResumeVersion[]>([]);
@@ -1610,6 +1624,7 @@ export function Admin() {
   const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>([]);
   const [certForm, setCertForm] = useState(emptyCertification);
   const [systemForm, setSystemForm] = useState(emptySystem);
+  const [coreNodeForm, setCoreNodeForm] = useState(emptyCoreNode);
   const [contactForm, setContactForm] = useState(emptyContact);
   const [categoryForm, setCategoryForm] = useState(emptyCategory);
   const [resumeForm, setResumeForm] = useState(emptyResumeForm);
@@ -1624,6 +1639,7 @@ export function Admin() {
   const [editingMediaId, setEditingMediaId] = useState<string | null>(null);
   const [editingCertificationId, setEditingCertificationId] = useState<string | null>(null);
   const [editingSystemId, setEditingSystemId] = useState<string | null>(null);
+  const [editingCoreNodeId, setEditingCoreNodeId] = useState<string | null>(null);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -1644,6 +1660,7 @@ export function Admin() {
   const [resumeSearch, setResumeSearch] = useState("");
   const [certificationSearch, setCertificationSearch] = useState("");
   const [systemSearch, setSystemSearch] = useState("");
+  const [coreNodeSearch, setCoreNodeSearch] = useState("");
   const [contactSearch, setContactSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [categoryScopeFilter, setCategoryScopeFilter] = useState<ContentCategoryScope | "">("");
@@ -1744,6 +1761,10 @@ export function Admin() {
   const filteredSystems = useMemo(
     () => systems.filter((system) => matchesSearch(systemSearch, [system.title, system.description, system.url, system.embedUrl, system.isPublished, system.isEmbeddable])),
     [systems, systemSearch],
+  );
+  const filteredCoreNodes = useMemo(
+    () => coreNodes.filter((node) => matchesSearch(coreNodeSearch, [node.label, node.description, node.href, node.isPublished])),
+    [coreNodes, coreNodeSearch],
   );
   const filteredContacts = useMemo(
     () => contacts.filter((contact) => matchesSearch(contactSearch, [contact.type, contact.label, contact.value, contact.url, contact.isPrimary])),
@@ -1850,9 +1871,10 @@ export function Admin() {
   }
 
   async function loadAdminData() {
-    const [certificationResponse, systemResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse, contextResponse, auditResponse] = await Promise.allSettled([
+    const [certificationResponse, systemResponse, coreNodeResponse, contactResponse, categoryResponse, mediaResponse, resumeResponse, projectResponse, experienceResponse, musicResponse, pagesResponse, articlesResponse, themeResponse, contextResponse, auditResponse] = await Promise.allSettled([
       adminApi.certifications(),
       adminApi.systems(),
+      adminApi.coreNodes(),
       adminApi.contact(),
       adminApi.categories(),
       adminApi.media(),
@@ -1869,6 +1891,7 @@ export function Admin() {
 
     if (certificationResponse.status === "fulfilled") setCertifications(certificationResponse.value.data);
     if (systemResponse.status === "fulfilled") setSystems(systemResponse.value.data);
+    if (coreNodeResponse.status === "fulfilled") setCoreNodes(coreNodeResponse.value.data);
     if (contactResponse.status === "fulfilled") setContacts(contactResponse.value.data);
     if (categoryResponse.status === "fulfilled") setCategories(categoryResponse.value.data);
     if (mediaResponse.status === "fulfilled") setMediaAssets(mediaResponse.value.data);
@@ -2021,6 +2044,27 @@ export function Admin() {
       setEditingSystemId(null);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to save live system.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleCreateCoreNode(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    try {
+      setNotice(null);
+      if (editingCoreNodeId) {
+        await adminApi.updateCoreNode(editingCoreNodeId, coreNodeForm);
+      } else {
+        await adminApi.createCoreNode(coreNodeForm);
+      }
+      resetCoreNodeForm();
+      await loadAdminData();
+      setNotice(editingCoreNodeId ? "Core node updated." : "Core node added.");
+      setEditingCoreNodeId(null);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to save core node.");
     } finally {
       setSaving(false);
     }
@@ -2411,7 +2455,28 @@ export function Admin() {
       await loadAdminData();
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Failed to reorder systems.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleReorderCoreNodes(id: string, direction: "up" | "down") {
+    const currentIndex = coreNodes.findIndex((item) => item.id === id);
+    if (currentIndex === -1) return;
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= coreNodes.length) return;
+
+    const newOrder = [...coreNodes];
+    const [movedItem] = newOrder.splice(currentIndex, 1);
+    newOrder.splice(newIndex, 0, movedItem);
+
+    setCoreNodes(newOrder);
+    setSaving(true);
+    try {
+      await adminApi.reorderCoreNodes({ ids: newOrder.map((item) => item.id) });
       await loadAdminData();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Failed to reorder core nodes.");
     } finally {
       setSaving(false);
     }
@@ -2932,6 +2997,11 @@ export function Admin() {
     setEditingMusicId(null);
   }
 
+  function resetCoreNodeForm() {
+    setCoreNodeForm(emptyCoreNode);
+    setEditingCoreNodeId(null);
+  }
+
   function resetPageSectionForm() {
     setPageSectionForm(emptyPageSection);
     setEditingPageSectionKey(null);
@@ -2969,6 +3039,20 @@ export function Admin() {
       isEmbeddable: system.isEmbeddable,
       isPublished: system.isPublished,
       sortOrder: system.sortOrder,
+    });
+  }
+
+  function editCoreNode(node: AdminCoreServerNode) {
+    setActiveTab("core-nodes");
+    setEditingCoreNodeId(node.id);
+    setCoreNodeForm({
+      label: node.label,
+      description: node.description,
+      href: node.href,
+      positionX: node.positionX,
+      positionY: node.positionY,
+      sortOrder: node.sortOrder,
+      isPublished: node.isPublished,
     });
   }
 
@@ -3109,6 +3193,7 @@ export function Admin() {
     try {
       if (deleteTarget.type === "certification") await adminApi.deleteCertification(deleteTarget.id);
       if (deleteTarget.type === "system") await adminApi.deleteSystem(deleteTarget.id);
+      if (deleteTarget.type === "coreNode") await adminApi.deleteCoreNode(deleteTarget.id);
       if (deleteTarget.type === "contact") await adminApi.deleteContact(deleteTarget.id);
       if (deleteTarget.type === "media") await adminApi.deleteMedia(deleteTarget.id);
       if (deleteTarget.type === "project") await adminApi.deleteProject(deleteTarget.id);
@@ -4037,6 +4122,95 @@ export function Admin() {
                 );
               })}
               {filteredSystems.length === 0 ? <p className="admin-empty">No live systems matched this search.</p> : null}
+            </div>
+          </Card>
+
+          <Card className="admin-card-core-nodes">
+            <div className="admin-card-head">
+              <h3>{editingCoreNodeId ? "Edit core node" : "New core node"}</h3>
+              {editingCoreNodeId ? (
+                <button className="icon-btn" type="button" aria-label="Cancel core node edit" onClick={resetCoreNodeForm}>
+                  <X size={15} />
+                </button>
+              ) : null}
+            </div>
+            <form className="admin-form" onSubmit={handleCreateCoreNode}>
+              <label>
+                Label
+                <input value={coreNodeForm.label} onChange={(event) => setCoreNodeForm({ ...coreNodeForm, label: event.target.value })} required />
+              </label>
+              <label>
+                Description
+                <textarea value={coreNodeForm.description} onChange={(event) => setCoreNodeForm({ ...coreNodeForm, description: event.target.value })} required />
+              </label>
+              <label>
+                Href
+                <input value={coreNodeForm.href} onChange={(event) => setCoreNodeForm({ ...coreNodeForm, href: event.target.value })} required />
+              </label>
+              <div className="admin-form-pair">
+                <label>
+                  Position X (%)
+                  <input value={coreNodeForm.positionX} onChange={(event) => setCoreNodeForm({ ...coreNodeForm, positionX: Number(event.target.value) })} type="number" step="0.1" required />
+                </label>
+                <label>
+                  Position Y (%)
+                  <input value={coreNodeForm.positionY} onChange={(event) => setCoreNodeForm({ ...coreNodeForm, positionY: Number(event.target.value) })} type="number" step="0.1" required />
+                </label>
+              </div>
+              <label>
+                Display Order
+                <input value={coreNodeForm.sortOrder} onChange={(event) => setCoreNodeForm({ ...coreNodeForm, sortOrder: Number(event.target.value) })} type="number" />
+              </label>
+              <label className="admin-check">
+                <input checked={coreNodeForm.isPublished} onChange={(event) => setCoreNodeForm({ ...coreNodeForm, isPublished: event.target.checked })} type="checkbox" />
+                Published
+              </label>
+              <button className="btn btn-primary" type="submit" disabled={saving}>
+                <Plus size={16} /> {editingCoreNodeId ? "Update Core Node" : "Add Core Node"}
+              </button>
+            </form>
+          </Card>
+
+          <Card className="admin-card-core-nodes">
+            <h3>Core nodes</h3>
+            <AdminListTools
+              label="Search core nodes"
+              value={coreNodeSearch}
+              placeholder="Label, description, or href"
+              count={filteredCoreNodes.length}
+              total={coreNodes.length}
+              onChange={setCoreNodeSearch}
+            />
+            <div className="admin-list">
+              {filteredCoreNodes.map((node) => {
+                const nodeIndex = coreNodes.findIndex((item) => item.id === node.id);
+                return (
+                  <div className="admin-list-item" key={node.id}>
+                    <div>
+                      <strong>{node.label}</strong>
+                      <span>{node.href} · X: {node.positionX} Y: {node.positionY}</span>
+                      <div className="admin-badges">
+                        <span className={`admin-badge${node.isPublished ? "" : " is-muted"}`}>{node.isPublished ? "Published" : "Draft"}</span>
+                      </div>
+                    </div>
+                    <div className="admin-row-actions">
+                      <button className="icon-btn" type="button" aria-label={`Move ${node.label} up`} onClick={() => void handleReorderCoreNodes(node.id, "up")} disabled={nodeIndex === 0 || saving}>
+                        <ArrowUp size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Move ${node.label} down`} onClick={() => void handleReorderCoreNodes(node.id, "down")} disabled={nodeIndex === coreNodes.length - 1 || saving}>
+                        <ArrowDown size={15} />
+                      </button>
+                      <button className="icon-btn" type="button" aria-label={`Edit ${node.label}`} onClick={() => editCoreNode(node)}>
+                        <Pencil size={15} />
+                      </button>
+                      <button className="icon-btn danger" type="button" aria-label={`Delete ${node.label}`} onClick={() => setDeleteTarget({ type: "coreNode", id: node.id, label: node.label })}>
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredCoreNodes.length === 0 ? <p className="admin-empty">No core nodes matched this search.</p> : null}
             </div>
           </Card>
 

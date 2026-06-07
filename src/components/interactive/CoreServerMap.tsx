@@ -1,12 +1,32 @@
 import { ArrowRight, Server } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { coreServerNodes } from "../../data/coreServerNodes";
+import { coreServerNodes as fallbackNodes, type CoreServerNode } from "../../data/coreServerNodes";
+import { publicApi } from "../../lib/publicApi";
 import { ServerVisual } from "../ServerVisual";
 
 export function CoreServerMap() {
-  const [activeNodeId, setActiveNodeId] = useState(coreServerNodes[0].id);
-  const activeNode = coreServerNodes.find((node) => node.id === activeNodeId) ?? coreServerNodes[0];
+  const [nodes, setNodes] = useState<CoreServerNode[]>(fallbackNodes);
+  const [activeNodeId, setActiveNodeId] = useState(fallbackNodes[0].id);
+
+  useEffect(() => {
+    let active = true;
+    publicApi.coreNodes().then((response) => {
+      if (!active || response.data.length === 0) return;
+      const apiNodes: CoreServerNode[] = response.data.map((node) => ({
+        id: node.id,
+        label: node.label,
+        description: node.description,
+        href: node.href,
+        position: { x: node.positionX, y: node.positionY },
+      }));
+      setNodes(apiNodes);
+      setActiveNodeId(apiNodes[0].id);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+
+  const activeNode = nodes.find((node) => node.id === activeNodeId) ?? nodes[0];
 
   return (
     <section className="interactive-section core-map-section" id="core-server-map">
@@ -29,7 +49,7 @@ export function CoreServerMap() {
               <Server size={16} />
               Core Server
             </div>
-            {coreServerNodes.map((node) => (
+            {nodes.map((node) => (
               <button
                 className={`core-node ${activeNode.id === node.id ? "core-node-active" : ""}`}
                 style={{ left: `${node.position.x}%`, top: `${node.position.y}%` }}

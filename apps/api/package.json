@@ -13,7 +13,8 @@
     "prisma:deploy": "node scripts/with-root-env.mjs prisma migrate deploy",
     "admin:bootstrap": "node scripts/with-root-env.mjs tsx prisma/bootstrap-admin.ts",
     "seed": "node scripts/with-root-env.mjs tsx prisma/seed.ts",
-    "seed:cms": "node scripts/with-root-env.mjs tsx prisma/seed-cms.ts"
+    "seed:cms": "node scripts/with-root-env.mjs tsx prisma/seed-cms.ts",
+    "seed:core-nodes": "node scripts/with-root-env.mjs tsx prisma/seed-core-nodes.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",

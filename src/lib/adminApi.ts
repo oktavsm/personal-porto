@@ -142,6 +142,19 @@ export type AdminMusicTrack = {
   sortOrder: number;
 };
 
+export type AdminCoreServerNode = {
+  id: string;
+  label: string;
+  description: string;
+  href: string;
+  positionX: number;
+  positionY: number;
+  sortOrder: number;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type ContentCategoryScope = "article" | "project" | "experience";
 
 export type AdminContentCategory = {
@@ -365,6 +378,16 @@ type MusicPayload = {
   sortOrder?: number;
 };
 
+type CoreNodePayload = {
+  label: string;
+  description: string;
+  href: string;
+  positionX?: number;
+  positionY?: number;
+  isPublished?: boolean;
+  sortOrder?: number;
+};
+
 type PagePayload = {
   title: string;
   description?: string;
@@ -578,6 +601,23 @@ export const adminApi = {
   deleteMusic: (id: string) => request<{ ok: boolean }>(`/api/admin/music/${id}`, { method: "DELETE" }),
   reorderMusic: (payload: ReorderPayload) =>
     request<{ ok: boolean }>("/api/admin/music/reorder", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  coreNodes: () => request<{ data: AdminCoreServerNode[] }>("/api/admin/core-nodes"),
+  createCoreNode: (payload: CoreNodePayload) =>
+    request<{ data: AdminCoreServerNode }>("/api/admin/core-nodes", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+  updateCoreNode: (id: string, payload: Partial<CoreNodePayload>) =>
+    request<{ data: AdminCoreServerNode }>(`/api/admin/core-nodes/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  deleteCoreNode: (id: string) => request<{ ok: boolean }>(`/api/admin/core-nodes/${id}`, { method: "DELETE" }),
+  reorderCoreNodes: (payload: ReorderPayload) =>
+    request<{ ok: boolean }>("/api/admin/core-nodes/reorder", {
       method: "POST",
       body: JSON.stringify(payload),
     }),

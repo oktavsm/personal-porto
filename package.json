@@ -18,6 +18,7 @@
     "prisma:migrate": "npm run prisma:migrate -w apps/api",
     "seed:api": "npm run seed -w apps/api",
     "seed:cms": "npm run seed:cms -w apps/api",
+    "seed:core-nodes": "npm run seed:core-nodes -w apps/api",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {

@@ -118,6 +118,17 @@ export type PublicContentCategory = {
   usageCount: number;
 };
 
+export type PublicCoreServerNode = {
+  id: string;
+  label: string;
+  description: string;
+  href: string;
+  positionX: number;
+  positionY: number;
+  sortOrder: number;
+  isPublished: boolean;
+};
+
 export type PublicSiteBlock = {
   id: string;
   type: string;
@@ -169,6 +180,7 @@ export const publicApi = {
   article: (slug: string) => request<{ data: PublicArticle }>(`/api/public/articles/${slug}`),
   // Theme Studio
   theme: () => request<{ data: PublicTheme; defaults: PublicTheme }>("/api/public/theme"),
+  coreNodes: () => request<{ data: PublicCoreServerNode[] }>("/api/public/core-nodes"),
 };
 
 // ─── Article & Theme Types ────────────────────────────────────────────────────
