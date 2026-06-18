@@ -88,7 +88,7 @@ export const perspectives: VisitorPerspective[] = [
 export const projectInterests: ProjectInterest[] = [
   {
     id: "android",
-    label: "Android",
+    label: "Android Development",
     description: "Mobile apps, product flows, Compose, Kotlin, and on-device ML.",
     projectSlugs: ["titipin-android", "muel-app", "asclepius"],
   },
@@ -99,15 +99,27 @@ export const projectInterests: ProjectInterest[] = [
     projectSlugs: ["n8n-personal-assistant", "daily-digest", "web-scraper-automation"],
   },
   {
-    id: "web",
-    label: "Web",
-    description: "React, deployed apps, live systems, frontend polish, and product routing.",
-    projectSlugs: ["titipin-web", "dev-playground", "daily-digest"],
+    id: "ai",
+    label: "AI Integration",
+    description: "AI-assisted workflows, generated content, on-device inference, and useful automation.",
+    projectSlugs: ["n8n-personal-assistant", "asclepius", "daily-digest"],
   },
   {
-    id: "impact",
-    label: "Social Impact",
-    description: "Projects and experiences connected to accessibility, usefulness, and everyday friction.",
-    projectSlugs: ["titipin-web", "titipin-android", "ngiritin"],
+    id: "network",
+    label: "Network Systems",
+    description: "Systems thinking, connectivity, deployment, routing, and reliable infrastructure.",
+    projectSlugs: ["n8n-personal-assistant", "dev-playground", "daily-digest"],
+  },
+  {
+    id: "problem-solving",
+    label: "Real-World Problem Solving",
+    description: "Projects that started from scattered information, repetitive work, or everyday friction.",
+    projectSlugs: ["titipin-web", "titipin-android", "web-scraper-automation"],
+  },
+  {
+    id: "teaching",
+    label: "Teaching & Learning",
+    description: "Learning tools, course submissions, digest automation, and knowledge-sharing artifacts.",
+    projectSlugs: ["daily-digest", "dicoding-event", "ub-faculties"],
   },
 ];

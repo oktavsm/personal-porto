@@ -67,11 +67,12 @@ function PortfolioExplorerContent({ compact = false }: PortfolioExplorerProps) {
         <div className="matchmaker-panel">
           <div className="matchmaker-copy">
             <div className="section-kicker">Project matchmaker</div>
-            <h3>Pick an interest and see the projects I would show first.</h3>
+            <h3>Find projects by interest.</h3>
             <p>
-              This is a small routing layer for people who care less about chronology and more about fit: Android,
-              automation, web systems, or social impact.
+              This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you
+              care about. Instead of reading every project one by one, you can start from what matters to you.
             </p>
+            <p>Pick an interest, and I will show the projects that fit it best.</p>
           </div>
 
           <div className="interest-tabs" role="tablist" aria-label="Project interests">
@@ -117,8 +118,12 @@ export function PortfolioExplorer() {
             <h2>Now choose where to go deeper.</h2>
           </div>
           <p>
-            After the story, this portfolio becomes a routing system. Choose your perspective, then jump to the parts
-            that matter most to you.
+            Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that
+            are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or
+            just curious.
+            <br />
+            <br />
+            Choose your perspective, and I will route you to the most relevant parts of this portfolio.
           </p>
         </div>
 

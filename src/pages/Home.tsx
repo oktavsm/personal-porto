@@ -64,6 +64,17 @@ const values = [
   },
 ];
 
+const heroHighlightCards = [
+  { title: "Informatics Engineering", text: "Universitas Brawijaya" },
+  { title: "TELADAN Scholar", text: "Leadership development program by Tanoto Foundation" },
+  { title: "System Builder", text: "Android · Automation · AI · Network Systems" },
+  { title: "Self-Symbol", text: "Core Server" },
+];
+
+const empathyHighlights = ["Empathy", "Accessibility", "Usefulness", "Social Intelligence"];
+
+const routeTimelineSteps = ["Poltek SSN preparation", "Health selection", "UTBK pivot", "Informatics UB"];
+
 function mapPublicProject(project: PublicProject, staticProject?: Project): Project {
   return {
     slug: project.slug,
@@ -131,14 +142,26 @@ export function Home() {
   const rebuildingDirection = sectionCopy(homeSections, "rebuilding-direction");
   const manyThings = sectionCopy(homeSections, "many-things");
   const quietPattern = sectionCopy(homeSections, "quiet-pattern");
+  const valuesTogether = sectionCopy(homeSections, "values-together");
+  const mission = sectionCopy(homeSections, "mission");
+  const missionPreface = sectionCopy(homeSections, "mission-preface");
+  const missionAlignment = sectionCopy(homeSections, "mission-alignment");
+  const missionApplication = sectionCopy(homeSections, "mission-application");
   const heroBody = bodyParagraphs(hero.body);
   const heroTagline = heroBody.at(-1) ?? "I let things flow, but I stand my ground.";
+  const heroPremise = settingString(
+    heroSettings,
+    "premise",
+    "Those roles mattered, but they are not the whole story. This portfolio is about the pattern behind them: how I think, respond, build, and grow through real problems.",
+  );
   const heroProfileImage = settingImage(heroSettings, cmsImageByKey, media.profile);
   const empathyImage = settingImage(empathySettings, cmsImageByKey, media.pldVolunteer);
   const rebuildingImage = settingImage(sectionSettings(homeSections, "rebuilding-direction"), cmsImageByKey, media.tanoto);
   const manyThingsImage = settingImage(sectionSettings(homeSections, "many-things"), cmsImageByKey, media.tanoto);
   const heroPrimaryHref = resolveCtaHref(settingString(heroSettings, "primaryCtaHref"), "/#story");
   const heroSecondaryHref = resolveCtaHref(settingString(heroSettings, "secondaryCtaHref"), "/projects");
+  const heroIdentityHref = resolveCtaHref(settingString(heroSettings, "identityCtaHref"), "/#identity");
+  const heroHighlights = useMemo(() => cardBlocks(homeSections, "hero", heroHighlightCards), [homeSections]);
   const projectsCtaHref = resolveCtaHref(settingString(featuredProjectsSettings, "ctaHref"), "/projects");
   const experiencesCtaHref = resolveCtaHref(settingString(featuredExperiencesSettings, "ctaHref"), "/experiences");
   const closingPrimaryHref = resolveCtaHref(settingString(closingSettings, "primaryCtaHref"), "/projects");
@@ -223,11 +246,23 @@ export function Home() {
                 </span>
               ))}
             </p>
+            <div className="hero-premise">
+              <FormattedText text={heroPremise} />
+            </div>
             <div className="tagline"><FormattedText text={heroTagline} /></div>
+            <div className="hero-highlight-grid" aria-label="Portfolio profile highlights">
+              {heroHighlights.map((item) => (
+                <div className="hero-highlight-card" key={item.title}>
+                  <strong>{item.title}</strong>
+                  <span><FormattedText text={item.text} /></span>
+                </div>
+              ))}
+            </div>
             <div className="actions">
               <Button {...ctaTarget(heroPrimaryHref)} variant="primary">
                 {settingString(heroSettings, "primaryCtaLabel", "Explore My Story")} <ArrowRight size={16} />
               </Button>
+              <Button {...ctaTarget(heroIdentityHref)}>{settingString(heroSettings, "identityCtaLabel", "Who Am I?")}</Button>
               <Button {...ctaTarget(heroSecondaryHref)}>{settingString(heroSettings, "secondaryCtaLabel", "View Projects")}</Button>
               <button className="quick-route-button" type="button" onClick={() => setIsExplorerOpen(true)}>
                 <Compass size={16} /> {settingString(heroSettings, "tertiaryCtaLabel", "Choose Route")}
@@ -241,9 +276,16 @@ export function Home() {
                 <strong>Oktavianus Samuel Minarto</strong>
                 <span>A steady mind who builds systems that help</span>
                 <span>Informatics Engineering · Universitas Brawijaya</span>
+                <span>TELADAN Scholar · Android · Automation · Network</span>
               </div>
             </div>
-            <ServerVisual />
+            <div className="server-symbol-card">
+              <ServerVisual />
+              <div className="symbol-caption">
+                <strong>Self-symbol · Core Server</strong>
+                <span>A visual metaphor for how I try to keep systems clear, connected, and useful.</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -345,13 +387,18 @@ export function Home() {
             </p>
           </Card>
           <div className="thin-divider" />
+          <div className="route-timeline" aria-label="Route transition timeline">
+            {routeTimelineSteps.map((step) => (
+              <span key={step}>{step}</span>
+            ))}
+          </div>
           {bodyParagraphs(routeMission.body).map((paragraph, index) => (
             <p className="section-desc wide with-space" style={sectionBodyStyle("route-mission")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
           ))}
         </div>
       </section>
 
-      <section id="values">
+      <section id="rebuilding-direction">
         <div className="container split">
           <div>
             <div className="section-kicker">{rebuildingDirection.subtitle}</div>
@@ -408,6 +455,11 @@ export function Home() {
           <div>
             <div className="section-kicker">{sectionCopy(homeSections, "empathy").subtitle}</div>
             <h2 style={sectionTitleStyle("empathy")}>{sectionCopy(homeSections, "empathy").title}</h2>
+            <div className="highlight-pills empathy-pills" aria-label="Empathy section keywords">
+              {empathyHighlights.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
             {bodyParagraphs(sectionCopy(homeSections, "empathy").body).map((paragraph, index) => (
               <p className="section-desc with-space" style={sectionBodyStyle("empathy")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
             ))}
@@ -418,7 +470,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id="values">
         <div className="container">
           <SectionHeader
             kicker={sectionCopy(homeSections, "values").subtitle ?? ""}
@@ -434,16 +486,53 @@ export function Home() {
               </Card>
             ))}
           </div>
+          <Card className="values-together-card">
+            <div className="section-kicker">{valuesTogether.subtitle}</div>
+            <h3 style={sectionTitleStyle("values-together")}>{valuesTogether.title}</h3>
+            {bodyParagraphs(valuesTogether.body).map((paragraph, index) => (
+              <p style={sectionBodyStyle("values-together")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
+            ))}
+          </Card>
         </div>
       </section>
 
       <section className="mission-section" id="mission">
-        <div className="container">
-          <div className="section-kicker">{sectionCopy(homeSections, "mission").subtitle}</div>
-          <h2 style={sectionTitleStyle("mission")}>{sectionCopy(homeSections, "mission").title}</h2>
-          {bodyParagraphs(sectionCopy(homeSections, "mission").body).map((paragraph, index) => (
-            <p style={sectionBodyStyle("mission")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
-          ))}
+        <div className="container mission-layout">
+          <Card className="mission-preface-card">
+            <div className="section-kicker">{missionPreface.subtitle}</div>
+            <h3 style={sectionTitleStyle("mission-preface")}>{missionPreface.title}</h3>
+            {bodyParagraphs(missionPreface.body).map((paragraph, index) => (
+              <p style={sectionBodyStyle("mission-preface")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
+            ))}
+          </Card>
+
+          <div className="mission-statement">
+            <div className="section-kicker">{mission.subtitle}</div>
+            <h2 style={sectionTitleStyle("mission")}>{mission.title}</h2>
+          </div>
+
+          <div className="mission-explanation-grid">
+            <Card className="mission-explanation-card">
+              <div className="section-kicker">{missionAlignment.subtitle}</div>
+              <h3 style={sectionTitleStyle("mission-alignment")}>{missionAlignment.title}</h3>
+              {bodyParagraphs(missionAlignment.body).map((paragraph, index) => (
+                <p style={sectionBodyStyle("mission-alignment")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
+              ))}
+            </Card>
+            <Card className="mission-explanation-card">
+              <div className="section-kicker">{missionApplication.subtitle}</div>
+              <h3 style={sectionTitleStyle("mission-application")}>{missionApplication.title}</h3>
+              {bodyParagraphs(missionApplication.body).map((paragraph, index) => (
+                <p style={sectionBodyStyle("mission-application")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
+              ))}
+            </Card>
+          </div>
+
+          <div className="mission-body-copy">
+            {bodyParagraphs(mission.body).map((paragraph, index) => (
+              <p style={sectionBodyStyle("mission")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
+            ))}
+          </div>
         </div>
       </section>
 

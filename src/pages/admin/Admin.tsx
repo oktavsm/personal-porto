@@ -1381,7 +1381,7 @@ function publicPagePath(slug: string) {
 }
 
 const cardEnabledSections: Record<string, string[]> = {
-  home: ["early-story", "values"],
+  home: ["hero", "early-story", "values"],
   "lead-self": ["evidence"],
 };
 

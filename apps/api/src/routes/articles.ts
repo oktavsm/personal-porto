@@ -488,6 +488,14 @@ export async function articleRoutes(app: FastifyInstance) {
           context: pickString(mediaContext[asset.id]),
         }));
       const defaultArticleContext = await getArticleWritingContextMarkdown();
+      const requestArticleContext = pickString(request.body.articleContext);
+      const composedArticleContext = [
+        defaultArticleContext,
+        requestArticleContext
+          ? ["REQUEST-SPECIFIC ARTICLE NOTES:", requestArticleContext].join("\n")
+          : "",
+        articleLengthGuidance(targetLength),
+      ].filter(Boolean).join("\n\n---\n\n");
 
       let generated: ArticleBody & { error?: string; data?: ArticleBody };
       try {
@@ -505,10 +513,7 @@ export async function articleRoutes(app: FastifyInstance) {
             language: pickString(request.body.language, "English"),
             targetLength,
             sourceContext: pickString(request.body.sourceContext),
-            articleContext: [
-              pickString(request.body.articleContext, defaultArticleContext),
-              articleLengthGuidance(targetLength),
-            ].filter(Boolean).join("\n\n"),
+            articleContext: composedArticleContext,
             availableMedia,
           }),
         });
@@ -581,7 +586,8 @@ export async function articleRoutes(app: FastifyInstance) {
           targetLength,
           rawNotes,
           sourceContext: pickString(request.body.sourceContext),
-          articleContextOverride: pickString(request.body.articleContext),
+          articleContextOverride: requestArticleContext,
+          articleContextLength: composedArticleContext.length,
           media: availableMedia.map((media) => ({
             mediaAssetId: media.mediaAssetId,
             originalName: media.originalName,

@@ -34,11 +34,15 @@ export function CoreServerMap() {
         <div className="interactive-head">
           <div>
             <div className="section-kicker">Interactive self-symbol</div>
-            <h2>Core server as a living map.</h2>
+            <h2>Core Server as a living map.</h2>
           </div>
           <p>
-            I chose core server because it reflects how I understand myself: quiet, connected, structured, and useful.
-            Click a node to see how the symbol routes into the rest of this portfolio.
+            I chose a core server as my self-symbol because it reflects how I understand myself: steady, connected,
+            structured, and useful. Each node represents a part of my portfolio, from identity and values to projects
+            and experiences.
+            <br />
+            <br />
+            Click a node to see how each part connects to the rest of my story.
           </p>
         </div>
 

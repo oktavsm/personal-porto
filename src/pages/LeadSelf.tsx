@@ -66,6 +66,15 @@ export function LeadSelf() {
           {...sectionHeaderAlign("intro")}
         />
 
+        <Card className="leadself-context-card">
+          <p>
+            <FormattedText text="Lead Self is a self-discovery and leadership development phase in the TELADAN program by Tanoto Foundation. It helped me understand myself more deeply before trying to lead others." />
+          </p>
+          <p>
+            <FormattedText text="The reflections on this page are the foundation behind the way I present my story, core values, mission, and self-symbol across this portfolio." />
+          </p>
+        </Card>
+
         <div className="leadself-grid">
           <Card className="identity-card">
             <div className="section-kicker">{sectionCopy(leadSelfSections, "identity").subtitle}</div>

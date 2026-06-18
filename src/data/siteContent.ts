@@ -211,12 +211,44 @@ export const siteContentPages: SiteContentPage[] = [
         ],
       },
       {
+        key: "values-together",
+        title: "How these values work together",
+        subtitle: "Values in motion",
+        body:
+          "When these values work together, they become the way I solve problems.\n\nEmpathy helps me notice what people need. Structure helps me organize the scattered parts. Stability helps me respond without rushing. Usefulness helps me make sure the result actually matters.\n\nThis combination is one of my unique strengths. I may not always be the loudest person in the room, but I can read the situation, organize the problem, and keep moving until the system becomes clearer and more helpful.",
+        sortOrder: 13,
+      },
+      {
         key: "mission",
         title: "To build useful systems that turn scattered problems into structured, accessible, and reliable solutions.",
         subtitle: "My mission",
         body:
           "This is the pattern I keep returning to. I like helping unclear things become clearer, repetitive things become lighter, and scattered flows become easier to use.",
-        sortOrder: 13,
+        sortOrder: 14,
+      },
+      {
+        key: "mission-preface",
+        title: "My mission comes from the pattern I found in myself.",
+        subtitle: "Before the mission",
+        body:
+          "I am interested in work that lets me investigate how a problem works, understand the structure behind it, and build something practical from that understanding.\n\nThat is why software engineering, Android development, automation, AI, and network systems feel aligned with me. They allow me to combine technical curiosity, structured thinking, and the desire to make something useful for real people.",
+        sortOrder: 15,
+      },
+      {
+        key: "mission-alignment",
+        title: "How I approach work",
+        subtitle: "Work pattern",
+        body:
+          "My investigative side makes me curious about how systems work and why a problem happens. My conventional side makes me comfortable with structure, documentation, flow, and organized execution. My realistic side makes me enjoy hands-on implementation, where ideas are tested through real tools, code, and systems.\n\nAt the same time, my interpersonal side appears in the way I try to understand users, students, teammates, and the people affected by the system.",
+        sortOrder: 16,
+      },
+      {
+        key: "mission-application",
+        title: "How I apply it through technology",
+        subtitle: "Technology direction",
+        body:
+          "Through Android development, I can build tools people can access directly from their daily devices. Through automation, I can reduce repetitive work and connect scattered information. Through AI, I can explore systems that adapt and assist more intelligently. Through network systems, I can understand how services connect, communicate, and stay reliable.",
+        sortOrder: 17,
       },
       {
         key: "featured-projects",
@@ -227,7 +259,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "Explore My Projects",
           ctaHref: "/projects",
         },
-        sortOrder: 14,
+        sortOrder: 18,
       },
       {
         key: "featured-experiences",
@@ -238,7 +270,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "See My Experiences",
           ctaHref: "/experiences",
         },
-        sortOrder: 15,
+        sortOrder: 19,
       },
       {
         key: "closing",
@@ -254,7 +286,7 @@ export const siteContentPages: SiteContentPage[] = [
           tertiaryCtaLabel: "Contact Me",
           tertiaryCtaHref: "/contact",
         },
-        sortOrder: 16,
+        sortOrder: 20,
       },
     ],
   },

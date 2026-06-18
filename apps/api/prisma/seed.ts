@@ -12,6 +12,7 @@ import { projects } from "../../../src/data/projects.js";
 import { siteContentPages } from "../../../src/data/siteContent.js";
 
 const prisma = new PrismaClient();
+const shouldOverwriteCms = process.env.CMS_SEED_OVERWRITE === "true";
 
 const uploadDir = process.env.UPLOAD_DIR ? (process.env.UPLOAD_DIR.startsWith("/") ? process.env.UPLOAD_DIR : resolve(process.cwd(), process.env.UPLOAD_DIR)) : resolve(process.cwd(), "uploads");
 const publicUploadBaseUrl = (process.env.PUBLIC_UPLOAD_BASE_URL ?? "/uploads").replace(/\/$/, "");
@@ -196,14 +197,18 @@ async function main() {
     for (const section of page.sections) {
       const savedSection = await prisma.siteSection.upsert({
         where: { pageId_key: { pageId: savedPage.id, key: section.key } },
-        update: {
-          title: section.title ?? null,
-          subtitle: section.subtitle ?? null,
-          body: section.body ?? null,
-          settingsJson: inputJson(section.settingsJson),
-          sortOrder: section.sortOrder,
-          isPublished: section.isPublished ?? true,
-        },
+        update: shouldOverwriteCms
+          ? {
+            title: section.title ?? null,
+            subtitle: section.subtitle ?? null,
+            body: section.body ?? null,
+            settingsJson: inputJson(section.settingsJson),
+            sortOrder: section.sortOrder,
+            isPublished: section.isPublished ?? true,
+          }
+          : {
+            sortOrder: section.sortOrder,
+          },
         create: {
           pageId: savedPage.id,
           key: section.key,
