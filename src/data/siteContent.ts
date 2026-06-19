@@ -41,6 +41,16 @@ export const siteContentPages: SiteContentPage[] = [
           secondaryCtaLabel: "View Projects",
           secondaryCtaHref: "/projects",
           tertiaryCtaLabel: "Choose Route",
+          premise:
+            "Those roles mattered, but they are not the whole story. This portfolio is about the pattern behind them: how I think, respond, build, and grow through real problems.",
+          identityCtaLabel: "Who Am I?",
+          identityCtaHref: "/#identity",
+          profileName: "Oktavianus Samuel Minarto",
+          profileHeadline: "A steady mind who builds systems that help",
+          profileMeta: "Informatics Engineering · Universitas Brawijaya",
+          profileTags: "TELADAN Scholar · Android · Automation · Network",
+          symbolTitle: "Self-symbol · Core Server",
+          symbolBody: "A visual metaphor for how I try to keep systems clear, connected, and useful.",
           imageKey: "profile",
         },
         sortOrder: 1,
@@ -98,6 +108,26 @@ export const siteContentPages: SiteContentPage[] = [
         body:
           "In high school, I started to take technology seriously. I joined Informatics Olympiad and IT knowledge competitions. I began to see technology not only as something I liked, but as a path I wanted to pursue.\n\nAt that time, my dream was clear: Poltek SSN. I wanted to be part of cybersecurity, public service, and technology for the country.\n\nFor the first time, I thought: maybe this is really me.",
         sortOrder: 3,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "High school technology competition",
+              text: "IT knowledge competition moment.",
+              imageKey: "highSchoolWinner",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "OSN certificate",
+              text: "Informatics Olympiad certificate.",
+              imageKey: "highSchoolCertificate",
+            },
+            sortOrder: 2,
+          },
+        ],
       },
       {
         key: "ssn-route",
@@ -106,6 +136,43 @@ export const siteContentPages: SiteContentPage[] = [
         body:
           "While many of my friends prepared for UTBK, I focused on a different path. I prepared for Poltek SSN because I believed it was the closest route to the future I imagined: technology, cybersecurity, public service, and contribution to the country.",
         sortOrder: 4,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "SKD Preparation",
+              text: "Learning discipline, consistency, and test strategy.",
+              imageKey: "ssnStudy",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Academic Test",
+              text: "Facing mathematics and English as the next gate.",
+              imageKey: "ssnAfterAcademic",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Health Selection",
+              text: "The stage where the route finally changed.",
+              imageKey: "ssnHealth",
+            },
+            sortOrder: 3,
+          },
+        ],
+      },
+      {
+        key: "ssn-route-note",
+        title: "For a moment, it felt close.",
+        subtitle: "Selection note",
+        body:
+          "The process started with SKD preparation, academic tests, and every stage that made the dream feel closer. One by one, I passed the early stages.\n\nFor a moment, it felt like the route I had built for years was finally opening.",
+        sortOrder: 5,
       },
       {
         key: "route-changed",
@@ -113,14 +180,48 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "When the route changed",
         body:
           "The selection process started well. I passed SKD. I passed the academic test. Then came the health selection — the stage where everything changed.\n\nIt hurt, because it was not only a failed selection. It felt like losing a version of myself that I had been building for years.\n\nThe dream was still there, but the route had to change.",
-        sortOrder: 5,
+        sortOrder: 6,
       },
       {
         key: "route-mission",
         title: "The route changed.\nThe mission didn't.",
         body:
           "At the last moment, I decided to take UTBK. I started almost from zero, because I had never fully prepared for that path before. In around one and a half months, I joined more than 20 tryouts, reviewed my mistakes, rebuilt my study rhythm, and forced myself to adapt quickly.\n\nEventually, I entered Informatics at Universitas Brawijaya. It was not an escape. It was a conscious choice. I realized that my dream did not have to disappear. I could still learn technology, build systems, and prepare myself to contribute through software, AI, networks, and maybe one day, government technology.",
-        sortOrder: 6,
+        sortOrder: 7,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Poltek SSN preparation",
+              text: "A route I prepared for seriously.",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Health selection",
+              text: "The stage where the route changed.",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "UTBK pivot",
+              text: "A short, intense period of rebuilding direction.",
+            },
+            sortOrder: 3,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Informatics UB",
+              text: "A conscious choice to keep the mission alive.",
+            },
+            sortOrder: 4,
+          },
+        ],
       },
       {
         key: "rebuilding-direction",
@@ -131,7 +232,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "tanoto",
         },
-        sortOrder: 7,
+        sortOrder: 8,
       },
       {
         key: "many-things",
@@ -142,13 +243,42 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "tanoto",
         },
-        sortOrder: 8,
+        sortOrder: 9,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "TELADAN scholarship moment",
+              text: "A scholarship and growth moment.",
+              imageKey: "tanoto",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Speaking and mentoring moment",
+              text: "A moment of speaking and sharing.",
+              imageKey: "speakerTeladan",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Camp Daniel leadership moment",
+              text: "A leadership and community moment.",
+              imageKey: "campDanielWide",
+            },
+            sortOrder: 3,
+          },
+        ],
       },
       {
         key: "quiet-pattern",
         body:
           "When the titles became too loud, I found what stayed quiet.\n\nIt was never the title.\n\nIt was the moment when something I built actually helped someone.\n\nA small script. An automation. A mobile app. A tool that reduces repetitive work. A system that makes scattered things easier to use.\n\nSince my first semester, I have built small tools and projects not because they were impressive, but because they solved something around me.\n\nThat is where I feel most like myself.",
-        sortOrder: 9,
+        sortOrder: 10,
       },
       {
         key: "identity",
@@ -156,7 +286,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "So, who am I?",
         body:
           "I am not only a winner, speaker, leader, scholar, or developer. Those are moments, roles, and responsibilities.\n\nThe pattern behind them is clearer: I tend to observe scattered problems, organize them into structure, and build systems that help people move easier.",
-        sortOrder: 10,
+        sortOrder: 11,
       },
       {
         key: "empathy",
@@ -167,14 +297,48 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "pldVolunteer",
         },
-        sortOrder: 11,
+        sortOrder: 12,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Empathy",
+              text: "Noticing the people behind the system.",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Accessibility",
+              text: "Making information reachable for different needs.",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Usefulness",
+              text: "Building things that help in real situations.",
+            },
+            sortOrder: 3,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Social Intelligence",
+              text: "Reading context, needs, and tension with care.",
+            },
+            sortOrder: 4,
+          },
+        ],
       },
       {
         key: "values",
         title: "The values I keep returning to",
         subtitle: "Core values",
         body: "Stability, structure, usefulness, and empathy are the values I keep seeing across the way I learn, serve, and build.",
-        sortOrder: 12,
+        sortOrder: 13,
         blocks: [
           {
             type: "card",
@@ -216,7 +380,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Values in motion",
         body:
           "When these values work together, they become the way I solve problems.\n\nEmpathy helps me notice what people need. Structure helps me organize the scattered parts. Stability helps me respond without rushing. Usefulness helps me make sure the result actually matters.\n\nThis combination is one of my unique strengths. I may not always be the loudest person in the room, but I can read the situation, organize the problem, and keep moving until the system becomes clearer and more helpful.",
-        sortOrder: 13,
+        sortOrder: 14,
       },
       {
         key: "mission",
@@ -224,7 +388,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "My mission",
         body:
           "This is the pattern I keep returning to. I like helping unclear things become clearer, repetitive things become lighter, and scattered flows become easier to use.",
-        sortOrder: 14,
+        sortOrder: 15,
       },
       {
         key: "mission-preface",
@@ -232,7 +396,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Before the mission",
         body:
           "I am interested in work that lets me investigate how a problem works, understand the structure behind it, and build something practical from that understanding.\n\nThat is why software engineering, Android development, automation, AI, and network systems feel aligned with me. They allow me to combine technical curiosity, structured thinking, and the desire to make something useful for real people.",
-        sortOrder: 15,
+        sortOrder: 16,
       },
       {
         key: "mission-alignment",
@@ -240,7 +404,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Work pattern",
         body:
           "My investigative side makes me curious about how systems work and why a problem happens. My conventional side makes me comfortable with structure, documentation, flow, and organized execution. My realistic side makes me enjoy hands-on implementation, where ideas are tested through real tools, code, and systems.\n\nAt the same time, my interpersonal side appears in the way I try to understand users, students, teammates, and the people affected by the system.",
-        sortOrder: 16,
+        sortOrder: 17,
       },
       {
         key: "mission-application",
@@ -248,7 +412,59 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Technology direction",
         body:
           "Through Android development, I can build tools people can access directly from their daily devices. Through automation, I can reduce repetitive work and connect scattered information. Through AI, I can explore systems that adapt and assist more intelligently. Through network systems, I can understand how services connect, communicate, and stay reliable.",
-        sortOrder: 17,
+        sortOrder: 18,
+      },
+      {
+        key: "core-server-map",
+        title: "Core Server as a living map.",
+        subtitle: "Interactive self-symbol",
+        body:
+          "I chose a core server as my self-symbol because it reflects how I understand myself: steady, connected, structured, and useful. Each node represents a part of my portfolio, from identity and values to projects and experiences.\n\nClick a node to see how each part connects to the rest of my story.",
+        settingsJson: {
+          selectedKicker: "Selected node",
+          centerLabel: "Core Server",
+          linkLabel: "Open related page",
+        },
+        sortOrder: 19,
+      },
+      {
+        key: "music",
+        title: "Some songs do not push me to be stronger.",
+        subtitle: "Songs that give me space",
+        body:
+          "They simply give me space to breathe. Hindia's “everything u are” and “Evaluasi (Reprise)” do not feel like forced motivation. They feel calm, honest, and human — like a quiet reminder that I am allowed to rest and still continue.\n\nResting is not the opposite of trying. Sometimes, resting is how I keep trying.",
+        settingsJson: {
+          blockedMessage: "Autoplay was blocked by the browser. Press play to start the soundtrack.",
+        },
+        sortOrder: 20,
+      },
+      {
+        key: "explorer",
+        title: "Now choose where to go deeper.",
+        subtitle: "Portfolio explorer",
+        body:
+          "Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or just curious.\n\nChoose your perspective, and I will route you to the most relevant parts of this portfolio.",
+        sortOrder: 21,
+      },
+      {
+        key: "project-matchmaker",
+        title: "Find projects by interest.",
+        subtitle: "Project matchmaker",
+        body:
+          "This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you care about. Instead of reading every project one by one, you can start from what matters to you.\n\nPick an interest, and I will show the projects that fit it best.",
+        sortOrder: 22,
+      },
+      {
+        key: "route-modal",
+        title: "Choose your path, or keep reading the story.",
+        subtitle: "Quick route",
+        body:
+          "If you already know what you need, jump directly. If not, continue the story first and this route will appear again near the end.",
+        settingsJson: {
+          primaryCtaLabel: "Continue the story",
+          secondaryCtaLabel: "See full explorer later",
+        },
+        sortOrder: 23,
       },
       {
         key: "featured-projects",
@@ -259,7 +475,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "Explore My Projects",
           ctaHref: "/projects",
         },
-        sortOrder: 18,
+        sortOrder: 24,
       },
       {
         key: "featured-experiences",
@@ -270,7 +486,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "See My Experiences",
           ctaHref: "/experiences",
         },
-        sortOrder: 19,
+        sortOrder: 25,
       },
       {
         key: "closing",
@@ -286,7 +502,7 @@ export const siteContentPages: SiteContentPage[] = [
           tertiaryCtaLabel: "Contact Me",
           tertiaryCtaHref: "/contact",
         },
-        sortOrder: 20,
+        sortOrder: 26,
       },
     ],
   },

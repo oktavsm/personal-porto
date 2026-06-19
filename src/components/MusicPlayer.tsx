@@ -2,7 +2,9 @@ import { Music, Pause, Play, Volume2 } from "lucide-react";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { media } from "../data/media";
+import { bodyParagraphs } from "../lib/siteContent";
 import { publicApi } from "../lib/publicApi";
+import { FormattedText } from "./FormattedText";
 
 type Track = {
   id: string;
@@ -162,25 +164,33 @@ export function GlobalMusicPlayer() {
   );
 }
 
-export function HomeMusicSection() {
+type HomeMusicSectionProps = {
+  kicker?: string;
+  title?: string;
+  body?: string;
+  blockedMessage?: string;
+};
+
+export function HomeMusicSection({
+  kicker = "Songs that give me space",
+  title = "Some songs do not push me to be stronger.",
+  body = "They simply give me space to breathe. Hindia's “everything u are” and “Evaluasi (Reprise)” do not feel like forced motivation. They feel calm, honest, and human — like a quiet reminder that I am allowed to rest and still continue.\n\nResting is not the opposite of trying. Sometimes, resting is how I keep trying.",
+  blockedMessage = "Autoplay was blocked by the browser. Press play to start the soundtrack.",
+}: HomeMusicSectionProps) {
   const { track, tracks, playing, blocked, play, pause, setTrack } = useMusic();
+  const paragraphs = bodyParagraphs(body);
 
   return (
     <section className="music-section" id="music" data-reveal>
       <div className="container music-grid">
         <div>
-          <div className="section-kicker">Songs that give me space</div>
-          <h2>Some songs do not push me to be stronger.</h2>
-          <p>
-            They simply give me space to breathe. Hindia&apos;s “everything u are” and “Evaluasi (Reprise)” do not feel
-            like forced motivation. They feel calm, honest, and human — like a quiet reminder that I am allowed to rest
-            and still continue.
-          </p>
-          <p>
-            Resting is not the opposite of trying. Sometimes, resting is how I keep trying.
-          </p>
+          <div className="section-kicker">{kicker}</div>
+          <h2>{title}</h2>
+          {paragraphs.map((paragraph) => (
+            <p key={paragraph}><FormattedText text={paragraph} /></p>
+          ))}
           {blocked ? (
-            <p className="music-note">Autoplay was blocked by the browser. Press play to start the soundtrack.</p>
+            <p className="music-note">{blockedMessage}</p>
           ) : null}
         </div>
 

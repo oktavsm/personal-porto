@@ -204,6 +204,15 @@ const emptyPageSection = {
   secondaryCtaHref: "",
   tertiaryCtaLabel: "",
   tertiaryCtaHref: "",
+  premise: "",
+  identityCtaLabel: "",
+  identityCtaHref: "",
+  profileName: "",
+  profileHeadline: "",
+  profileMeta: "",
+  profileTags: "",
+  symbolTitle: "",
+  symbolBody: "",
   sortOrder: 0,
   isPublished: true,
 };
@@ -1337,6 +1346,15 @@ function pageSectionSettings(form: typeof emptyPageSection) {
     secondaryCtaHref: form.secondaryCtaHref || undefined,
     tertiaryCtaLabel: form.tertiaryCtaLabel || undefined,
     tertiaryCtaHref: form.tertiaryCtaHref || undefined,
+    premise: form.premise || undefined,
+    identityCtaLabel: form.identityCtaLabel || undefined,
+    identityCtaHref: form.identityCtaHref || undefined,
+    profileName: form.profileName || undefined,
+    profileHeadline: form.profileHeadline || undefined,
+    profileMeta: form.profileMeta || undefined,
+    profileTags: form.profileTags || undefined,
+    symbolTitle: form.symbolTitle || undefined,
+    symbolBody: form.symbolBody || undefined,
   };
 }
 
@@ -1381,7 +1399,7 @@ function publicPagePath(slug: string) {
 }
 
 const cardEnabledSections: Record<string, string[]> = {
-  home: ["hero", "early-story", "values"],
+  home: ["hero", "early-story", "chosen-path", "ssn-route", "route-mission", "many-things", "empathy", "values"],
   "lead-self": ["evidence"],
 };
 
@@ -3166,6 +3184,15 @@ export function Admin() {
       secondaryCtaHref: settingsField(section.settingsJson, "secondaryCtaHref"),
       tertiaryCtaLabel: settingsField(section.settingsJson, "tertiaryCtaLabel"),
       tertiaryCtaHref: settingsField(section.settingsJson, "tertiaryCtaHref"),
+      premise: settingsField(section.settingsJson, "premise"),
+      identityCtaLabel: settingsField(section.settingsJson, "identityCtaLabel"),
+      identityCtaHref: settingsField(section.settingsJson, "identityCtaHref"),
+      profileName: settingsField(section.settingsJson, "profileName"),
+      profileHeadline: settingsField(section.settingsJson, "profileHeadline"),
+      profileMeta: settingsField(section.settingsJson, "profileMeta"),
+      profileTags: settingsField(section.settingsJson, "profileTags"),
+      symbolTitle: settingsField(section.settingsJson, "symbolTitle"),
+      symbolBody: settingsField(section.settingsJson, "symbolBody"),
       sortOrder: section.sortOrder,
       isPublished: section.isPublished,
     });
@@ -4519,6 +4546,54 @@ export function Admin() {
                   </label>
                 </div>
               </div>
+              {editingPageSectionKey === "hero" ? (
+                <div className="admin-field-group">
+                  <div className="admin-field-group-head">
+                    <strong>Hero Details</strong>
+                    <span>Fine-tune the Home hero profile card, identity button, and core server caption.</span>
+                  </div>
+                  <label>
+                    Premise Card
+                    <textarea value={pageSectionForm.premise} onChange={(event) => setPageSectionForm({ ...pageSectionForm, premise: event.target.value })} placeholder="Short clarification below the hero intro" />
+                  </label>
+                  <div className="admin-form-row">
+                    <label>
+                      Identity Button Label
+                      <input value={pageSectionForm.identityCtaLabel} onChange={(event) => setPageSectionForm({ ...pageSectionForm, identityCtaLabel: event.target.value })} placeholder="Who Am I?" />
+                    </label>
+                    <label>
+                      Identity Button Href
+                      <input value={pageSectionForm.identityCtaHref} onChange={(event) => setPageSectionForm({ ...pageSectionForm, identityCtaHref: event.target.value })} placeholder="/#identity" />
+                    </label>
+                  </div>
+                  <label>
+                    Profile Name
+                    <input value={pageSectionForm.profileName} onChange={(event) => setPageSectionForm({ ...pageSectionForm, profileName: event.target.value })} placeholder="Oktavianus Samuel Minarto" />
+                  </label>
+                  <label>
+                    Profile Headline
+                    <input value={pageSectionForm.profileHeadline} onChange={(event) => setPageSectionForm({ ...pageSectionForm, profileHeadline: event.target.value })} placeholder="A steady mind who turns scattered problems into systems that help" />
+                  </label>
+                  <div className="admin-form-row">
+                    <label>
+                      Profile Meta
+                      <input value={pageSectionForm.profileMeta} onChange={(event) => setPageSectionForm({ ...pageSectionForm, profileMeta: event.target.value })} placeholder="Informatics Engineering · Universitas Brawijaya" />
+                    </label>
+                    <label>
+                      Profile Tags
+                      <input value={pageSectionForm.profileTags} onChange={(event) => setPageSectionForm({ ...pageSectionForm, profileTags: event.target.value })} placeholder="TELADAN Scholar · Android · Automation · Network" />
+                    </label>
+                  </div>
+                  <label>
+                    Symbol Caption Title
+                    <input value={pageSectionForm.symbolTitle} onChange={(event) => setPageSectionForm({ ...pageSectionForm, symbolTitle: event.target.value })} placeholder="Self-symbol · Core Server" />
+                  </label>
+                  <label>
+                    Symbol Caption Body
+                    <textarea value={pageSectionForm.symbolBody} onChange={(event) => setPageSectionForm({ ...pageSectionForm, symbolBody: event.target.value })} placeholder="A visual metaphor for how I try to keep systems clear, connected, and useful." />
+                  </label>
+                </div>
+              ) : null}
               <label>
                 Display Order
                 <input value={pageSectionForm.sortOrder} onChange={(event) => setPageSectionForm({ ...pageSectionForm, sortOrder: Number(event.target.value) })} type="number" />

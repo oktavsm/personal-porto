@@ -3,9 +3,26 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { coreServerNodes as fallbackNodes, type CoreServerNode } from "../../data/coreServerNodes";
 import { publicApi } from "../../lib/publicApi";
+import { FormattedText } from "../FormattedText";
 import { ServerVisual } from "../ServerVisual";
 
-export function CoreServerMap() {
+type CoreServerMapProps = {
+  kicker?: string;
+  title?: string;
+  body?: string;
+  selectedKicker?: string;
+  centerLabel?: string;
+  linkLabel?: string;
+};
+
+export function CoreServerMap({
+  kicker = "Interactive self-symbol",
+  title = "Core Server as a living map.",
+  body = "I chose a core server as my self-symbol because it reflects how I understand myself: steady, connected, structured, and useful. Each node represents a part of my portfolio, from identity and values to projects and experiences.\n\nClick a node to see how each part connects to the rest of my story.",
+  selectedKicker = "Selected node",
+  centerLabel = "Core Server",
+  linkLabel = "Open related page",
+}: CoreServerMapProps) {
   const [nodes, setNodes] = useState<CoreServerNode[]>(fallbackNodes);
   const [activeNodeId, setActiveNodeId] = useState(fallbackNodes[0].id);
 
@@ -33,17 +50,10 @@ export function CoreServerMap() {
       <div className="container">
         <div className="interactive-head">
           <div>
-            <div className="section-kicker">Interactive self-symbol</div>
-            <h2>Core Server as a living map.</h2>
+            <div className="section-kicker">{kicker}</div>
+            <h2>{title}</h2>
           </div>
-          <p>
-            I chose a core server as my self-symbol because it reflects how I understand myself: steady, connected,
-            structured, and useful. Each node represents a part of my portfolio, from identity and values to projects
-            and experiences.
-            <br />
-            <br />
-            Click a node to see how each part connects to the rest of my story.
-          </p>
+          <p><FormattedText text={body} /></p>
         </div>
 
         <div className="core-map-layout">
@@ -51,7 +61,7 @@ export function CoreServerMap() {
             <ServerVisual />
             <div className="core-center-chip">
               <Server size={16} />
-              Core Server
+              {centerLabel}
             </div>
             {nodes.map((node) => (
               <button
@@ -67,11 +77,11 @@ export function CoreServerMap() {
           </div>
 
           <div className="core-node-panel">
-            <div className="section-kicker">Selected node</div>
+            <div className="section-kicker">{selectedKicker}</div>
             <h3>{activeNode.label}</h3>
             <p>{activeNode.description}</p>
             <Link className="inline-link" to={activeNode.href}>
-              Open related page <ArrowRight size={15} />
+              {linkLabel} <ArrowRight size={15} />
             </Link>
           </div>
         </div>

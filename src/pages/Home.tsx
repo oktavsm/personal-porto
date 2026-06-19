@@ -28,6 +28,9 @@ const cardImageByKey: Record<string, string> = {
   earlyPmr: media.earlyPmr,
   earlyPramuka: media.earlyPramuka,
   highSchoolWinner: media.highSchoolWinner,
+  ssnStudy: media.ssnStudy,
+  ssnAfterAcademic: media.ssnAfterAcademic,
+  ssnHealth: media.ssnHealth,
 };
 
 const cmsImageByKey: Record<string, string> = {
@@ -37,12 +40,13 @@ const cmsImageByKey: Record<string, string> = {
   tanoto: media.tanoto,
   speakerTeladan: media.speakerTeladan,
   campDanielWide: media.campDanielWide,
+  highSchoolCertificate: media.highSchoolCertificate,
 };
 
 const selectionCards = [
-  { title: "SKD Preparation", image: media.ssnStudy, text: "Learning discipline, consistency, and test strategy." },
-  { title: "Academic Test", image: media.ssnAfterAcademic, text: "Facing mathematics and English as the next gate." },
-  { title: "Health Selection", image: media.ssnHealth, text: "The stage where the route finally changed." },
+  { title: "SKD Preparation", imageKey: "ssnStudy", image: media.ssnStudy, text: "Learning discipline, consistency, and test strategy." },
+  { title: "Academic Test", imageKey: "ssnAfterAcademic", image: media.ssnAfterAcademic, text: "Facing mathematics and English as the next gate." },
+  { title: "Health Selection", imageKey: "ssnHealth", image: media.ssnHealth, text: "The stage where the route finally changed." },
 ];
 
 const values = [
@@ -71,9 +75,30 @@ const heroHighlightCards = [
   { title: "Self-Symbol", text: "Core Server" },
 ];
 
-const empathyHighlights = ["Empathy", "Accessibility", "Usefulness", "Social Intelligence"];
+const empathyHighlightCards = [
+  { title: "Empathy", text: "Noticing the people behind the system." },
+  { title: "Accessibility", text: "Making information reachable for different needs." },
+  { title: "Usefulness", text: "Building things that help in real situations." },
+  { title: "Social Intelligence", text: "Reading context, needs, and tension with care." },
+];
 
-const routeTimelineSteps = ["Poltek SSN preparation", "Health selection", "UTBK pivot", "Informatics UB"];
+const routeTimelineCards = [
+  { title: "Poltek SSN preparation", text: "A route I prepared for seriously." },
+  { title: "Health selection", text: "The stage where the route changed." },
+  { title: "UTBK pivot", text: "A short, intense period of rebuilding direction." },
+  { title: "Informatics UB", text: "A conscious choice to keep the mission alive." },
+];
+
+const chosenPathImages = [
+  { title: "High school technology competition", text: "IT knowledge competition moment.", imageKey: "highSchoolWinner", image: media.highSchoolWinner },
+  { title: "OSN certificate", text: "Informatics Olympiad certificate.", imageKey: "highSchoolCertificate", image: media.highSchoolCertificate },
+];
+
+const manyThingsImages = [
+  { title: "TELADAN scholarship moment", text: "A scholarship and growth moment.", imageKey: "tanoto", image: media.tanoto },
+  { title: "Speaking and mentoring moment", text: "A moment of speaking and sharing.", imageKey: "speakerTeladan", image: media.speakerTeladan },
+  { title: "Camp Daniel leadership moment", text: "A leadership and community moment.", imageKey: "campDanielWide", image: media.campDanielWide },
+];
 
 function mapPublicProject(project: PublicProject, staticProject?: Project): Project {
   return {
@@ -139,6 +164,7 @@ export function Home() {
   const closingSettings = sectionSettings(homeSections, "closing");
   const routeChanged = sectionCopy(homeSections, "route-changed");
   const routeMission = sectionCopy(homeSections, "route-mission");
+  const ssnRouteNote = sectionCopy(homeSections, "ssn-route-note");
   const rebuildingDirection = sectionCopy(homeSections, "rebuilding-direction");
   const manyThings = sectionCopy(homeSections, "many-things");
   const quietPattern = sectionCopy(homeSections, "quiet-pattern");
@@ -147,6 +173,14 @@ export function Home() {
   const missionPreface = sectionCopy(homeSections, "mission-preface");
   const missionAlignment = sectionCopy(homeSections, "mission-alignment");
   const missionApplication = sectionCopy(homeSections, "mission-application");
+  const musicSection = sectionCopy(homeSections, "music");
+  const coreMapSection = sectionCopy(homeSections, "core-server-map");
+  const explorerSection = sectionCopy(homeSections, "explorer");
+  const matchmakerSection = sectionCopy(homeSections, "project-matchmaker");
+  const routeModalSection = sectionCopy(homeSections, "route-modal");
+  const musicSettings = sectionSettings(homeSections, "music");
+  const coreMapSettings = sectionSettings(homeSections, "core-server-map");
+  const routeModalSettings = sectionSettings(homeSections, "route-modal");
   const heroBody = bodyParagraphs(hero.body);
   const heroTagline = heroBody.at(-1) ?? "I let things flow, but I stand my ground.";
   const heroPremise = settingString(
@@ -155,9 +189,14 @@ export function Home() {
     "Those roles mattered, but they are not the whole story. This portfolio is about the pattern behind them: how I think, respond, build, and grow through real problems.",
   );
   const heroProfileImage = settingImage(heroSettings, cmsImageByKey, media.profile);
+  const heroProfileName = settingString(heroSettings, "profileName", "Oktavianus Samuel Minarto");
+  const heroProfileHeadline = settingString(heroSettings, "profileHeadline", "A steady mind who builds systems that help");
+  const heroProfileMeta = settingString(heroSettings, "profileMeta", "Informatics Engineering · Universitas Brawijaya");
+  const heroProfileTags = settingString(heroSettings, "profileTags", "TELADAN Scholar · Android · Automation · Network");
+  const heroSymbolTitle = settingString(heroSettings, "symbolTitle", "Self-symbol · Core Server");
+  const heroSymbolBody = settingString(heroSettings, "symbolBody", "A visual metaphor for how I try to keep systems clear, connected, and useful.");
   const empathyImage = settingImage(empathySettings, cmsImageByKey, media.pldVolunteer);
   const rebuildingImage = settingImage(sectionSettings(homeSections, "rebuilding-direction"), cmsImageByKey, media.tanoto);
-  const manyThingsImage = settingImage(sectionSettings(homeSections, "many-things"), cmsImageByKey, media.tanoto);
   const heroPrimaryHref = resolveCtaHref(settingString(heroSettings, "primaryCtaHref"), "/#story");
   const heroSecondaryHref = resolveCtaHref(settingString(heroSettings, "secondaryCtaHref"), "/projects");
   const heroIdentityHref = resolveCtaHref(settingString(heroSettings, "identityCtaHref"), "/#identity");
@@ -175,6 +214,32 @@ export function Home() {
       })),
     [homeSections],
   );
+  const homeSelectionCards = useMemo(
+    () =>
+      cardBlocks(homeSections, "ssn-route", selectionCards).map((card, index) => ({
+        ...card,
+        image: card.imageUrl ?? (card.imageKey ? cardImageByKey[card.imageKey] ?? selectionCards[index]?.image ?? media.ssnStudy : selectionCards[index]?.image ?? media.ssnStudy),
+      })),
+    [homeSections],
+  );
+  const homeChosenPathImages = useMemo(
+    () =>
+      cardBlocks(homeSections, "chosen-path", chosenPathImages).map((card, index) => ({
+        ...card,
+        image: card.imageUrl ?? (card.imageKey ? cardImageByKey[card.imageKey] ?? chosenPathImages[index]?.image ?? media.highSchoolWinner : chosenPathImages[index]?.image ?? media.highSchoolWinner),
+      })),
+    [homeSections],
+  );
+  const homeManyThingsImages = useMemo(
+    () =>
+      cardBlocks(homeSections, "many-things", manyThingsImages).map((card, index) => ({
+        ...card,
+        image: card.imageUrl ?? (card.imageKey ? cardImageByKey[card.imageKey] ?? manyThingsImages[index]?.image ?? media.tanoto : manyThingsImages[index]?.image ?? media.tanoto),
+      })),
+    [homeSections],
+  );
+  const homeRouteTimeline = useMemo(() => cardBlocks(homeSections, "route-mission", routeTimelineCards), [homeSections]);
+  const homeEmpathyHighlights = useMemo(() => cardBlocks(homeSections, "empathy", empathyHighlightCards), [homeSections]);
   const homeValues = useMemo(() => cardBlocks(homeSections, "values", values), [homeSections]);
   const homeProjects = useMemo(
     () =>
@@ -273,17 +338,17 @@ export function Home() {
             <div className="profile-strip hero-profile-card">
               <img src={heroProfileImage} alt="Oktavianus Samuel Minarto" />
               <div>
-                <strong>Oktavianus Samuel Minarto</strong>
-                <span>A steady mind who builds systems that help</span>
-                <span>Informatics Engineering · Universitas Brawijaya</span>
-                <span>TELADAN Scholar · Android · Automation · Network</span>
+                <strong>{heroProfileName}</strong>
+                <span><FormattedText text={heroProfileHeadline} /></span>
+                <span><FormattedText text={heroProfileMeta} /></span>
+                <span><FormattedText text={heroProfileTags} /></span>
               </div>
             </div>
             <div className="server-symbol-card">
               <ServerVisual />
               <div className="symbol-caption">
-                <strong>Self-symbol · Core Server</strong>
-                <span>A visual metaphor for how I try to keep systems clear, connected, and useful.</span>
+                <strong>{heroSymbolTitle}</strong>
+                <span><FormattedText text={heroSymbolBody} /></span>
               </div>
             </div>
           </div>
@@ -323,8 +388,9 @@ export function Home() {
             <div className="highlight-line" style={sectionBodyStyle("chosen-path")}><FormattedText text={bodyParagraphs(sectionCopy(homeSections, "chosen-path").body).at(-1) ?? ""} /></div>
           </div>
           <div className="photo-collage">
-            <img src={media.highSchoolWinner} alt="High school technology competition" loading="lazy" />
-            <img src={media.highSchoolCertificate} alt="OSN certificate" loading="lazy" />
+            {homeChosenPathImages.map((image) => (
+              <img src={image.image} alt={image.title} key={image.title} loading="lazy" />
+            ))}
           </div>
         </div>
       </section>
@@ -339,7 +405,7 @@ export function Home() {
           />
           <div className="selection-layout">
             <div className="grid grid-3">
-              {selectionCards.map((card) => (
+              {homeSelectionCards.map((card) => (
                 <Card className="memory-card" key={card.title}>
                   <img src={card.image} alt={card.title} loading="lazy" />
                   <div>
@@ -350,11 +416,9 @@ export function Home() {
               ))}
             </div>
             <Card className="route-card">
-              <p>
-                The process started with SKD preparation, academic tests, and every stage that made the dream feel
-                closer. One by one, I passed the early stages.
-              </p>
-              <p>For a moment, it felt like the route I had built for years was finally opening.</p>
+              {bodyParagraphs(ssnRouteNote.body).map((paragraph) => (
+                <p key={paragraph}><FormattedText text={paragraph} /></p>
+              ))}
             </Card>
           </div>
         </div>
@@ -388,8 +452,8 @@ export function Home() {
           </Card>
           <div className="thin-divider" />
           <div className="route-timeline" aria-label="Route transition timeline">
-            {routeTimelineSteps.map((step) => (
-              <span key={step}>{step}</span>
+            {homeRouteTimeline.map((step) => (
+              <span key={step.title}>{step.title}</span>
             ))}
           </div>
           {bodyParagraphs(routeMission.body).map((paragraph, index) => (
@@ -423,9 +487,9 @@ export function Home() {
             ))}
           </div>
           <div className="stacked-photos">
-            <img src={manyThingsImage} alt="TELADAN scholarship moment" loading="lazy" />
-            <img src={media.speakerTeladan} alt="Speaking and mentoring moment" loading="lazy" />
-            <img src={media.campDanielWide} alt="Camp Daniel leadership moment" loading="lazy" />
+            {homeManyThingsImages.map((image) => (
+              <img src={image.image} alt={image.title} key={image.title} loading="lazy" />
+            ))}
           </div>
         </div>
       </section>
@@ -456,8 +520,8 @@ export function Home() {
             <div className="section-kicker">{sectionCopy(homeSections, "empathy").subtitle}</div>
             <h2 style={sectionTitleStyle("empathy")}>{sectionCopy(homeSections, "empathy").title}</h2>
             <div className="highlight-pills empathy-pills" aria-label="Empathy section keywords">
-              {empathyHighlights.map((item) => (
-                <span key={item}>{item}</span>
+              {homeEmpathyHighlights.map((item) => (
+                <span key={item.title}>{item.title}</span>
               ))}
             </div>
             {bodyParagraphs(sectionCopy(homeSections, "empathy").body).map((paragraph, index) => (
@@ -578,11 +642,31 @@ export function Home() {
         </div>
       </section>
 
-      <CoreServerMap />
+      <CoreServerMap
+        kicker={coreMapSection.subtitle}
+        title={coreMapSection.title}
+        body={coreMapSection.body}
+        selectedKicker={settingString(coreMapSettings, "selectedKicker", "Selected node")}
+        centerLabel={settingString(coreMapSettings, "centerLabel", "Core Server")}
+        linkLabel={settingString(coreMapSettings, "linkLabel", "Open related page")}
+      />
 
-      <HomeMusicSection />
+      <HomeMusicSection
+        kicker={musicSection.subtitle}
+        title={musicSection.title}
+        body={musicSection.body}
+        blockedMessage={settingString(musicSettings, "blockedMessage", "Autoplay was blocked by the browser. Press play to start the soundtrack.")}
+      />
 
-      <PortfolioExplorer />
+      <PortfolioExplorer
+        kicker={explorerSection.subtitle}
+        title={explorerSection.title}
+        body={explorerSection.body}
+        matchmakerKicker={matchmakerSection.subtitle}
+        matchmakerTitle={matchmakerSection.title}
+        matchmakerBody={bodyParagraphs(matchmakerSection.body)[0]}
+        matchmakerHelper={bodyParagraphs(matchmakerSection.body)[1]}
+      />
 
       <section className="closing-section">
         <div className="container">
@@ -609,7 +693,15 @@ export function Home() {
         </div>
       </section>
 
-      <PortfolioExplorerModal isOpen={isExplorerOpen} onClose={() => setIsExplorerOpen(false)} />
+      <PortfolioExplorerModal
+        isOpen={isExplorerOpen}
+        onClose={() => setIsExplorerOpen(false)}
+        kicker={routeModalSection.subtitle}
+        title={routeModalSection.title}
+        body={routeModalSection.body}
+        primaryLinkLabel={settingString(routeModalSettings, "primaryCtaLabel", "Continue the story")}
+        secondaryLinkLabel={settingString(routeModalSettings, "secondaryCtaLabel", "See full explorer later")}
+      />
     </>
   );
 }

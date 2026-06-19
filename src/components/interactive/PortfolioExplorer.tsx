@@ -6,14 +6,39 @@ import { useEffect, useState } from "react";
 
 type PortfolioExplorerProps = {
   compact?: boolean;
+  matchmakerKicker?: string;
+  matchmakerTitle?: string;
+  matchmakerBody?: string;
+  matchmakerHelper?: string;
 };
 
 type PortfolioExplorerModalProps = {
   isOpen: boolean;
   onClose: () => void;
+  kicker?: string;
+  title?: string;
+  body?: string;
+  primaryLinkLabel?: string;
+  secondaryLinkLabel?: string;
 };
 
-function PortfolioExplorerContent({ compact = false }: PortfolioExplorerProps) {
+type PortfolioExplorerSectionProps = {
+  kicker?: string;
+  title?: string;
+  body?: string;
+  matchmakerKicker?: string;
+  matchmakerTitle?: string;
+  matchmakerBody?: string;
+  matchmakerHelper?: string;
+};
+
+function PortfolioExplorerContent({
+  compact = false,
+  matchmakerKicker = "Project matchmaker",
+  matchmakerTitle = "Find projects by interest.",
+  matchmakerBody = "This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you care about. Instead of reading every project one by one, you can start from what matters to you.",
+  matchmakerHelper = "Pick an interest, and I will show the projects that fit it best.",
+}: PortfolioExplorerProps) {
   const [activePerspectiveId, setActivePerspectiveId] = useState(perspectives[0].id);
   const [activeInterestId, setActiveInterestId] = useState(projectInterests[0].id);
 
@@ -66,13 +91,10 @@ function PortfolioExplorerContent({ compact = false }: PortfolioExplorerProps) {
       {!compact && (
         <div className="matchmaker-panel">
           <div className="matchmaker-copy">
-            <div className="section-kicker">Project matchmaker</div>
-            <h3>Find projects by interest.</h3>
-            <p>
-              This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you
-              care about. Instead of reading every project one by one, you can start from what matters to you.
-            </p>
-            <p>Pick an interest, and I will show the projects that fit it best.</p>
+            <div className="section-kicker">{matchmakerKicker}</div>
+            <h3>{matchmakerTitle}</h3>
+            <p>{matchmakerBody}</p>
+            <p>{matchmakerHelper}</p>
           </div>
 
           <div className="interest-tabs" role="tablist" aria-label="Project interests">
@@ -108,32 +130,46 @@ function PortfolioExplorerContent({ compact = false }: PortfolioExplorerProps) {
   );
 }
 
-export function PortfolioExplorer() {
+export function PortfolioExplorer({
+  kicker = "Portfolio explorer",
+  title = "Now choose where to go deeper.",
+  body = "Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or just curious.\n\nChoose your perspective, and I will route you to the most relevant parts of this portfolio.",
+  matchmakerKicker,
+  matchmakerTitle,
+  matchmakerBody,
+  matchmakerHelper,
+}: PortfolioExplorerSectionProps) {
   return (
     <section className="interactive-section" id="explorer">
       <div className="container">
         <div className="interactive-head">
           <div>
-            <div className="section-kicker">Portfolio explorer</div>
-            <h2>Now choose where to go deeper.</h2>
+            <div className="section-kicker">{kicker}</div>
+            <h2>{title}</h2>
           </div>
-          <p>
-            Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that
-            are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or
-            just curious.
-            <br />
-            <br />
-            Choose your perspective, and I will route you to the most relevant parts of this portfolio.
-          </p>
+          <p>{body}</p>
         </div>
 
-        <PortfolioExplorerContent />
+        <PortfolioExplorerContent
+          matchmakerKicker={matchmakerKicker}
+          matchmakerTitle={matchmakerTitle}
+          matchmakerBody={matchmakerBody}
+          matchmakerHelper={matchmakerHelper}
+        />
       </div>
     </section>
   );
 }
 
-export function PortfolioExplorerModal({ isOpen, onClose }: PortfolioExplorerModalProps) {
+export function PortfolioExplorerModal({
+  isOpen,
+  onClose,
+  kicker = "Quick route",
+  title = "Choose your path, or keep reading the story.",
+  body = "If you already know what you need, jump directly. If not, continue the story first and this route will appear again near the end.",
+  primaryLinkLabel = "Continue the story",
+  secondaryLinkLabel = "See full explorer later",
+}: PortfolioExplorerModalProps) {
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -167,21 +203,18 @@ export function PortfolioExplorerModal({ isOpen, onClose }: PortfolioExplorerMod
         </button>
         <div className="route-modal-head">
           <div>
-            <div className="section-kicker">Quick route</div>
-            <h2 id="route-modal-title">Choose your path, or keep reading the story.</h2>
+            <div className="section-kicker">{kicker}</div>
+            <h2 id="route-modal-title">{title}</h2>
           </div>
-          <p>
-            If you already know what you need, jump directly. If not, continue the story first and this route will appear
-            again near the end.
-          </p>
+          <p>{body}</p>
         </div>
         <PortfolioExplorerContent compact />
         <div className="route-modal-actions">
           <Link className="inline-link" to="/#story" onClick={onClose}>
-            Continue the story <ArrowRight size={15} />
+            {primaryLinkLabel} <ArrowRight size={15} />
           </Link>
           <Link className="inline-link muted-link" to="/#explorer" onClick={onClose}>
-            See full explorer later
+            {secondaryLinkLabel}
           </Link>
         </div>
       </div>
