@@ -4,7 +4,7 @@ import { config } from "../config.js";
 import { writeAuditLog } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { pickBoolean, pickNumber, pickString, slugify } from "../lib/strings.js";
-import { getArticleWritingContextMarkdown } from "./portfolioContext.js";
+import { getArticleWritingContextMarkdown, getPortfolioContextMarkdown } from "./portfolioContext.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -487,8 +487,18 @@ export async function articleRoutes(app: FastifyInstance) {
           caption: asset.caption ?? "",
           context: pickString(mediaContext[asset.id]),
         }));
-      const defaultArticleContext = await getArticleWritingContextMarkdown();
+      const [defaultSourceContext, defaultArticleContext] = await Promise.all([
+        getPortfolioContextMarkdown(),
+        getArticleWritingContextMarkdown(),
+      ]);
+      const requestSourceContext = pickString(request.body.sourceContext);
       const requestArticleContext = pickString(request.body.articleContext);
+      const composedSourceContext = [
+        defaultSourceContext,
+        requestSourceContext
+          ? ["REQUEST-SPECIFIC PORTFOLIO CONTEXT NOTES:", requestSourceContext].join("\n")
+          : "",
+      ].filter(Boolean).join("\n\n---\n\n");
       const composedArticleContext = [
         defaultArticleContext,
         requestArticleContext
@@ -512,7 +522,7 @@ export async function articleRoutes(app: FastifyInstance) {
             tone: pickString(request.body.tone, "reflective, grounded, personal, professional"),
             language: pickString(request.body.language, "English"),
             targetLength,
-            sourceContext: pickString(request.body.sourceContext),
+            sourceContext: composedSourceContext,
             articleContext: composedArticleContext,
             availableMedia,
           }),
@@ -585,7 +595,8 @@ export async function articleRoutes(app: FastifyInstance) {
           language: pickString(request.body.language, "English"),
           targetLength,
           rawNotes,
-          sourceContext: pickString(request.body.sourceContext),
+          sourceContextOverride: requestSourceContext,
+          sourceContextLength: composedSourceContext.length,
           articleContextOverride: requestArticleContext,
           articleContextLength: composedArticleContext.length,
           media: availableMedia.map((media) => ({

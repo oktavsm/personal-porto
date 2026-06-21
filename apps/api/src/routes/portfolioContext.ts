@@ -473,6 +473,10 @@ export async function getArticleWritingContextMarkdown() {
   return (await resolveContext("article")).finalMarkdown;
 }
 
+export async function getPortfolioContextMarkdown() {
+  return (await resolveContext("portfolio")).finalMarkdown;
+}
+
 export async function portfolioContextRoutes(app: FastifyInstance) {
   app.get("/api/public/portfolio-context.md", async (_request, reply) => {
     const context = await resolveContext("portfolio");

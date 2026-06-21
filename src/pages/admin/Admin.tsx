@@ -676,8 +676,10 @@ function GeneratorMetaPanel({ value }: { value: unknown }) {
 
   const media = generatorMetaMedia(meta.media);
   const rawNotes = generatorMetaText(meta.rawNotes);
-  const sourceContext = generatorMetaText(meta.sourceContext);
+  const sourceContextOverride = generatorMetaText(meta.sourceContextOverride);
+  const sourceContextLength = typeof meta.sourceContextLength === "number" ? meta.sourceContextLength : 0;
   const articleContextOverride = generatorMetaText(meta.articleContextOverride);
+  const articleContextLength = typeof meta.articleContextLength === "number" ? meta.articleContextLength : 0;
 
   return (
     <details className="admin-generator-trace">
@@ -700,10 +702,22 @@ function GeneratorMetaPanel({ value }: { value: unknown }) {
           </div>
         </div>
       ) : null}
-      {sourceContext ? (
+      {sourceContextLength > 0 ? (
+        <div className="admin-generator-trace-section">
+          <strong>Default portfolio context</strong>
+          <p>{sourceContextLength.toLocaleString()} characters sent to the generator.</p>
+        </div>
+      ) : null}
+      {articleContextLength > 0 ? (
+        <div className="admin-generator-trace-section">
+          <strong>Default article context</strong>
+          <p>{articleContextLength.toLocaleString()} characters sent to the generator.</p>
+        </div>
+      ) : null}
+      {sourceContextOverride ? (
         <div className="admin-generator-trace-section">
           <strong>Extra source context</strong>
-          <p>{sourceContext}</p>
+          <p>{sourceContextOverride}</p>
         </div>
       ) : null}
       {articleContextOverride ? (
@@ -1152,23 +1166,23 @@ function ArticleGeneratorModal({
           </label>
 
           <details>
-            <summary className="admin-seo-toggle">Extra context (optional)</summary>
+            <summary className="admin-seo-toggle">Extra context (optional, appended to defaults)</summary>
             <div className="admin-form-nested">
               <label>
-                Portfolio/source context
+                Additional portfolio/source notes
                 <textarea
                   value={value.sourceContext}
                   onChange={(event) => update({ sourceContext: event.target.value })}
-                  placeholder="Optional extra facts n8n should know for this specific article."
+                  placeholder="Optional notes appended after the default portfolio context for this specific article."
                   rows={3}
                 />
               </label>
               <label>
-                Writing style context
+                Additional writing style notes
                 <textarea
                   value={value.articleContext}
                   onChange={(event) => update({ articleContext: event.target.value })}
-                  placeholder="Optional excerpt from article-context.md or writing preferences."
+                  placeholder="Optional notes appended after the default article writing context."
                   rows={3}
                 />
               </label>
