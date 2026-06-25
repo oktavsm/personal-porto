@@ -215,6 +215,15 @@ const emptyPageSection = {
   profileTags: "",
   symbolTitle: "",
   symbolBody: "",
+  highlightEnabled: "true",
+  highlightText: "",
+  timelineEnabled: "true",
+  pivotTitle: "",
+  pivotBody: "",
+  mediaEnabled: "true",
+  mediaLayout: "carousel",
+  mediaTitle: "",
+  mediaDescription: "",
   sortOrder: 0,
   isPublished: true,
 };
@@ -1372,6 +1381,15 @@ function pageSectionSettings(form: typeof emptyPageSection) {
     profileTags: form.profileTags || undefined,
     symbolTitle: form.symbolTitle || undefined,
     symbolBody: form.symbolBody || undefined,
+    highlightEnabled: form.highlightEnabled || undefined,
+    highlightText: form.highlightText || undefined,
+    timelineEnabled: form.timelineEnabled || undefined,
+    pivotTitle: form.pivotTitle || undefined,
+    pivotBody: form.pivotBody || undefined,
+    mediaEnabled: form.mediaEnabled || undefined,
+    mediaLayout: form.mediaLayout || undefined,
+    mediaTitle: form.mediaTitle || undefined,
+    mediaDescription: form.mediaDescription || undefined,
   };
 }
 
@@ -1416,7 +1434,7 @@ function publicPagePath(slug: string) {
 }
 
 const cardEnabledSections: Record<string, string[]> = {
-  home: ["hero", "who-i-am-now", "early-story", "chosen-path", "ssn-route", "route-mission", "many-things", "empathy", "values"],
+  home: ["hero", "who-i-am-now", "early-story", "chosen-path", "ssn-route", "route-turning-point", "many-things", "empathy", "values"],
   "lead-self": ["evidence"],
 };
 
@@ -3211,6 +3229,15 @@ export function Admin() {
       profileTags: settingsField(section.settingsJson, "profileTags"),
       symbolTitle: settingsField(section.settingsJson, "symbolTitle"),
       symbolBody: settingsField(section.settingsJson, "symbolBody"),
+      highlightEnabled: settingsField(section.settingsJson, "highlightEnabled") || "true",
+      highlightText: settingsField(section.settingsJson, "highlightText"),
+      timelineEnabled: settingsField(section.settingsJson, "timelineEnabled") || "true",
+      pivotTitle: settingsField(section.settingsJson, "pivotTitle"),
+      pivotBody: settingsField(section.settingsJson, "pivotBody"),
+      mediaEnabled: settingsField(section.settingsJson, "mediaEnabled") || "true",
+      mediaLayout: settingsField(section.settingsJson, "mediaLayout") || "carousel",
+      mediaTitle: settingsField(section.settingsJson, "mediaTitle"),
+      mediaDescription: settingsField(section.settingsJson, "mediaDescription"),
       sortOrder: section.sortOrder,
       isPublished: section.isPublished,
     });
@@ -4618,6 +4645,75 @@ export function Admin() {
                   <label>
                     Symbol Caption Body
                     <textarea value={pageSectionForm.symbolBody} onChange={(event) => setPageSectionForm({ ...pageSectionForm, symbolBody: event.target.value })} placeholder="A visual metaphor for how I try to keep systems clear, connected, and useful." />
+                  </label>
+                </div>
+              ) : null}
+              {editingPageSectionKey === "route-turning-point" ? (
+                <div className="admin-field-group">
+                  <div className="admin-field-group-head">
+                    <strong>Route Turning Point</strong>
+                    <span>Cards without images become timeline chips. Cards with images become media items.</span>
+                  </div>
+                  <div className="admin-form-row">
+                    <AdminSelect
+                      label="Highlight"
+                      value={pageSectionForm.highlightEnabled}
+                      options={[
+                        { label: "Enabled", value: "true" },
+                        { label: "Disabled", value: "false" },
+                      ]}
+                      onChange={(highlightEnabled) => setPageSectionForm({ ...pageSectionForm, highlightEnabled })}
+                    />
+                    <AdminSelect
+                      label="Timeline"
+                      value={pageSectionForm.timelineEnabled}
+                      options={[
+                        { label: "Enabled", value: "true" },
+                        { label: "Disabled", value: "false" },
+                      ]}
+                      onChange={(timelineEnabled) => setPageSectionForm({ ...pageSectionForm, timelineEnabled })}
+                    />
+                  </div>
+                  <label>
+                    Highlight Text
+                    <textarea value={pageSectionForm.highlightText} onChange={(event) => setPageSectionForm({ ...pageSectionForm, highlightText: event.target.value })} placeholder={"The route changed.\nThe direction stayed."} />
+                  </label>
+                  <label>
+                    Pivot Title
+                    <input value={pageSectionForm.pivotTitle} onChange={(event) => setPageSectionForm({ ...pageSectionForm, pivotTitle: event.target.value })} placeholder="So I rebuilt the route." />
+                  </label>
+                  <label>
+                    Pivot Body
+                    <textarea className="admin-copy-textarea" value={pageSectionForm.pivotBody} onChange={(event) => setPageSectionForm({ ...pageSectionForm, pivotBody: event.target.value })} placeholder="Use blank lines to separate pivot paragraphs." />
+                  </label>
+                  <div className="admin-form-row">
+                    <AdminSelect
+                      label="Media"
+                      value={pageSectionForm.mediaEnabled}
+                      options={[
+                        { label: "Enabled", value: "true" },
+                        { label: "Disabled", value: "false" },
+                      ]}
+                      onChange={(mediaEnabled) => setPageSectionForm({ ...pageSectionForm, mediaEnabled })}
+                    />
+                    <AdminSelect
+                      label="Media Layout"
+                      value={pageSectionForm.mediaLayout}
+                      options={[
+                        { label: "Carousel", value: "carousel" },
+                        { label: "Grid", value: "grid" },
+                        { label: "None", value: "none" },
+                      ]}
+                      onChange={(mediaLayout) => setPageSectionForm({ ...pageSectionForm, mediaLayout })}
+                    />
+                  </div>
+                  <label>
+                    Media Title
+                    <input value={pageSectionForm.mediaTitle} onChange={(event) => setPageSectionForm({ ...pageSectionForm, mediaTitle: event.target.value })} placeholder="The route I continued through" />
+                  </label>
+                  <label>
+                    Media Description
+                    <textarea value={pageSectionForm.mediaDescription} onChange={(event) => setPageSectionForm({ ...pageSectionForm, mediaDescription: event.target.value })} placeholder="Small moments from the beginning of my new route at Universitas Brawijaya." />
                   </label>
                 </div>
               ) : null}

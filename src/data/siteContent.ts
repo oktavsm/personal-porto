@@ -260,24 +260,31 @@ export const siteContentPages: SiteContentPage[] = [
         sortOrder: 6,
       },
       {
-        key: "route-changed",
-        title: "But not every path opens the way we expect.",
+        key: "route-turning-point",
+        title: "One route closed.\nThe direction stayed.",
         subtitle: "When the route changed",
         body:
-          "The selection process started well. I passed SKD. I passed the academic test. Then came the health selection — the stage where everything changed.\n\nIt hurt, because it was not only a failed selection. It felt like losing a version of myself that I had been building for years.\n\nThe dream was still there, but the route had to change.",
+          "I passed the SKD. I passed the academic test. Then came the health selection — the stage where everything changed.\n\nIt hurt because Poltek SSN was not a sudden dream. For years, it had been the route I prepared for, the place where I imagined technology, cybersecurity, public service, and contribution to the country could meet.\n\nFor a moment, it felt like I was losing the future I had been building.\n\nBut I slowly realized that a changed route did not mean a lost direction. I still wanted to learn technology, understand systems, and build something meaningful. I just had to find another way.",
+        settingsJson: {
+          highlightEnabled: "true",
+          highlightText: "The route changed.\nThe direction stayed.",
+          timelineEnabled: "true",
+          pivotTitle: "So I rebuilt the route.",
+          pivotBody:
+            "At the last moment, I decided to take UTBK. I started almost from zero, joined more than 20 tryouts, reviewed my mistakes, and rebuilt my study rhythm in around one and a half months.\n\nEventually, I entered Informatics Engineering at Universitas Brawijaya.\n\nIt was not the route I first imagined, but it kept me moving in the same direction.",
+          mediaEnabled: "true",
+          mediaLayout: "carousel",
+          mediaTitle: "The route I continued through",
+          mediaDescription: "Small moments from the beginning of my new route at Universitas Brawijaya.",
+          ctaLabel: "Continue the story",
+          ctaHref: "/#rebuilding-direction",
+        },
         sortOrder: 7,
-      },
-      {
-        key: "route-mission",
-        title: "The route changed.\nThe mission didn't.",
-        body:
-          "At the last moment, I decided to take UTBK. I started almost from zero, because I had never fully prepared for that path before. In around one and a half months, I joined more than 20 tryouts, reviewed my mistakes, rebuilt my study rhythm, and forced myself to adapt quickly.\n\nEventually, I entered Informatics at Universitas Brawijaya. It was not an escape. It was a conscious choice. I realized that my dream did not have to disappear. I could still learn technology, build systems, and prepare myself to contribute through software, AI, networks, and maybe one day, government technology.",
-        sortOrder: 8,
         blocks: [
           {
             type: "card",
             contentJson: {
-              title: "Poltek SSN preparation",
+              title: "Poltek SSN prep",
               text: "A route I prepared for seriously.",
             },
             sortOrder: 1,
@@ -285,39 +292,108 @@ export const siteContentPages: SiteContentPage[] = [
           {
             type: "card",
             contentJson: {
-              title: "Health selection",
-              text: "The stage where the route changed.",
+              title: "SKD passed",
+              text: "The early stage that made the prepared route feel closer.",
             },
             sortOrder: 2,
           },
           {
             type: "card",
             contentJson: {
-              title: "UTBK pivot",
-              text: "A short, intense period of rebuilding direction.",
+              title: "Academic test",
+              text: "Another gate that I was able to pass.",
             },
             sortOrder: 3,
           },
           {
             type: "card",
             contentJson: {
-              title: "Informatics UB",
-              text: "A conscious choice to keep the mission alive.",
+              title: "Health selection",
+              text: "The stage where the route changed.",
             },
             sortOrder: 4,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "UTBK pivot",
+              text: "A short, intense period of rebuilding the route.",
+            },
+            sortOrder: 5,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Informatics UB",
+              text: "A new route for the same direction.",
+            },
+            sortOrder: 6,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Early UB moment",
+              text: "One of the early moments after entering Universitas Brawijaya, where I started rebuilding my direction through Informatics Engineering.",
+              imageKey: "firstUbMaba",
+            },
+            sortOrder: 7,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "First campus route",
+              text: "A small reminder that the route had changed, but the direction to keep learning technology was still there.",
+              imageKey: "firstUbFilkom",
+            },
+            sortOrder: 8,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "First class rhythm",
+              text: "The beginning of a new route that eventually led me to projects, TELADAN, and deeper self-reflection.",
+              imageKey: "firstUbKelasPertama",
+            },
+            sortOrder: 9,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "UTBK preparation notes",
+              text: "A trace from the short, intense period of rebuilding my study rhythm before entering UB.",
+              imageKey: "firstUbCatatanUtbk1",
+            },
+            sortOrder: 10,
           },
         ],
       },
       {
+        key: "route-changed",
+        title: "But not every path opens the way we expect.",
+        subtitle: "When the route changed",
+        body:
+          "The selection process started well. I passed SKD. I passed the academic test. Then came the health selection — the stage where everything changed.\n\nIt hurt, because it was not only a failed selection. It felt like losing a version of myself that I had been building for years.\n\nThe dream was still there, but the route had to change.",
+        sortOrder: 8,
+        isPublished: false,
+      },
+      {
+        key: "route-mission",
+        title: "The route changed.\nThe mission didn't.",
+        body:
+          "At the last moment, I decided to take UTBK. I started almost from zero, because I had never fully prepared for that path before. In around one and a half months, I joined more than 20 tryouts, reviewed my mistakes, rebuilt my study rhythm, and forced myself to adapt quickly.\n\nEventually, I entered Informatics at Universitas Brawijaya. It was not an escape. It was a conscious choice. I realized that my dream did not have to disappear. I could still learn technology, build systems, and prepare myself to contribute through software, AI, networks, and maybe one day, government technology.",
+        sortOrder: 9,
+        isPublished: false,
+      },
+      {
         key: "rebuilding-direction",
-        title: "After entering UB, I tried to accelerate my growth.",
+        title: "After entering UB, I tried to rebuild my direction.",
         subtitle: "Rebuilding my direction",
         body:
           "Entering Informatics UB gave me a new route, but I knew that I still had to rebuild myself. I started applying for scholarships and development opportunities. I was rejected many times, revised my applications, improved my essays, reflected on my experiences, and tried again.\n\nEventually, I became a Tanoto Scholar through the TELADAN program. But more than the title, TELADAN became a space where I had to ask a deeper question: who am I, beyond everything I have achieved?",
         settingsJson: {
           imageKey: "tanoto",
         },
-        sortOrder: 9,
+        sortOrder: 10,
       },
       {
         key: "many-things",
@@ -328,7 +404,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "tanoto",
         },
-        sortOrder: 10,
+        sortOrder: 11,
         blocks: [
           {
             type: "card",
@@ -363,7 +439,7 @@ export const siteContentPages: SiteContentPage[] = [
         key: "quiet-pattern",
         body:
           "When the titles became too loud, I found what stayed quiet.\n\nIt was never the title.\n\nIt was the moment when something I built actually helped someone.\n\nA small script. An automation. A mobile app. A tool that reduces repetitive work. A system that makes scattered things easier to use.\n\nSince my first semester, I have built small tools and projects not because they were impressive, but because they solved something around me.\n\nThat is where I feel most like myself.",
-        sortOrder: 11,
+        sortOrder: 12,
       },
       {
         key: "identity",
@@ -371,7 +447,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "So, who am I?",
         body:
           "I am not only a winner, speaker, leader, scholar, or developer. Those are moments, roles, and responsibilities.\n\nThe pattern behind them is clearer: I tend to observe scattered problems, organize them into structure, and build systems that help people move easier.",
-        sortOrder: 12,
+        sortOrder: 13,
       },
       {
         key: "empathy",
@@ -382,7 +458,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "pldVolunteer",
         },
-        sortOrder: 13,
+        sortOrder: 14,
         blocks: [
           {
             type: "card",
@@ -423,7 +499,7 @@ export const siteContentPages: SiteContentPage[] = [
         title: "The values I keep returning to",
         subtitle: "Core values",
         body: "Stability, structure, usefulness, and empathy are the values I keep seeing across the way I learn, serve, and build.",
-        sortOrder: 14,
+        sortOrder: 15,
         blocks: [
           {
             type: "card",
@@ -465,7 +541,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Values in motion",
         body:
           "When these values work together, they become the way I solve problems.\n\nEmpathy helps me notice what people need. Structure helps me organize the scattered parts. Stability helps me respond without rushing. Usefulness helps me make sure the result actually matters.\n\nThis combination is one of my unique strengths. I may not always be the loudest person in the room, but I can read the situation, organize the problem, and keep moving until the system becomes clearer and more helpful.",
-        sortOrder: 15,
+        sortOrder: 16,
       },
       {
         key: "mission",
@@ -473,7 +549,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "My mission",
         body:
           "This is the pattern I keep returning to. I like helping unclear things become clearer, repetitive things become lighter, and scattered flows become easier to use.",
-        sortOrder: 16,
+        sortOrder: 17,
       },
       {
         key: "mission-preface",
@@ -481,7 +557,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Before the mission",
         body:
           "I am interested in work that lets me investigate how a problem works, understand the structure behind it, and build something practical from that understanding.\n\nThat is why software engineering, Android development, automation, AI, and network systems feel aligned with me. They allow me to combine technical curiosity, structured thinking, and the desire to make something useful for real people.",
-        sortOrder: 17,
+        sortOrder: 18,
       },
       {
         key: "mission-alignment",
@@ -489,7 +565,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Work pattern",
         body:
           "My investigative side makes me curious about how systems work and why a problem happens. My conventional side makes me comfortable with structure, documentation, flow, and organized execution. My realistic side makes me enjoy hands-on implementation, where ideas are tested through real tools, code, and systems.\n\nAt the same time, my interpersonal side appears in the way I try to understand users, students, teammates, and the people affected by the system.",
-        sortOrder: 18,
+        sortOrder: 19,
       },
       {
         key: "mission-application",
@@ -497,7 +573,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Technology direction",
         body:
           "Through Android development, I can build tools people can access directly from their daily devices. Through automation, I can reduce repetitive work and connect scattered information. Through AI, I can explore systems that adapt and assist more intelligently. Through network systems, I can understand how services connect, communicate, and stay reliable.",
-        sortOrder: 19,
+        sortOrder: 20,
       },
       {
         key: "core-server-map",
@@ -510,7 +586,7 @@ export const siteContentPages: SiteContentPage[] = [
           centerLabel: "Core Server",
           linkLabel: "Open related page",
         },
-        sortOrder: 20,
+        sortOrder: 21,
       },
       {
         key: "music",
@@ -521,7 +597,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           blockedMessage: "Autoplay was blocked by the browser. Press play to start the soundtrack.",
         },
-        sortOrder: 21,
+        sortOrder: 22,
       },
       {
         key: "explorer",
@@ -529,7 +605,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Portfolio explorer",
         body:
           "Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or just curious.\n\nChoose your perspective, and I will route you to the most relevant parts of this portfolio.",
-        sortOrder: 22,
+        sortOrder: 23,
       },
       {
         key: "project-matchmaker",
@@ -537,7 +613,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Project matchmaker",
         body:
           "This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you care about. Instead of reading every project one by one, you can start from what matters to you.\n\nPick an interest, and I will show the projects that fit it best.",
-        sortOrder: 23,
+        sortOrder: 24,
       },
       {
         key: "route-modal",
@@ -549,7 +625,7 @@ export const siteContentPages: SiteContentPage[] = [
           primaryCtaLabel: "Continue the story",
           secondaryCtaLabel: "See full explorer later",
         },
-        sortOrder: 24,
+        sortOrder: 25,
       },
       {
         key: "featured-projects",
@@ -560,7 +636,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "Explore My Projects",
           ctaHref: "/projects",
         },
-        sortOrder: 25,
+        sortOrder: 26,
       },
       {
         key: "featured-experiences",
@@ -571,7 +647,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "See My Experiences",
           ctaHref: "/experiences",
         },
-        sortOrder: 26,
+        sortOrder: 27,
       },
       {
         key: "closing",
@@ -587,7 +663,7 @@ export const siteContentPages: SiteContentPage[] = [
           tertiaryCtaLabel: "Contact Me",
           tertiaryCtaHref: "/contact",
         },
-        sortOrder: 27,
+        sortOrder: 28,
       },
     ],
   },

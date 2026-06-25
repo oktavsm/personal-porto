@@ -40,6 +40,13 @@ function seedSettings(sectionKey: string, defaultValue?: Record<string, unknown>
   return { anchorId: defaultAnchorId(sectionKey), ...defaultValue };
 }
 
+function nonOverwriteSectionUpdate(section: { sortOrder: number; isPublished?: boolean }) {
+  return {
+    sortOrder: section.sortOrder,
+    ...(section.isPublished === false ? { isPublished: false } : {}),
+  };
+}
+
 async function seedCms() {
   for (const page of siteContentPages) {
     const savedPage = await prisma.sitePage.upsert({
@@ -67,9 +74,7 @@ async function seedCms() {
             sortOrder: section.sortOrder,
             isPublished: section.isPublished ?? true,
           }
-          : {
-            sortOrder: section.sortOrder,
-          },
+          : nonOverwriteSectionUpdate(section),
         create: {
           pageId: savedPage.id,
           key: section.key,

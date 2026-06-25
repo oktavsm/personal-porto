@@ -4,6 +4,7 @@ import { ExperienceCard } from "../components/ExperienceCard";
 import { FormattedText } from "../components/FormattedText";
 import { HomeMusicSection } from "../components/MusicPlayer";
 import { ProjectCard } from "../components/ProjectCard";
+import { RouteTurningPointSection } from "../components/RouteTurningPointSection";
 import { SectionHeader } from "../components/SectionHeader";
 import { ServerVisual } from "../components/ServerVisual";
 import { CoreServerMap } from "../components/interactive/CoreServerMap";
@@ -31,6 +32,12 @@ const cardImageByKey: Record<string, string> = {
   ssnStudy: media.ssnStudy,
   ssnAfterAcademic: media.ssnAfterAcademic,
   ssnHealth: media.ssnHealth,
+  firstUbMaba: media.firstUbMaba,
+  firstUbFilkom: media.firstUbFilkom,
+  firstUbKelasPertama: media.firstUbKelasPertama,
+  firstUbBelajarBareng: media.firstUbBelajarBareng,
+  firstUbCatatanUtbk1: media.firstUbCatatanUtbk1,
+  firstUbRajaBrawijaya: media.firstUbRajaBrawijaya,
 };
 
 const cmsImageByKey: Record<string, string> = {
@@ -171,8 +178,8 @@ export function Home() {
   const featuredProjectsSettings = sectionSettings(homeSections, "featured-projects");
   const featuredExperiencesSettings = sectionSettings(homeSections, "featured-experiences");
   const closingSettings = sectionSettings(homeSections, "closing");
-  const routeChanged = sectionCopy(homeSections, "route-changed");
-  const routeMission = sectionCopy(homeSections, "route-mission");
+  const routeTurning = sectionCopy(homeSections, "route-turning-point");
+  const routeTurningSettings = sectionSettings(homeSections, "route-turning-point");
   const ssnRouteNote = sectionCopy(homeSections, "ssn-route-note");
   const rebuildingDirection = sectionCopy(homeSections, "rebuilding-direction");
   const manyThings = sectionCopy(homeSections, "many-things");
@@ -253,7 +260,16 @@ export function Home() {
       })),
     [homeSections],
   );
-  const homeRouteTimeline = useMemo(() => cardBlocks(homeSections, "route-mission", routeTimelineCards), [homeSections]);
+  const routeTurningBlocks = useMemo(
+    () =>
+      cardBlocks(homeSections, "route-turning-point", routeTimelineCards).map((card) => ({
+        ...card,
+        imageUrl: card.imageUrl ?? (card.imageKey ? cmsImageByKey[card.imageKey] : undefined),
+      })),
+    [homeSections],
+  );
+  const homeRouteTimeline = useMemo(() => routeTurningBlocks.filter((card) => !card.imageUrl), [routeTurningBlocks]);
+  const homeRouteMedia = useMemo(() => routeTurningBlocks.filter((card) => card.imageUrl), [routeTurningBlocks]);
   const homeEmpathyHighlights = useMemo(() => cardBlocks(homeSections, "empathy", empathyHighlightCards), [homeSections]);
   const homeValues = useMemo(() => cardBlocks(homeSections, "values", values), [homeSections]);
   const homeProjects = useMemo(
@@ -479,43 +495,25 @@ export function Home() {
         </div>
       </section>
 
-      <section id={anchor("route-changed")}>
-        <div className="container split">
-          <Card className="big-quote">
-            <p style={sectionTitleStyle("route-changed")}>{routeChanged.title}</p>
-          </Card>
-          <div>
-            <div className="section-kicker">{routeChanged.subtitle}</div>
-            {bodyParagraphs(routeChanged.body).map((paragraph, index) => (
-              <p className="section-desc with-space" style={sectionBodyStyle("route-changed")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id={anchor("route-mission")}>
-        <div className="container">
-          <Card className="big-quote">
-            <p style={sectionTitleStyle("route-mission")}>
-              {(routeMission.title ?? "").split("\n").map((line, index, lines) => (
-                <Fragment key={line}>
-                  {line}
-                  {index < lines.length - 1 ? <br /> : null}
-                </Fragment>
-              ))}
-            </p>
-          </Card>
-          <div className="thin-divider" />
-          <div className="route-timeline" aria-label="Route transition timeline">
-            {homeRouteTimeline.map((step) => (
-              <span key={step.title}>{step.title}</span>
-            ))}
-          </div>
-          {bodyParagraphs(routeMission.body).map((paragraph, index) => (
-            <p className="section-desc wide with-space" style={sectionBodyStyle("route-mission")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
-          ))}
-        </div>
-      </section>
+      <RouteTurningPointSection
+        id={anchor("route-turning-point")}
+        kicker={routeTurning.subtitle}
+        title={routeTurning.title}
+        body={routeTurning.body}
+        highlightEnabled={settingString(routeTurningSettings, "highlightEnabled", "true") !== "false"}
+        highlightText={settingString(routeTurningSettings, "highlightText", "The route changed.\nThe direction stayed.")}
+        timelineEnabled={settingString(routeTurningSettings, "timelineEnabled", "true") !== "false"}
+        pivotTitle={settingString(routeTurningSettings, "pivotTitle", "So I rebuilt the route.")}
+        pivotBody={settingString(routeTurningSettings, "pivotBody")}
+        mediaEnabled={settingString(routeTurningSettings, "mediaEnabled", "true") !== "false"}
+        mediaLayout={settingString(routeTurningSettings, "mediaLayout", "carousel") as "none" | "grid" | "carousel"}
+        mediaTitle={settingString(routeTurningSettings, "mediaTitle", "The route I continued through")}
+        mediaDescription={settingString(routeTurningSettings, "mediaDescription", "Small moments from the beginning of my new route at Universitas Brawijaya.")}
+        ctaLabel={settingString(routeTurningSettings, "ctaLabel", "Continue the story")}
+        ctaHref={resolveCtaHref(settingString(routeTurningSettings, "ctaHref"), "/#rebuilding-direction")}
+        timelineItems={homeRouteTimeline}
+        mediaItems={homeRouteMedia}
+      />
 
       <section id={anchor("rebuilding-direction")}>
         <div className="container split">
