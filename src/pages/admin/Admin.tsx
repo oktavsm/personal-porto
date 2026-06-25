@@ -30,6 +30,7 @@ import { ArticleContent } from "../../components/articles/ArticleContent";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import type { PublicArticleBlock } from "../../lib/publicApi";
+import { defaultSectionAnchor } from "../../lib/siteContent";
 
 type AdminState = {
   user: AdminUser | null;
@@ -188,6 +189,7 @@ const emptyMusic = {
 
 const emptyPageSection = {
   key: "",
+  anchorId: "",
   title: "",
   subtitle: "",
   body: "",
@@ -1347,6 +1349,7 @@ function settingsField(settingsJson: unknown, field: keyof typeof emptyPageSecti
 
 function pageSectionSettings(form: typeof emptyPageSection) {
   return {
+    anchorId: form.anchorId || undefined,
     titleAlign: form.titleAlign || undefined,
     bodyAlign: form.bodyAlign || undefined,
     imageKey: form.imageKey || undefined,
@@ -1413,7 +1416,7 @@ function publicPagePath(slug: string) {
 }
 
 const cardEnabledSections: Record<string, string[]> = {
-  home: ["hero", "early-story", "chosen-path", "ssn-route", "route-mission", "many-things", "empathy", "values"],
+  home: ["hero", "who-i-am-now", "early-story", "chosen-path", "ssn-route", "route-mission", "many-things", "empathy", "values"],
   "lead-self": ["evidence"],
 };
 
@@ -3182,6 +3185,7 @@ export function Admin() {
     setEditingPageSectionKey(section.key);
     setPageSectionForm({
       key: section.key,
+      anchorId: settingsField(section.settingsJson, "anchorId") || defaultSectionAnchor(section.key),
       title: section.title ?? "",
       subtitle: section.subtitle ?? "",
       body: section.body ?? "",
@@ -4466,6 +4470,15 @@ export function Admin() {
                 <input value={pageSectionForm.key} disabled />
               </label>
               <label>
+                Anchor ID
+                <input
+                  value={pageSectionForm.anchorId}
+                  onChange={(event) => setPageSectionForm({ ...pageSectionForm, anchorId: event.target.value.trim().replace(/^#/, "") })}
+                  placeholder={defaultSectionAnchor(pageSectionForm.key) || "section-anchor"}
+                />
+                <span className="admin-help">Used for links like <code>/#{pageSectionForm.anchorId || defaultSectionAnchor(pageSectionForm.key) || "section-anchor"}</code>. Keep it lowercase and unique on this page.</span>
+              </label>
+              <label>
                 Kicker / Subtitle
                 <input value={pageSectionForm.subtitle} onChange={(event) => setPageSectionForm({ ...pageSectionForm, subtitle: event.target.value })} />
               </label>
@@ -4577,7 +4590,7 @@ export function Admin() {
                     </label>
                     <label>
                       Identity Button Href
-                      <input value={pageSectionForm.identityCtaHref} onChange={(event) => setPageSectionForm({ ...pageSectionForm, identityCtaHref: event.target.value })} placeholder="/#identity" />
+                      <input value={pageSectionForm.identityCtaHref} onChange={(event) => setPageSectionForm({ ...pageSectionForm, identityCtaHref: event.target.value })} placeholder="/#who-i-am-now" />
                     </label>
                   </div>
                   <label>

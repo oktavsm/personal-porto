@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 type PortfolioExplorerProps = {
   compact?: boolean;
+  matchmakerAnchorId?: string;
   matchmakerKicker?: string;
   matchmakerTitle?: string;
   matchmakerBody?: string;
@@ -26,6 +27,8 @@ type PortfolioExplorerSectionProps = {
   kicker?: string;
   title?: string;
   body?: string;
+  anchorId?: string;
+  matchmakerAnchorId?: string;
   matchmakerKicker?: string;
   matchmakerTitle?: string;
   matchmakerBody?: string;
@@ -34,6 +37,7 @@ type PortfolioExplorerSectionProps = {
 
 function PortfolioExplorerContent({
   compact = false,
+  matchmakerAnchorId,
   matchmakerKicker = "Project matchmaker",
   matchmakerTitle = "Find projects by interest.",
   matchmakerBody = "This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you care about. Instead of reading every project one by one, you can start from what matters to you.",
@@ -89,7 +93,7 @@ function PortfolioExplorerContent({
       </div>
 
       {!compact && (
-        <div className="matchmaker-panel">
+        <div className="matchmaker-panel" id={matchmakerAnchorId}>
           <div className="matchmaker-copy">
             <div className="section-kicker">{matchmakerKicker}</div>
             <h3>{matchmakerTitle}</h3>
@@ -134,13 +138,15 @@ export function PortfolioExplorer({
   kicker = "Portfolio explorer",
   title = "Now choose where to go deeper.",
   body = "Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or just curious.\n\nChoose your perspective, and I will route you to the most relevant parts of this portfolio.",
+  anchorId = "explorer",
+  matchmakerAnchorId = "project-matchmaker",
   matchmakerKicker,
   matchmakerTitle,
   matchmakerBody,
   matchmakerHelper,
 }: PortfolioExplorerSectionProps) {
   return (
-    <section className="interactive-section" id="explorer">
+    <section className="interactive-section" id={anchorId}>
       <div className="container">
         <div className="interactive-head">
           <div>
@@ -151,6 +157,7 @@ export function PortfolioExplorer({
         </div>
 
         <PortfolioExplorerContent
+          matchmakerAnchorId={matchmakerAnchorId}
           matchmakerKicker={matchmakerKicker}
           matchmakerTitle={matchmakerTitle}
           matchmakerBody={matchmakerBody}

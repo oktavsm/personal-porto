@@ -8,6 +8,38 @@ function inputJson(value?: Record<string, unknown>) {
   return value ? (value as Prisma.InputJsonObject) : Prisma.JsonNull;
 }
 
+function jsonObject(value: Prisma.JsonValue | null) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function defaultAnchorId(sectionKey: string) {
+  const anchors: Record<string, string> = {
+    "early-story": "story",
+    values: "core-values",
+  };
+
+  return anchors[sectionKey] ?? sectionKey;
+}
+
+function mergedSettings(sectionKey: string, currentValue: Prisma.JsonValue | null, defaultValue?: Record<string, unknown>) {
+  const current = jsonObject(currentValue);
+  const merged = { anchorId: defaultAnchorId(sectionKey), ...defaultValue, ...current };
+
+  if (sectionKey === "hero" && (!current.anchorId || current.identityCtaHref === "/#identity")) {
+    merged.anchorId = defaultAnchorId(sectionKey);
+  }
+
+  if (sectionKey === "hero" && defaultValue && current.identityCtaHref === "/#identity") {
+    merged.identityCtaHref = defaultValue.identityCtaHref;
+  }
+
+  return Object.keys(merged).some((key) => merged[key] !== current[key]) ? merged : null;
+}
+
+function seedSettings(sectionKey: string, defaultValue?: Record<string, unknown>) {
+  return { anchorId: defaultAnchorId(sectionKey), ...defaultValue };
+}
+
 async function seedCms() {
   for (const page of siteContentPages) {
     const savedPage = await prisma.sitePage.upsert({
@@ -31,7 +63,7 @@ async function seedCms() {
             title: section.title ?? null,
             subtitle: section.subtitle ?? null,
             body: section.body ?? null,
-            settingsJson: inputJson(section.settingsJson),
+            settingsJson: inputJson(seedSettings(section.key, section.settingsJson)),
             sortOrder: section.sortOrder,
             isPublished: section.isPublished ?? true,
           }
@@ -44,11 +76,21 @@ async function seedCms() {
           title: section.title ?? null,
           subtitle: section.subtitle ?? null,
           body: section.body ?? null,
-          settingsJson: inputJson(section.settingsJson),
+          settingsJson: inputJson(seedSettings(section.key, section.settingsJson)),
           sortOrder: section.sortOrder,
           isPublished: section.isPublished ?? true,
         },
       });
+
+      if (!shouldOverwriteCms) {
+        const settings = mergedSettings(section.key, savedSection.settingsJson, section.settingsJson);
+        if (settings) {
+          await prisma.siteSection.update({
+            where: { id: savedSection.id },
+            data: { settingsJson: inputJson(settings) },
+          });
+        }
+      }
 
       const existingBlockCount = await prisma.contentBlock.count({ where: { sectionId: savedSection.id } });
       if (existingBlockCount === 0 && section.blocks && section.blocks.length > 0) {

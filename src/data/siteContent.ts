@@ -44,7 +44,7 @@ export const siteContentPages: SiteContentPage[] = [
           premise:
             "Those roles mattered, but they are not the whole story. This portfolio is about the pattern behind them: how I think, respond, build, and grow through real problems.",
           identityCtaLabel: "Who Am I?",
-          identityCtaHref: "/#identity",
+          identityCtaHref: "/#who-i-am-now",
           profileName: "Oktavianus Samuel Minarto",
           profileHeadline: "A steady mind who builds systems that help",
           profileMeta: "Informatics Engineering · Universitas Brawijaya",
@@ -54,6 +54,91 @@ export const siteContentPages: SiteContentPage[] = [
           imageKey: "profile",
         },
         sortOrder: 1,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Informatics Engineering",
+              text: "Universitas Brawijaya",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "TELADAN Scholar",
+              text: "Leadership development program by Tanoto Foundation",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "System Builder",
+              text: "Android · Automation · AI · Network Systems",
+            },
+            sortOrder: 3,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Self-Symbol",
+              text: "Core Server",
+            },
+            sortOrder: 4,
+          },
+        ],
+      },
+      {
+        key: "who-i-am-now",
+        title: "Before the story, this is where I stand now.",
+        subtitle: "Who I am now",
+        body:
+          "Before telling the story of how I got here, this is where I stand now.\n\nI'm Oktavianus Samuel Minarto, an Informatics Engineering student at Universitas Brawijaya and a TELADAN Scholar from Tanoto Foundation.\n\nI'm currently focused on software engineering, especially Android development, automation, AI, and network systems. I enjoy building practical systems from real problems around me — from mobile apps and web platforms to automation workflows that reduce repetitive work.\n\nWhat connects these interests is simple: I like making scattered things easier to understand, access, and use.\n\nI may have been a winner, speaker, leader, or scholar in different moments, but what stays consistent is how I think and build: calmly, structurally, and with the intention to make something useful.",
+        settingsJson: {
+          imageKey: "profile",
+          primaryCtaLabel: "Explore Core Values",
+          primaryCtaHref: "/#core-values",
+          secondaryCtaLabel: "View Projects",
+          secondaryCtaHref: "/projects",
+          tertiaryCtaLabel: "Open Resume",
+          tertiaryCtaHref: "/resume",
+        },
+        sortOrder: 2,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Informatics Engineering",
+              text: "Universitas Brawijaya",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "TELADAN Scholar",
+              text: "Tanoto Foundation",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Current Focus",
+              text: "Android · Automation · AI · Network",
+            },
+            sortOrder: 3,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Mission",
+              text: "Build useful systems from scattered problems",
+            },
+            sortOrder: 4,
+          },
+        ],
       },
       {
         key: "early-story",
@@ -61,7 +146,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Before I knew myself",
         body:
           "Since I was young, I joined many activities. Silat, PMR, Jumbara, Pramuka, OSIS, and competitions taught me discipline, independence, care, responsibility, focus, and growth. But at that time, I was still too young to define who I was. I was only collecting pieces of myself.",
-        sortOrder: 2,
+        sortOrder: 3,
         blocks: [
           {
             type: "card",
@@ -107,7 +192,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "A path I chose early",
         body:
           "In high school, I started to take technology seriously. I joined Informatics Olympiad and IT knowledge competitions. I began to see technology not only as something I liked, but as a path I wanted to pursue.\n\nAt that time, my dream was clear: Poltek SSN. I wanted to be part of cybersecurity, public service, and technology for the country.\n\nFor the first time, I thought: maybe this is really me.",
-        sortOrder: 3,
+        sortOrder: 4,
         blocks: [
           {
             type: "card",
@@ -135,7 +220,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "The selection I prepared for",
         body:
           "While many of my friends prepared for UTBK, I focused on a different path. I prepared for Poltek SSN because I believed it was the closest route to the future I imagined: technology, cybersecurity, public service, and contribution to the country.",
-        sortOrder: 4,
+        sortOrder: 5,
         blocks: [
           {
             type: "card",
@@ -172,7 +257,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Selection note",
         body:
           "The process started with SKD preparation, academic tests, and every stage that made the dream feel closer. One by one, I passed the early stages.\n\nFor a moment, it felt like the route I had built for years was finally opening.",
-        sortOrder: 5,
+        sortOrder: 6,
       },
       {
         key: "route-changed",
@@ -180,14 +265,14 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "When the route changed",
         body:
           "The selection process started well. I passed SKD. I passed the academic test. Then came the health selection — the stage where everything changed.\n\nIt hurt, because it was not only a failed selection. It felt like losing a version of myself that I had been building for years.\n\nThe dream was still there, but the route had to change.",
-        sortOrder: 6,
+        sortOrder: 7,
       },
       {
         key: "route-mission",
         title: "The route changed.\nThe mission didn't.",
         body:
           "At the last moment, I decided to take UTBK. I started almost from zero, because I had never fully prepared for that path before. In around one and a half months, I joined more than 20 tryouts, reviewed my mistakes, rebuilt my study rhythm, and forced myself to adapt quickly.\n\nEventually, I entered Informatics at Universitas Brawijaya. It was not an escape. It was a conscious choice. I realized that my dream did not have to disappear. I could still learn technology, build systems, and prepare myself to contribute through software, AI, networks, and maybe one day, government technology.",
-        sortOrder: 7,
+        sortOrder: 8,
         blocks: [
           {
             type: "card",
@@ -232,7 +317,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "tanoto",
         },
-        sortOrder: 8,
+        sortOrder: 9,
       },
       {
         key: "many-things",
@@ -243,7 +328,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "tanoto",
         },
-        sortOrder: 9,
+        sortOrder: 10,
         blocks: [
           {
             type: "card",
@@ -278,7 +363,7 @@ export const siteContentPages: SiteContentPage[] = [
         key: "quiet-pattern",
         body:
           "When the titles became too loud, I found what stayed quiet.\n\nIt was never the title.\n\nIt was the moment when something I built actually helped someone.\n\nA small script. An automation. A mobile app. A tool that reduces repetitive work. A system that makes scattered things easier to use.\n\nSince my first semester, I have built small tools and projects not because they were impressive, but because they solved something around me.\n\nThat is where I feel most like myself.",
-        sortOrder: 10,
+        sortOrder: 11,
       },
       {
         key: "identity",
@@ -286,7 +371,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "So, who am I?",
         body:
           "I am not only a winner, speaker, leader, scholar, or developer. Those are moments, roles, and responsibilities.\n\nThe pattern behind them is clearer: I tend to observe scattered problems, organize them into structure, and build systems that help people move easier.",
-        sortOrder: 11,
+        sortOrder: 12,
       },
       {
         key: "empathy",
@@ -297,7 +382,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "pldVolunteer",
         },
-        sortOrder: 12,
+        sortOrder: 13,
         blocks: [
           {
             type: "card",
@@ -338,7 +423,7 @@ export const siteContentPages: SiteContentPage[] = [
         title: "The values I keep returning to",
         subtitle: "Core values",
         body: "Stability, structure, usefulness, and empathy are the values I keep seeing across the way I learn, serve, and build.",
-        sortOrder: 13,
+        sortOrder: 14,
         blocks: [
           {
             type: "card",
@@ -380,7 +465,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Values in motion",
         body:
           "When these values work together, they become the way I solve problems.\n\nEmpathy helps me notice what people need. Structure helps me organize the scattered parts. Stability helps me respond without rushing. Usefulness helps me make sure the result actually matters.\n\nThis combination is one of my unique strengths. I may not always be the loudest person in the room, but I can read the situation, organize the problem, and keep moving until the system becomes clearer and more helpful.",
-        sortOrder: 14,
+        sortOrder: 15,
       },
       {
         key: "mission",
@@ -388,7 +473,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "My mission",
         body:
           "This is the pattern I keep returning to. I like helping unclear things become clearer, repetitive things become lighter, and scattered flows become easier to use.",
-        sortOrder: 15,
+        sortOrder: 16,
       },
       {
         key: "mission-preface",
@@ -396,7 +481,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Before the mission",
         body:
           "I am interested in work that lets me investigate how a problem works, understand the structure behind it, and build something practical from that understanding.\n\nThat is why software engineering, Android development, automation, AI, and network systems feel aligned with me. They allow me to combine technical curiosity, structured thinking, and the desire to make something useful for real people.",
-        sortOrder: 16,
+        sortOrder: 17,
       },
       {
         key: "mission-alignment",
@@ -404,7 +489,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Work pattern",
         body:
           "My investigative side makes me curious about how systems work and why a problem happens. My conventional side makes me comfortable with structure, documentation, flow, and organized execution. My realistic side makes me enjoy hands-on implementation, where ideas are tested through real tools, code, and systems.\n\nAt the same time, my interpersonal side appears in the way I try to understand users, students, teammates, and the people affected by the system.",
-        sortOrder: 17,
+        sortOrder: 18,
       },
       {
         key: "mission-application",
@@ -412,7 +497,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Technology direction",
         body:
           "Through Android development, I can build tools people can access directly from their daily devices. Through automation, I can reduce repetitive work and connect scattered information. Through AI, I can explore systems that adapt and assist more intelligently. Through network systems, I can understand how services connect, communicate, and stay reliable.",
-        sortOrder: 18,
+        sortOrder: 19,
       },
       {
         key: "core-server-map",
@@ -425,7 +510,7 @@ export const siteContentPages: SiteContentPage[] = [
           centerLabel: "Core Server",
           linkLabel: "Open related page",
         },
-        sortOrder: 19,
+        sortOrder: 20,
       },
       {
         key: "music",
@@ -436,7 +521,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           blockedMessage: "Autoplay was blocked by the browser. Press play to start the soundtrack.",
         },
-        sortOrder: 20,
+        sortOrder: 21,
       },
       {
         key: "explorer",
@@ -444,7 +529,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Portfolio explorer",
         body:
           "Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or just curious.\n\nChoose your perspective, and I will route you to the most relevant parts of this portfolio.",
-        sortOrder: 21,
+        sortOrder: 22,
       },
       {
         key: "project-matchmaker",
@@ -452,7 +537,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Project matchmaker",
         body:
           "This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you care about. Instead of reading every project one by one, you can start from what matters to you.\n\nPick an interest, and I will show the projects that fit it best.",
-        sortOrder: 22,
+        sortOrder: 23,
       },
       {
         key: "route-modal",
@@ -464,7 +549,7 @@ export const siteContentPages: SiteContentPage[] = [
           primaryCtaLabel: "Continue the story",
           secondaryCtaLabel: "See full explorer later",
         },
-        sortOrder: 23,
+        sortOrder: 24,
       },
       {
         key: "featured-projects",
@@ -475,7 +560,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "Explore My Projects",
           ctaHref: "/projects",
         },
-        sortOrder: 24,
+        sortOrder: 25,
       },
       {
         key: "featured-experiences",
@@ -486,7 +571,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "See My Experiences",
           ctaHref: "/experiences",
         },
-        sortOrder: 25,
+        sortOrder: 26,
       },
       {
         key: "closing",
@@ -502,7 +587,7 @@ export const siteContentPages: SiteContentPage[] = [
           tertiaryCtaLabel: "Contact Me",
           tertiaryCtaHref: "/contact",
         },
-        sortOrder: 26,
+        sortOrder: 27,
       },
     ],
   },

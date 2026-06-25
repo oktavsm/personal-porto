@@ -13,6 +13,7 @@ type CoreServerMapProps = {
   selectedKicker?: string;
   centerLabel?: string;
   linkLabel?: string;
+  anchorId?: string;
 };
 
 export function CoreServerMap({
@@ -22,6 +23,7 @@ export function CoreServerMap({
   selectedKicker = "Selected node",
   centerLabel = "Core Server",
   linkLabel = "Open related page",
+  anchorId = "core-server-map",
 }: CoreServerMapProps) {
   const [nodes, setNodes] = useState<CoreServerNode[]>(fallbackNodes);
   const [activeNodeId, setActiveNodeId] = useState(fallbackNodes[0].id);
@@ -46,7 +48,7 @@ export function CoreServerMap({
   const activeNode = nodes.find((node) => node.id === activeNodeId) ?? nodes[0];
 
   return (
-    <section className="interactive-section core-map-section" id="core-server-map">
+    <section className="interactive-section core-map-section" id={anchorId}>
       <div className="container">
         <div className="interactive-head">
           <div>

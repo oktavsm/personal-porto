@@ -169,6 +169,7 @@ type HomeMusicSectionProps = {
   title?: string;
   body?: string;
   blockedMessage?: string;
+  anchorId?: string;
 };
 
 export function HomeMusicSection({
@@ -176,12 +177,13 @@ export function HomeMusicSection({
   title = "Some songs do not push me to be stronger.",
   body = "They simply give me space to breathe. Hindia's “everything u are” and “Evaluasi (Reprise)” do not feel like forced motivation. They feel calm, honest, and human — like a quiet reminder that I am allowed to rest and still continue.\n\nResting is not the opposite of trying. Sometimes, resting is how I keep trying.",
   blockedMessage = "Autoplay was blocked by the browser. Press play to start the soundtrack.",
+  anchorId = "music",
 }: HomeMusicSectionProps) {
   const { track, tracks, playing, blocked, play, pause, setTrack } = useMusic();
   const paragraphs = bodyParagraphs(body);
 
   return (
-    <section className="music-section" id="music" data-reveal>
+    <section className="music-section" id={anchorId} data-reveal>
       <div className="container music-grid">
         <div>
           <div className="section-kicker">{kicker}</div>

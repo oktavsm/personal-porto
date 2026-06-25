@@ -616,6 +616,79 @@ p {
   height: 76%;
 }
 
+.who-now-section {
+  padding-top: 82px;
+}
+
+.who-now-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(0, 1.18fr);
+  gap: 44px;
+  align-items: center;
+}
+
+.who-now-photo-card {
+  padding: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, var(--accent-wash), transparent 34%),
+    var(--card-glass);
+}
+
+.who-now-photo-card img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  filter: grayscale(1);
+}
+
+.who-now-photo-card div {
+  padding: 18px 4px 4px;
+}
+
+.who-now-photo-card strong,
+.who-now-photo-card span {
+  display: block;
+}
+
+.who-now-photo-card strong {
+  color: var(--text);
+  font-size: 1.15rem;
+}
+
+.who-now-photo-card span {
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+.who-now-content h2 {
+  max-width: 780px;
+}
+
+.who-now-highlight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.who-now-highlight-card {
+  min-height: 118px;
+}
+
+.who-now-highlight-card strong,
+.who-now-highlight-card span {
+  display: block;
+}
+
+.who-now-highlight-card span {
+  color: var(--muted);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
 .server-visual {
   position: relative;
   min-height: 520px;
@@ -4033,6 +4106,15 @@ body.is-embedded .chat-panel {
 
   .hero-highlight-grid {
     grid-template-columns: 1fr;
+  }
+
+  .who-now-grid,
+  .who-now-highlight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .who-now-section {
+    padding-top: 72px;
   }
 
   .hero-profile-card img {

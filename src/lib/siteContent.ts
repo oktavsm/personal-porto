@@ -63,6 +63,19 @@ export function settingImage(settings: Record<string, unknown>, imageMap: Record
   return imageKey ? imageMap[imageKey] ?? fallback : fallback;
 }
 
+export function defaultSectionAnchor(sectionKey: string) {
+  const anchors: Record<string, string> = {
+    "early-story": "story",
+    values: "core-values",
+  };
+
+  return anchors[sectionKey] ?? sectionKey;
+}
+
+export function sectionAnchor(sections: Map<string, EditableSection>, key: string, fallback = defaultSectionAnchor(key)) {
+  return settingString(sectionSettings(sections, key), "anchorId", fallback);
+}
+
 export function bodyParagraphs(body?: string | null) {
   return (body ?? "").split(/\n{2,}/).map((paragraph) => paragraph.trim()).filter(Boolean);
 }

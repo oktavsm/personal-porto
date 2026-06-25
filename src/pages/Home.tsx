@@ -14,7 +14,7 @@ import { media } from "../data/media";
 import { experiences, featuredExperiences, type Experience } from "../data/experiences";
 import { featuredProjects, projects, type Project } from "../data/projects";
 import { publicApi, type PublicExperience, type PublicProject, type PublicSitePage } from "../lib/publicApi";
-import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy, sectionSettings, settingImage, settingString, settingTextAlign } from "../lib/siteContent";
+import { bodyParagraphs, cardBlocks, resolveSections, sectionAnchor, sectionCopy, sectionSettings, settingImage, settingString, settingTextAlign } from "../lib/siteContent";
 
 const earlyCards = [
   { title: "Silat", imageKey: "earlySilat", image: media.earlySilat, text: "Discipline, physical control, consistency, and courage to train through repetition." },
@@ -73,6 +73,13 @@ const heroHighlightCards = [
   { title: "TELADAN Scholar", text: "Leadership development program by Tanoto Foundation" },
   { title: "System Builder", text: "Android · Automation · AI · Network Systems" },
   { title: "Self-Symbol", text: "Core Server" },
+];
+
+const whoNowCards = [
+  { title: "Informatics Engineering", text: "Universitas Brawijaya" },
+  { title: "TELADAN Scholar", text: "Tanoto Foundation" },
+  { title: "Current Focus", text: "Android · Automation · AI · Network" },
+  { title: "Mission", text: "Build useful systems from scattered problems" },
 ];
 
 const empathyHighlightCards = [
@@ -158,6 +165,8 @@ export function Home() {
   const homeSections = useMemo(() => resolveSections("home", homePage), [homePage]);
   const hero = sectionCopy(homeSections, "hero");
   const heroSettings = sectionSettings(homeSections, "hero");
+  const whoNow = sectionCopy(homeSections, "who-i-am-now");
+  const whoNowSettings = sectionSettings(homeSections, "who-i-am-now");
   const empathySettings = sectionSettings(homeSections, "empathy");
   const featuredProjectsSettings = sectionSettings(homeSections, "featured-projects");
   const featuredExperiencesSettings = sectionSettings(homeSections, "featured-experiences");
@@ -181,6 +190,7 @@ export function Home() {
   const musicSettings = sectionSettings(homeSections, "music");
   const coreMapSettings = sectionSettings(homeSections, "core-server-map");
   const routeModalSettings = sectionSettings(homeSections, "route-modal");
+  const anchor = (key: string) => sectionAnchor(homeSections, key);
   const heroBody = bodyParagraphs(hero.body);
   const heroTagline = heroBody.at(-1) ?? "I let things flow, but I stand my ground.";
   const heroPremise = settingString(
@@ -199,8 +209,13 @@ export function Home() {
   const rebuildingImage = settingImage(sectionSettings(homeSections, "rebuilding-direction"), cmsImageByKey, media.tanoto);
   const heroPrimaryHref = resolveCtaHref(settingString(heroSettings, "primaryCtaHref"), "/#story");
   const heroSecondaryHref = resolveCtaHref(settingString(heroSettings, "secondaryCtaHref"), "/projects");
-  const heroIdentityHref = resolveCtaHref(settingString(heroSettings, "identityCtaHref"), "/#identity");
+  const heroIdentityHref = resolveCtaHref(settingString(heroSettings, "identityCtaHref"), "/#who-i-am-now");
   const heroHighlights = useMemo(() => cardBlocks(homeSections, "hero", heroHighlightCards), [homeSections]);
+  const whoNowHighlights = useMemo(() => cardBlocks(homeSections, "who-i-am-now", whoNowCards), [homeSections]);
+  const whoNowImage = settingImage(whoNowSettings, cmsImageByKey, media.profile);
+  const whoNowPrimaryHref = resolveCtaHref(settingString(whoNowSettings, "primaryCtaHref"), "/#core-values");
+  const whoNowSecondaryHref = resolveCtaHref(settingString(whoNowSettings, "secondaryCtaHref"), "/projects");
+  const whoNowTertiaryHref = resolveCtaHref(settingString(whoNowSettings, "tertiaryCtaHref"), "/resume");
   const projectsCtaHref = resolveCtaHref(settingString(featuredProjectsSettings, "ctaHref"), "/projects");
   const experiencesCtaHref = resolveCtaHref(settingString(featuredExperiencesSettings, "ctaHref"), "/experiences");
   const closingPrimaryHref = resolveCtaHref(settingString(closingSettings, "primaryCtaHref"), "/projects");
@@ -286,7 +301,7 @@ export function Home() {
 
   return (
     <>
-      <section className="hero-section">
+      <section className="hero-section" id={anchor("hero")}>
         <div className="container hero-grid">
           <div className="hero-copy-wrap">
             <h1>
@@ -355,7 +370,47 @@ export function Home() {
         </div>
       </section>
 
-      <section id="story">
+      <section className="who-now-section" id={anchor("who-i-am-now")}>
+        <div className="container who-now-grid">
+          <Card className="who-now-photo-card">
+            <img src={whoNowImage} alt={heroProfileName} loading="lazy" />
+            <div>
+              <strong>{heroProfileName}</strong>
+              <span><FormattedText text={heroProfileHeadline} /></span>
+            </div>
+          </Card>
+          <div className="who-now-content">
+            <div className="section-kicker">{whoNow.subtitle}</div>
+            <h2 style={sectionTitleStyle("who-i-am-now")}>{whoNow.title}</h2>
+            {bodyParagraphs(whoNow.body).map((paragraph, index) => (
+              <p className="section-desc with-space" style={sectionBodyStyle("who-i-am-now")} key={`${paragraph}-${index}`}>
+                <FormattedText text={paragraph} />
+              </p>
+            ))}
+            <div className="who-now-highlight-grid" aria-label="Current identity highlights">
+              {whoNowHighlights.map((item) => (
+                <Card className="who-now-highlight-card" key={item.title}>
+                  <strong>{item.title}</strong>
+                  <span><FormattedText text={item.text} /></span>
+                </Card>
+              ))}
+            </div>
+            <div className="actions">
+              <Button {...ctaTarget(whoNowPrimaryHref)} variant="primary">
+                {settingString(whoNowSettings, "primaryCtaLabel", "Explore Core Values")}
+              </Button>
+              <Button {...ctaTarget(whoNowSecondaryHref)}>
+                {settingString(whoNowSettings, "secondaryCtaLabel", "View Projects")}
+              </Button>
+              <Button {...ctaTarget(whoNowTertiaryHref)}>
+                {settingString(whoNowSettings, "tertiaryCtaLabel", "Open Resume")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id={anchor("early-story")}>
         <div className="container">
           <SectionHeader
             kicker={sectionCopy(homeSections, "early-story").subtitle ?? ""}
@@ -377,7 +432,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("chosen-path")}>
         <div className="container split">
           <div>
             <div className="section-kicker">{sectionCopy(homeSections, "chosen-path").subtitle}</div>
@@ -395,7 +450,7 @@ export function Home() {
         </div>
       </section>
 
-      <section id="identity">
+      <section id={anchor("ssn-route")}>
         <div className="container">
           <SectionHeader
             kicker={sectionCopy(homeSections, "ssn-route").subtitle ?? ""}
@@ -424,7 +479,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("route-changed")}>
         <div className="container split">
           <Card className="big-quote">
             <p style={sectionTitleStyle("route-changed")}>{routeChanged.title}</p>
@@ -438,7 +493,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("route-mission")}>
         <div className="container">
           <Card className="big-quote">
             <p style={sectionTitleStyle("route-mission")}>
@@ -462,7 +517,7 @@ export function Home() {
         </div>
       </section>
 
-      <section id="rebuilding-direction">
+      <section id={anchor("rebuilding-direction")}>
         <div className="container split">
           <div>
             <div className="section-kicker">{rebuildingDirection.subtitle}</div>
@@ -477,7 +532,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("many-things")}>
         <div className="container split">
           <div>
             <div className="section-kicker">{manyThings.subtitle}</div>
@@ -494,7 +549,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("quiet-pattern")}>
         <div className="container narrative">
           {bodyParagraphs(quietPattern.body).map((paragraph, index) => (
             <p className={index % 2 === 1 ? "muted" : undefined} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
@@ -502,7 +557,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("identity")}>
         <div className="container">
           <Card className="identity-card">
             <div className="section-kicker">{sectionCopy(homeSections, "identity").subtitle}</div>
@@ -514,7 +569,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("empathy")}>
         <div className="container split">
           <div>
             <div className="section-kicker">{sectionCopy(homeSections, "empathy").subtitle}</div>
@@ -534,7 +589,7 @@ export function Home() {
         </div>
       </section>
 
-      <section id="values">
+      <section id={anchor("values")}>
         <div className="container">
           <SectionHeader
             kicker={sectionCopy(homeSections, "values").subtitle ?? ""}
@@ -560,9 +615,9 @@ export function Home() {
         </div>
       </section>
 
-      <section className="mission-section" id="mission">
+      <section className="mission-section" id={anchor("mission")}>
         <div className="container mission-layout">
-          <Card className="mission-preface-card">
+          <Card className="mission-preface-card" id={anchor("mission-preface")}>
             <div className="section-kicker">{missionPreface.subtitle}</div>
             <h3 style={sectionTitleStyle("mission-preface")}>{missionPreface.title}</h3>
             {bodyParagraphs(missionPreface.body).map((paragraph, index) => (
@@ -576,14 +631,14 @@ export function Home() {
           </div>
 
           <div className="mission-explanation-grid">
-            <Card className="mission-explanation-card">
+            <Card className="mission-explanation-card" id={anchor("mission-alignment")}>
               <div className="section-kicker">{missionAlignment.subtitle}</div>
               <h3 style={sectionTitleStyle("mission-alignment")}>{missionAlignment.title}</h3>
               {bodyParagraphs(missionAlignment.body).map((paragraph, index) => (
                 <p style={sectionBodyStyle("mission-alignment")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
               ))}
             </Card>
-            <Card className="mission-explanation-card">
+            <Card className="mission-explanation-card" id={anchor("mission-application")}>
               <div className="section-kicker">{missionApplication.subtitle}</div>
               <h3 style={sectionTitleStyle("mission-application")}>{missionApplication.title}</h3>
               {bodyParagraphs(missionApplication.body).map((paragraph, index) => (
@@ -600,7 +655,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("featured-projects")}>
         <div className="container">
           <SectionHeader
             kicker={sectionCopy(homeSections, "featured-projects").subtitle ?? ""}
@@ -621,7 +676,7 @@ export function Home() {
         </div>
       </section>
 
-      <section>
+      <section id={anchor("featured-experiences")}>
         <div className="container">
           <SectionHeader
             kicker={sectionCopy(homeSections, "featured-experiences").subtitle ?? ""}
@@ -649,6 +704,7 @@ export function Home() {
         selectedKicker={settingString(coreMapSettings, "selectedKicker", "Selected node")}
         centerLabel={settingString(coreMapSettings, "centerLabel", "Core Server")}
         linkLabel={settingString(coreMapSettings, "linkLabel", "Open related page")}
+        anchorId={anchor("core-server-map")}
       />
 
       <HomeMusicSection
@@ -656,6 +712,7 @@ export function Home() {
         title={musicSection.title}
         body={musicSection.body}
         blockedMessage={settingString(musicSettings, "blockedMessage", "Autoplay was blocked by the browser. Press play to start the soundtrack.")}
+        anchorId={anchor("music")}
       />
 
       <PortfolioExplorer
@@ -666,9 +723,11 @@ export function Home() {
         matchmakerTitle={matchmakerSection.title}
         matchmakerBody={bodyParagraphs(matchmakerSection.body)[0]}
         matchmakerHelper={bodyParagraphs(matchmakerSection.body)[1]}
+        anchorId={anchor("explorer")}
+        matchmakerAnchorId={anchor("project-matchmaker")}
       />
 
-      <section className="closing-section">
+      <section className="closing-section" id={anchor("closing")}>
         <div className="container">
           <div className="section-kicker">{sectionCopy(homeSections, "closing").subtitle}</div>
           <h2 style={sectionTitleStyle("closing")}>{sectionCopy(homeSections, "closing").title}</h2>
