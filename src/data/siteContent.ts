@@ -568,12 +568,46 @@ export const siteContentPages: SiteContentPage[] = [
         sortOrder: 19,
       },
       {
+        key: "mission-fit",
+        title: "Why this mission fits me",
+        subtitle: "Interest and strength pattern",
+        body:
+          "The minat-bakat reflection helped me see that my direction is not random. My strongest patterns point toward understanding problems, organizing systems, building practical solutions, and working with people.\n\nThat is why my mission feels natural: I am drawn to systems that begin as scattered problems, then become clearer through structure, implementation, and empathy.",
+        sortOrder: 20,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Investigative + Logical",
+              text: "I like finding how a problem works, tracing the root cause, and breaking unclear things into smaller logical parts.",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Conventional + Structured",
+              text: "I feel comfortable with flow, documentation, planning, and making a messy process easier to follow.",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Realistic + Interpersonal",
+              text: "I enjoy hands-on implementation, but I also care whether the result can be understood and used by real people.",
+            },
+            sortOrder: 3,
+          },
+        ],
+      },
+      {
         key: "mission-application",
         title: "How I apply it through technology",
         subtitle: "Technology direction",
         body:
           "Through Android development, I can build tools people can access directly from their daily devices. Through automation, I can reduce repetitive work and connect scattered information. Through AI, I can explore systems that adapt and assist more intelligently. Through network systems, I can understand how services connect, communicate, and stay reliable.",
-        sortOrder: 20,
+        sortOrder: 21,
       },
       {
         key: "core-server-map",
@@ -586,7 +620,7 @@ export const siteContentPages: SiteContentPage[] = [
           centerLabel: "Core Server",
           linkLabel: "Open related page",
         },
-        sortOrder: 21,
+        sortOrder: 22,
       },
       {
         key: "music",
@@ -597,7 +631,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           blockedMessage: "Autoplay was blocked by the browser. Press play to start the soundtrack.",
         },
-        sortOrder: 22,
+        sortOrder: 23,
       },
       {
         key: "explorer",
@@ -605,7 +639,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Portfolio explorer",
         body:
           "Not every visitor comes for the same reason. This explorer helps you find the parts of my portfolio that are most relevant to your purpose — whether you are a recruiter, mentor, collaborator, fellow student, or just curious.\n\nChoose your perspective, and I will route you to the most relevant parts of this portfolio.",
-        sortOrder: 23,
+        sortOrder: 24,
       },
       {
         key: "project-matchmaker",
@@ -613,7 +647,7 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Project matchmaker",
         body:
           "This matchmaker helps you explore my projects based on the kind of problem, technology, or interest you care about. Instead of reading every project one by one, you can start from what matters to you.\n\nPick an interest, and I will show the projects that fit it best.",
-        sortOrder: 24,
+        sortOrder: 25,
       },
       {
         key: "route-modal",
@@ -625,7 +659,7 @@ export const siteContentPages: SiteContentPage[] = [
           primaryCtaLabel: "Continue the story",
           secondaryCtaLabel: "See full explorer later",
         },
-        sortOrder: 25,
+        sortOrder: 26,
       },
       {
         key: "featured-projects",
@@ -636,7 +670,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "Explore My Projects",
           ctaHref: "/projects",
         },
-        sortOrder: 26,
+        sortOrder: 27,
       },
       {
         key: "featured-experiences",
@@ -647,7 +681,7 @@ export const siteContentPages: SiteContentPage[] = [
           ctaLabel: "See My Experiences",
           ctaHref: "/experiences",
         },
-        sortOrder: 27,
+        sortOrder: 28,
       },
       {
         key: "closing",
@@ -663,7 +697,7 @@ export const siteContentPages: SiteContentPage[] = [
           tertiaryCtaLabel: "Contact Me",
           tertiaryCtaHref: "/contact",
         },
-        sortOrder: 28,
+        sortOrder: 29,
       },
     ],
   },
@@ -706,6 +740,40 @@ export const siteContentPages: SiteContentPage[] = [
         sortOrder: 4,
       },
       {
+        key: "interest-strength-pattern",
+        title: "How my interests and strengths connect",
+        subtitle: "Minat vs bakat reflection",
+        body:
+          "The minat-bakat task helped me compare three sources of self-knowledge: what I see in myself, what other people notice, and what the assessment tools show.\n\nAcross those sources, one pattern became clearer. My technical side is strong in problem solving, analytical thinking, and logical-mathematical reasoning. At the same time, my interpersonal side also appears through teaching, mentoring, public speaking, volunteering, and organizational work.\n\nThis made me realize that I am not only an individual problem solver. I feel more aligned when technical thinking, structure, and people-aware communication work together.",
+        sortOrder: 5,
+        blocks: [
+          {
+            type: "card",
+            contentJson: {
+              title: "Analytical core",
+              text: "Logical-mathematical strength, problem solving, analytical thinking, competitive programming, and debugging show the way I break problems down.",
+            },
+            sortOrder: 1,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "Practical builder",
+              text: "Kinesthetic and realistic tendencies show up when I learn by building, testing, implementing, and turning ideas into working tools.",
+            },
+            sortOrder: 2,
+          },
+          {
+            type: "card",
+            contentJson: {
+              title: "People-aware communicator",
+              text: "Interpersonal skill appears in teaching, mentoring, volunteering, and explaining technical concepts so they become easier to understand.",
+            },
+            sortOrder: 3,
+          },
+        ],
+      },
+      {
         key: "self-symbol",
         title: "Core Server",
         subtitle: "Self-symbol",
@@ -714,7 +782,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "coreServer",
         },
-        sortOrder: 5,
+        sortOrder: 6,
       },
       {
         key: "empathy",
@@ -725,7 +793,7 @@ export const siteContentPages: SiteContentPage[] = [
         settingsJson: {
           imageKey: "pldVolunteer",
         },
-        sortOrder: 6,
+        sortOrder: 7,
       },
       {
         key: "mission",
@@ -733,14 +801,14 @@ export const siteContentPages: SiteContentPage[] = [
         subtitle: "Mission",
         body:
           "My mission is to build useful systems that turn scattered problems into structured, accessible, and reliable solutions.\n\nThis mission comes from the pattern I found in myself. I often feel meaningful when I can take something scattered, repetitive, inefficient, or unclear, then make it easier to understand and use.\n\nSoftware engineering, Android development, automation, AI, and network systems are different ways for me to build systems that help people.",
-        sortOrder: 7,
+        sortOrder: 8,
       },
       {
         key: "evidence",
         title: "Where this reflection appears in real life",
         subtitle: "Evidence in practice",
         body: "The reflection is not meant to stay abstract. It shows up in the way I serve, lead, teach, and build.",
-        sortOrder: 8,
+        sortOrder: 9,
         blocks: [
           {
             type: "card",
@@ -781,7 +849,7 @@ export const siteContentPages: SiteContentPage[] = [
         title: "I am still being built.",
         body:
           "Lead Self did not give me a final answer about who I am. Instead, it helped me see the pattern behind my choices, strengths, and struggles.\n\nI am still learning how to be more assertive, more focused, and more honest with what I want. But for now, I understand one thing more clearly: I feel most like myself when I build systems that help.",
-        sortOrder: 9,
+        sortOrder: 10,
       },
     ],
   },

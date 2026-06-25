@@ -1337,6 +1337,53 @@ p {
   gap: 18px;
 }
 
+.mission-fit-card {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 22px;
+  min-height: 0;
+  text-align: left;
+}
+
+.mission-fit-card h3 {
+  font-size: clamp(24px, 2.8vw, 38px);
+  line-height: 1.08;
+}
+
+.mission-fit-card p {
+  max-width: none;
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.mission-fit-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.mission-fit-item {
+  padding: 16px;
+  border: 1px solid rgba(216, 211, 200, 0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.mission-fit-item strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.mission-fit-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .mission-body-copy {
   max-width: 760px;
   margin: 12px auto 0;
@@ -1573,6 +1620,55 @@ li + li {
 .leadself-context-card p:first-child {
   color: var(--text);
   font-weight: 650;
+}
+
+.leadself-pattern-card {
+  min-height: 0;
+  margin: 18px 0;
+}
+
+.leadself-pattern-card h2 {
+  max-width: 920px;
+  margin-bottom: 18px;
+  font-size: clamp(32px, 4.2vw, 58px);
+  line-height: 1.02;
+}
+
+.leadself-pattern-card p {
+  max-width: 980px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.leadself-pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.leadself-pattern-item {
+  padding: 18px;
+  border: 1px solid rgba(216, 211, 200, 0.12);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgba(242, 238, 232, 0.035), transparent),
+    rgba(255, 255, 255, 0.022);
+}
+
+.leadself-pattern-item strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.leadself-pattern-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.65;
 }
 
 .containerless-split {
@@ -4214,6 +4310,7 @@ body.is-embedded .chat-panel {
   .explorer-layout,
   .matchmaker-panel,
   .core-map-layout,
+  .mission-fit-card,
   .route-turning-top,
   .route-turning-pivot,
   .route-modal-head,
@@ -4239,6 +4336,7 @@ body.is-embedded .chat-panel {
   .grid-2,
   .detail-grid,
   .mission-explanation-grid,
+  .leadself-pattern-grid,
   .route-turning-media-grid,
   .memory-grid,
   .gallery-grid {

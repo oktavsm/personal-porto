@@ -1434,8 +1434,8 @@ function publicPagePath(slug: string) {
 }
 
 const cardEnabledSections: Record<string, string[]> = {
-  home: ["hero", "who-i-am-now", "early-story", "chosen-path", "ssn-route", "route-turning-point", "many-things", "empathy", "values"],
-  "lead-self": ["evidence"],
+  home: ["hero", "who-i-am-now", "early-story", "chosen-path", "ssn-route", "route-turning-point", "many-things", "empathy", "values", "mission-fit"],
+  "lead-self": ["interest-strength-pattern", "evidence"],
 };
 
 function sectionSupportsCards(pageSlug?: string | null, sectionKey?: string | null) {

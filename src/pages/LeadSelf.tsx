@@ -4,7 +4,7 @@ import { Card } from "../components/ui/Card";
 import { media } from "../data/media";
 import { useEffect, useMemo, useState } from "react";
 import { publicApi, type PublicSitePage } from "../lib/publicApi";
-import { bodyParagraphs, cardBlocks, resolveSections, sectionCopy, sectionSettings, settingImage, settingTextAlign } from "../lib/siteContent";
+import { bodyParagraphs, cardBlocks, resolveSections, sectionAnchor, sectionCopy, sectionSettings, settingImage, settingTextAlign } from "../lib/siteContent";
 
 const leadSelfImageByKey: Record<string, string> = {
   profile: media.profile,
@@ -31,10 +31,26 @@ const evidenceCards = [
   },
 ];
 
+const interestStrengthCards = [
+  {
+    title: "Analytical core",
+    text: "Logical-mathematical strength, problem solving, analytical thinking, competitive programming, and debugging show the way I break problems down.",
+  },
+  {
+    title: "Practical builder",
+    text: "Kinesthetic and realistic tendencies show up when I learn by building, testing, implementing, and turning ideas into working tools.",
+  },
+  {
+    title: "People-aware communicator",
+    text: "Interpersonal skill appears in teaching, mentoring, volunteering, and explaining technical concepts so they become easier to understand.",
+  },
+];
+
 export function LeadSelf() {
   const [leadSelfPage, setLeadSelfPage] = useState<PublicSitePage | null>(null);
   const leadSelfSections = useMemo(() => resolveSections("lead-self", leadSelfPage), [leadSelfPage]);
   const leadSelfEvidenceCards = useMemo(() => cardBlocks(leadSelfSections, "evidence", evidenceCards), [leadSelfSections]);
+  const leadSelfInterestCards = useMemo(() => cardBlocks(leadSelfSections, "interest-strength-pattern", interestStrengthCards), [leadSelfSections]);
   const introImage = settingImage(sectionSettings(leadSelfSections, "intro"), leadSelfImageByKey, media.profile);
   const selfSymbolImage = settingImage(sectionSettings(leadSelfSections, "self-symbol"), leadSelfImageByKey, media.coreServer);
   const empathyImage = settingImage(sectionSettings(leadSelfSections, "empathy"), leadSelfImageByKey, media.pldVolunteer);
@@ -44,6 +60,7 @@ export function LeadSelf() {
     titleAlign: settingTextAlign(sectionSettings(leadSelfSections, key), "titleAlign"),
     descriptionAlign: settingTextAlign(sectionSettings(leadSelfSections, key), "bodyAlign"),
   });
+  const anchor = (key: string) => sectionAnchor(leadSelfSections, key);
 
   useEffect(() => {
     let active = true;
@@ -102,6 +119,22 @@ export function LeadSelf() {
             ))}
           </Card>
         </div>
+
+        <Card className="leadself-pattern-card" id={anchor("interest-strength-pattern")}>
+          <div className="section-kicker">{sectionCopy(leadSelfSections, "interest-strength-pattern").subtitle}</div>
+          <h2 style={sectionTitleStyle("interest-strength-pattern")}>{sectionCopy(leadSelfSections, "interest-strength-pattern").title}</h2>
+          {bodyParagraphs(sectionCopy(leadSelfSections, "interest-strength-pattern").body).map((paragraph, index) => (
+            <p key={`${paragraph}-${index}`} style={sectionBodyStyle("interest-strength-pattern")}><FormattedText text={paragraph} /></p>
+          ))}
+          <div className="leadself-pattern-grid" aria-label="Interest and strength pattern cards">
+            {leadSelfInterestCards.map((card) => (
+              <div className="leadself-pattern-item" key={card.title}>
+                <strong>{card.title}</strong>
+                <span><FormattedText text={card.text} /></span>
+              </div>
+            ))}
+          </div>
+        </Card>
 
         <div className="containerless-split" id="self-symbol">
           <div>

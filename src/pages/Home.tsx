@@ -75,6 +75,21 @@ const values = [
   },
 ];
 
+const missionFitCards = [
+  {
+    title: "Investigative + Logical",
+    text: "I like finding how a problem works, tracing the root cause, and breaking unclear things into smaller logical parts.",
+  },
+  {
+    title: "Conventional + Structured",
+    text: "I feel comfortable with flow, documentation, planning, and making a messy process easier to follow.",
+  },
+  {
+    title: "Realistic + Interpersonal",
+    text: "I enjoy hands-on implementation, but I also care whether the result can be understood and used by real people.",
+  },
+];
+
 const heroHighlightCards = [
   { title: "Informatics Engineering", text: "Universitas Brawijaya" },
   { title: "TELADAN Scholar", text: "Leadership development program by Tanoto Foundation" },
@@ -188,6 +203,7 @@ export function Home() {
   const mission = sectionCopy(homeSections, "mission");
   const missionPreface = sectionCopy(homeSections, "mission-preface");
   const missionAlignment = sectionCopy(homeSections, "mission-alignment");
+  const missionFit = sectionCopy(homeSections, "mission-fit");
   const missionApplication = sectionCopy(homeSections, "mission-application");
   const musicSection = sectionCopy(homeSections, "music");
   const coreMapSection = sectionCopy(homeSections, "core-server-map");
@@ -272,6 +288,7 @@ export function Home() {
   const homeRouteMedia = useMemo(() => routeTurningBlocks.filter((card) => card.imageUrl), [routeTurningBlocks]);
   const homeEmpathyHighlights = useMemo(() => cardBlocks(homeSections, "empathy", empathyHighlightCards), [homeSections]);
   const homeValues = useMemo(() => cardBlocks(homeSections, "values", values), [homeSections]);
+  const homeMissionFitCards = useMemo(() => cardBlocks(homeSections, "mission-fit", missionFitCards), [homeSections]);
   const homeProjects = useMemo(
     () =>
       apiProjects
@@ -644,6 +661,24 @@ export function Home() {
               ))}
             </Card>
           </div>
+
+          <Card className="mission-fit-card" id={anchor("mission-fit")}>
+            <div>
+              <div className="section-kicker">{missionFit.subtitle}</div>
+              <h3 style={sectionTitleStyle("mission-fit")}>{missionFit.title}</h3>
+              {bodyParagraphs(missionFit.body).map((paragraph, index) => (
+                <p style={sectionBodyStyle("mission-fit")} key={`${paragraph}-${index}`}><FormattedText text={paragraph} /></p>
+              ))}
+            </div>
+            <div className="mission-fit-grid" aria-label="Interest and strength pattern">
+              {homeMissionFitCards.map((item) => (
+                <div className="mission-fit-item" key={item.title}>
+                  <strong>{item.title}</strong>
+                  <span><FormattedText text={item.text} /></span>
+                </div>
+              ))}
+            </div>
+          </Card>
 
           <div className="mission-body-copy">
             {bodyParagraphs(mission.body).map((paragraph, index) => (
